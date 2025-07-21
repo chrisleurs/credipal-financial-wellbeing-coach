@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Plus, CreditCard, Trash2, AlertTriangle } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, CreditCard, Trash2, AlertTriangle, Calendar, Clock } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
 import type { Debt } from '@/types'
@@ -17,23 +19,38 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
   const [newDebt, setNewDebt] = useState({
     name: '',
     amount: '',
-    monthlyPayment: ''
+    monthlyPayment: '',
+    paymentDueDate: '',
+    termInMonths: ''
   })
 
+  const calculateEstimatedPayoffDate = (monthlyPayment: number, totalAmount: number, termInMonths: number) => {
+    const today = new Date()
+    const estimatedDate = new Date(today.getFullYear(), today.getMonth() + termInMonths, 1)
+    return estimatedDate.toISOString().split('T')[0]
+  }
+
   const addDebt = () => {
-    if (newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment) {
+    if (newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment && newDebt.paymentDueDate && newDebt.termInMonths) {
       const amount = parseFloat(newDebt.amount) || 0
       const monthlyPayment = parseFloat(newDebt.monthlyPayment) || 0
+      const paymentDueDate = parseInt(newDebt.paymentDueDate) || 1
+      const termInMonths = parseInt(newDebt.termInMonths) || 1
       
-      if (amount > 0 && monthlyPayment > 0) {
+      if (amount > 0 && monthlyPayment > 0 && paymentDueDate >= 1 && paymentDueDate <= 31 && termInMonths > 0) {
+        const estimatedPayoffDate = calculateEstimatedPayoffDate(monthlyPayment, amount, termInMonths)
+        
         const debt: Debt = {
           id: Date.now().toString(),
           name: newDebt.name.trim(),
           amount,
-          monthlyPayment
+          monthlyPayment,
+          paymentDueDate,
+          termInMonths,
+          estimatedPayoffDate
         }
         setDebts([...debts, debt])
-        setNewDebt({ name: '', amount: '', monthlyPayment: '' })
+        setNewDebt({ name: '', amount: '', monthlyPayment: '', paymentDueDate: '', termInMonths: '' })
       }
     }
   }
@@ -49,7 +66,12 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
 
   const totalDebtAmount = debts.reduce((sum, debt) => sum + (debt.amount || 0), 0)
   const totalMonthlyPayments = debts.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0)
-  const canAddDebt = newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment
+  const canAddDebt = newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment && newDebt.paymentDueDate && newDebt.termInMonths
+
+  const isPaymentSufficient = (monthlyPayment: number, totalAmount: number, termInMonths: number) => {
+    const requiredPayment = totalAmount / termInMonths
+    return monthlyPayment >= requiredPayment
+  }
 
   return (
     <OnboardingStep
@@ -59,7 +81,7 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
       subtitle="Agrega tus tarjetas de crédito, préstamos personales y otras deudas. Si no tienes ninguna, puedes continuar."
       onNext={handleNext}
       onBack={onBack}
-      canProceed={true} // Las deudas son opcionales
+      canProceed={true}
     >
       <div className="space-y-6">
         {/* Formulario para agregar deuda */}
@@ -100,6 +122,39 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Día de pago mensual
+                </label>
+                <Select value={newDebt.paymentDueDate} onValueChange={(value) => setNewDebt({ ...newDebt, paymentDueDate: value })}>
+                  <SelectTrigger className="rounded-xl border-gray-300 focus:border-emerald-500">
+                    <SelectValue placeholder="Día del mes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      <SelectItem key={day} value={day.toString()}>
+                        {day}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Plazo en meses
+                </label>
+                <Input
+                  type="number"
+                  placeholder="Ej: 24"
+                  value={newDebt.termInMonths}
+                  onChange={(e) => setNewDebt({ ...newDebt, termInMonths: e.target.value })}
+                  className="rounded-xl border-gray-300 focus:border-emerald-500"
+                />
+              </div>
+            </div>
             
             <Button 
               onClick={addDebt}
@@ -124,10 +179,32 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <h5 className="font-medium text-red-800">{debt.name}</h5>
-                    <div className="text-sm text-red-600 mt-1">
-                      <span>Total: ${(debt.amount || 0).toLocaleString()}</span>
-                      <span className="mx-2">•</span>
-                      <span>Pago mensual: ${(debt.monthlyPayment || 0).toLocaleString()}</span>
+                    <div className="text-sm text-red-600 mt-1 space-y-1">
+                      <div>
+                        <span>Total: ${(debt.amount || 0).toLocaleString()}</span>
+                        <span className="mx-2">•</span>
+                        <span>Pago mensual: ${(debt.monthlyPayment || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>Pago el {debt.paymentDueDate} de cada mes</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{debt.termInMonths} meses</span>
+                        </div>
+                      </div>
+                      {debt.estimatedPayoffDate && (
+                        <div className="text-xs text-gray-600">
+                          Estimado de liquidación: {new Date(debt.estimatedPayoffDate).toLocaleDateString()}
+                        </div>
+                      )}
+                      {!isPaymentSufficient(debt.monthlyPayment, debt.amount, debt.termInMonths) && (
+                        <div className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                          ⚠️ Pago insuficiente para el plazo deseado
+                        </div>
+                      )}
                     </div>
                   </div>
                   <button

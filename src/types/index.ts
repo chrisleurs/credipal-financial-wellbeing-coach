@@ -1,3 +1,4 @@
+
 export interface User {
   id: string
   email: string
@@ -34,6 +35,9 @@ export interface Debt {
   name: string
   amount: number
   monthlyPayment: number
+  paymentDueDate: number
+  termInMonths: number
+  estimatedPayoffDate?: string
 }
 
 export interface AIGeneratedPlan {
