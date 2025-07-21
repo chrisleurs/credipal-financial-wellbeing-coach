@@ -1,109 +1,99 @@
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { MessageCircle, Bell, CheckCircle, X } from 'lucide-react'
+import { MessageCircle, Smartphone, CheckCircle, X } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
+import { useNavigate } from 'react-router-dom'
 
 interface Step6WhatsAppProps {
-  onNext: () => void
   onBack: () => void
 }
 
-const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onNext, onBack }) => {
-  const { financialData, updateFinancialData } = useFinancialStore()
-  const [whatsappOptin, setWhatsappOptin] = useState(
-    financialData.whatsappOptin || false
-  )
+const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
+  const navigate = useNavigate()
+  const { financialData, setWhatsAppOptIn, completeOnboarding } = useFinancialStore()
+  const [whatsappOptIn, setWhatsappOptInLocal] = useState(financialData.whatsappOptin)
 
-  const handleNext = () => {
-    updateFinancialData({
-      whatsappOptin
-    })
-    onNext()
+  const handleFinish = (optIn: boolean) => {
+    setWhatsAppOptIn(optIn)
+    completeOnboarding()
+    navigate('/dashboard')
   }
-
-  const canProceed = true
 
   return (
     <OnboardingStep
       currentStep={5}
-      totalSteps={9}
-      title="¿Quieres recibir recordatorios por WhatsApp?"
-      subtitle="Te enviaremos recordatorios útiles para mantenerte al día con tu plan financiero"
-      onNext={handleNext}
+      totalSteps={6}
+      title="¿Te gustaría recibir consejos por WhatsApp?"
+      subtitle="Credipal puede enviarte recordatorios, tips financieros y responder tus preguntas por WhatsApp."
+      onNext={() => {}} // No se usa
       onBack={onBack}
-      canProceed={canProceed}
+      canProceed={true}
       nextButtonText="Continuar"
     >
       <div className="space-y-6">
-        <div className="flex justify-center mb-6">
-          <div className="bg-green-100 p-6 rounded-full">
-            <MessageCircle className="h-12 w-12 text-green-600" />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="bg-white border-2 border-gray-100 rounded-xl p-4">
-            <div className="flex items-start space-x-3">
-              <Bell className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-gray-900 mb-1">
-                  Recordatorios de tareas
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Te recordaremos completar las tareas de tu plan financiero
-                </p>
-              </div>
+        {/* WhatsApp preview */}
+        <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6">
+          <div className="flex items-start space-x-3">
+            <div className="bg-green-500 p-2 rounded-full">
+              <MessageCircle className="h-5 w-5 text-white" />
             </div>
-          </div>
-
-          <div className="bg-white border-2 border-gray-100 rounded-xl p-4">
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-gray-900 mb-1">
-                  Seguimiento de metas
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Actualizaciones sobre el progreso de tus metas financieras
+            <div className="flex-1">
+              <div className="bg-white rounded-2xl rounded-tl-none p-4 shadow-sm">
+                <p className="text-sm text-gray-800">
+                  ¡Hola! Te escribo para recordarte que hoy es un buen día para revisar tu presupuesto. ¿Cómo vas con tus metas? 💪
                 </p>
               </div>
+              <p className="text-xs text-green-600 mt-1">Credipal • ahora</p>
             </div>
           </div>
         </div>
 
+        {/* Benefits */}
+        <div className="space-y-3">
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="h-5 w-5 text-emerald-500" />
+            <span className="text-gray-700">Recordatorios amigables para tus metas</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="h-5 w-5 text-emerald-500" />
+            <span className="text-gray-700">Tips financieros personalizados</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="h-5 w-5 text-emerald-500" />
+            <span className="text-gray-700">Respuestas rápidas a tus dudas</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <CheckCircle className="h-5 w-5 text-emerald-500" />
+            <span className="text-gray-700">Resúmenes mensuales de tu progreso</span>
+          </div>
+        </div>
+
+        {/* Action buttons */}
         <div className="space-y-3">
           <Button
-            onClick={() => setWhatsappOptin(true)}
-            className={`w-full py-4 rounded-xl transition-all ${
-              whatsappOptin
-                ? 'bg-green-600 hover:bg-green-700 text-white'
-                : 'bg-gray-100 hover:bg-green-50 text-gray-700 hover:text-green-700'
-            }`}
+            onClick={() => handleFinish(true)}
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-4 rounded-xl"
           >
-            <MessageCircle className="h-5 w-5 mr-2" />
-            Sí, quiero recibir recordatorios por WhatsApp
+            <Smartphone className="h-5 w-5 mr-2" />
+            Sí, quiero recibir ayuda por WhatsApp
           </Button>
 
           <Button
-            onClick={() => setWhatsappOptin(false)}
+            onClick={() => handleFinish(false)}
             variant="outline"
-            className={`w-full py-4 rounded-xl transition-all ${
-              !whatsappOptin
-                ? 'border-gray-400 bg-gray-50 text-gray-700'
-                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-            }`}
+            className="w-full border-2 border-gray-300 text-gray-700 py-4 rounded-xl hover:bg-gray-50"
           >
             <X className="h-5 w-5 mr-2" />
-            No, prefiero no recibir recordatorios
+            Continuar sin WhatsApp por ahora
           </Button>
         </div>
 
+        {/* Note */}
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
           <p className="text-sm text-blue-800 text-center">
-            <strong>Nota:</strong> Solo enviaremos mensajes relacionados con tu plan financiero. 
-            Puedes cambiar esta configuración en cualquier momento.
+            Puedes cambiar esta configuración en cualquier momento desde tu dashboard.
           </p>
         </div>
       </div>

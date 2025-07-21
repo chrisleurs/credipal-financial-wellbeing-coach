@@ -12,15 +12,11 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate()
-  const { currentStep, setCurrentStep, completeOnboarding } = useFinancialStore()
+  const { currentStep, setCurrentStep } = useFinancialStore()
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1)
-    } else {
-      // Completar onboarding y ir al dashboard
-      await completeOnboarding()
-      navigate('/dashboard')
     }
   }
 
@@ -45,7 +41,7 @@ const Onboarding: React.FC = () => {
       case 4:
         return <Step5Goals onNext={handleNext} onBack={handleBack} />
       case 5:
-        return <Step6WhatsApp onNext={handleNext} onBack={handleBack} />
+        return <Step6WhatsApp onBack={handleBack} />
       default:
         return <LoadingSpinner />
     }
@@ -54,4 +50,4 @@ const Onboarding: React.FC = () => {
   return <div>{renderStep()}</div>
 }
 
-export default Onboarding;
+export default Onboarding
