@@ -1,145 +1,102 @@
-import React, { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase, signIn, signUp, signOut, getCurrentUser } from '@/services/supabase';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react'
+import { User as SupabaseUser } from '@supabase/supabase-js'
+import { supabase, getCurrentUser } from '@/services/supabase'
+
+interface AuthState {
+  user: SupabaseUser | null
+  loading: boolean
+  error: string | null
+}
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    loading: true,
+    error: null
+  })
 
   useEffect(() => {
-    // Set up auth state listener
+    // Check current session
+    getCurrentUser()
+      .then((user) => {
+        setState(prev => ({ ...prev, user: user as SupabaseUser, loading: false }))
+      })
+      .catch((error) => {
+        setState(prev => ({ ...prev, error: error.message, loading: false }))
+      })
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+        const user = session?.user ?? null
+        setState(prev => ({ ...prev, user, loading: false }))
       }
-    );
+    )
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    return () => subscription.unsubscribe()
+  }, [])
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const login = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string) => {
+    setState(prev => ({ ...prev, loading: true, error: null }))
+    
     try {
-      setLoading(true);
-      const { data, error } = await signIn(email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
       
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "¡Bienvenido!",
-        description: "Has iniciado sesión exitosamente",
-      });
-
-      return { success: true, data };
+      if (error) throw error
     } catch (error: any) {
-      const errorMessage = error.message === 'Invalid login credentials' 
-        ? "Credenciales inválidas. Verifica tu email y contraseña."
-        : error.message;
-      
-      toast({
-        title: "Error de autenticación",
-        description: errorMessage,
-        variant: "destructive"
-      });
-
-      return { success: false, error };
-    } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, error: error.message, loading: false }))
     }
-  };
+  }
 
-  const register = async (
-    email: string, 
-    password: string, 
-    userData?: { first_name?: string; last_name?: string; }
-  ) => {
+  const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
+    setState(prev => ({ ...prev, loading: true, error: null }))
+    
     try {
-      setLoading(true);
-      const { data, error } = await signUp(email, password, userData);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      })
       
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "¡Cuenta creada!",
-        description: "Por favor revisa tu email para confirmar tu cuenta.",
-      });
-
-      return { success: true, data };
+      if (error) throw error
     } catch (error: any) {
-      let errorMessage = error.message;
-      
-      if (error.message.includes('already registered')) {
-        errorMessage = "Este email ya está registrado. Por favor inicia sesión.";
-      }
-      
-      toast({
-        title: "Error de registro",
-        description: errorMessage,
-        variant: "destructive"
-      });
-
-      return { success: false, error };
-    } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, error: error.message, loading: false }))
     }
-  };
+  }
 
-  const logout = async () => {
+  const signOut = async () => {
+    setState(prev => ({ ...prev, loading: true }))
+    
     try {
-      setLoading(true);
-      await signOut();
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
       
-      toast({
-        title: "Sesión cerrada",
-        description: "Has cerrado sesión exitosamente",
-      });
-
-      return { success: true };
+      setState({ user: null, loading: false, error: null })
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "No se pudo cerrar la sesión",
-        variant: "destructive"
-      });
-
-      return { success: false, error };
-    } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, error: error.message, loading: false }))
     }
-  };
+  }
 
-  const getUser = async () => {
-    try {
-      return await getCurrentUser();
-    } catch (error) {
-      console.error('Error getting user:', error);
-      return null;
-    }
-  };
+  // Add backward compatibility aliases
+  const login = signIn
+  const register = signUp
+  const logout = signOut
 
   return {
-    user,
-    session,
-    loading,
+    ...state,
+    signIn,
+    signUp,
+    signOut,
     login,
     register,
-    logout,
-    getUser,
-    isAuthenticated: !!user
-  };
-};
+    logout
+  }
+}
