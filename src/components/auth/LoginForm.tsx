@@ -23,9 +23,9 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
       return;
     }
 
-    const result = await login(formData.email, formData.password);
+    await login(formData.email, formData.password);
     
-    if (result.success && onSuccess) {
+    if (onSuccess) {
       onSuccess();
     }
   };

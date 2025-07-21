@@ -53,14 +53,9 @@ export const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
       return;
     }
 
-    const userData = {
-      first_name: formData.firstName,
-      last_name: formData.lastName
-    };
-
-    const result = await register(formData.email, formData.password, userData);
+    await register(formData.email, formData.password, formData.firstName, formData.lastName);
     
-    if (result.success && onSuccess) {
+    if (onSuccess) {
       onSuccess();
     }
   };
