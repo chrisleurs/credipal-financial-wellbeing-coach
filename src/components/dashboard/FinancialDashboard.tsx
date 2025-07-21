@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -155,24 +156,22 @@ export const FinancialDashboard = () => {
           <CardContent>
             {activeGoals.length > 0 ? (
               <div className="space-y-4">
-                {activeGoals.slice(0, 3).map((goalName, index) => {
+                {activeGoals.slice(0, 3).map((goal, index) => {
                   // Mock progress for demonstration
-                  const progress = Math.random() * 100;
-                  const currentAmount = Math.random() * 10000;
-                  const targetAmount = 10000;
+                  const progress = (goal.currentAmount / goal.targetAmount) * 100;
                   
                   return (
-                    <div key={index} className="space-y-2">
+                    <div key={goal.id} className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{goalName}</h4>
+                        <h4 className="font-medium">{goal.description}</h4>
                         <Badge variant="secondary">
-                          medium
+                          {goal.priority}
                         </Badge>
                       </div>
                       <Progress value={progress} className="h-3" />
                       <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>${currentAmount.toLocaleString()}</span>
-                        <span>${targetAmount.toLocaleString()}</span>
+                        <span>${goal.currentAmount.toLocaleString()}</span>
+                        <span>${goal.targetAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   );
