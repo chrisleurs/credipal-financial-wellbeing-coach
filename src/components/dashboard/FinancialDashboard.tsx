@@ -13,7 +13,7 @@ import {
   Calendar,
   CreditCard
 } from 'lucide-react';
-import { useFinancialStore } from '@/store/financial-store';
+import { useFinancialStore } from '@/store/financialStore';
 import { supabase } from '@/integrations/supabase/client';
 
 export const FinancialDashboard = () => {
