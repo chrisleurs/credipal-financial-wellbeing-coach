@@ -22,14 +22,19 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
 
   const addDebt = () => {
     if (newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment) {
-      const debt: Debt = {
-        id: Date.now().toString(),
-        name: newDebt.name.trim(),
-        amount: parseFloat(newDebt.amount),
-        monthlyPayment: parseFloat(newDebt.monthlyPayment)
+      const amount = parseFloat(newDebt.amount) || 0
+      const monthlyPayment = parseFloat(newDebt.monthlyPayment) || 0
+      
+      if (amount > 0 && monthlyPayment > 0) {
+        const debt: Debt = {
+          id: Date.now().toString(),
+          name: newDebt.name.trim(),
+          amount,
+          monthlyPayment
+        }
+        setDebts([...debts, debt])
+        setNewDebt({ name: '', amount: '', monthlyPayment: '' })
       }
-      setDebts([...debts, debt])
-      setNewDebt({ name: '', amount: '', monthlyPayment: '' })
     }
   }
 
@@ -42,8 +47,8 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
     onNext()
   }
 
-  const totalDebtAmount = debts.reduce((sum, debt) => sum + debt.amount, 0)
-  const totalMonthlyPayments = debts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
+  const totalDebtAmount = debts.reduce((sum, debt) => sum + (debt.amount || 0), 0)
+  const totalMonthlyPayments = debts.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0)
   const canAddDebt = newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment
 
   return (
@@ -120,9 +125,9 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
                   <div className="flex-1">
                     <h5 className="font-medium text-red-800">{debt.name}</h5>
                     <div className="text-sm text-red-600 mt-1">
-                      <span>Total: ${debt.amount.toLocaleString()}</span>
+                      <span>Total: ${(debt.amount || 0).toLocaleString()}</span>
                       <span className="mx-2">•</span>
-                      <span>Pago mensual: ${debt.monthlyPayment.toLocaleString()}</span>
+                      <span>Pago mensual: ${(debt.monthlyPayment || 0).toLocaleString()}</span>
                     </div>
                   </div>
                   <button
