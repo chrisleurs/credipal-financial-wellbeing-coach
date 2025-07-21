@@ -21,7 +21,7 @@ export const FinancialDashboard = () => {
   const { 
     financialData, 
     aiPlan,
-    actionPlan,
+    actionTasks,
     isLoading, 
     setCurrentStep,
     generateAIPlan,
@@ -145,7 +145,7 @@ export const FinancialDashboard = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                Progreso de Metas
+                Tus Metas Financieras
               </CardTitle>
               <Button size="sm" className="bg-secondary hover:bg-secondary-light">
                 <Plus className="h-4 w-4 mr-2" />
@@ -155,27 +155,15 @@ export const FinancialDashboard = () => {
           </CardHeader>
           <CardContent>
             {activeGoals.length > 0 ? (
-              <div className="space-y-4">
-                {activeGoals.slice(0, 3).map((goal, index) => {
-                  // Mock progress for demonstration
-                  const progress = (goal.currentAmount / goal.targetAmount) * 100;
-                  
-                  return (
-                    <div key={goal.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{goal.description}</h4>
-                        <Badge variant="secondary">
-                          {goal.priority}
-                        </Badge>
-                      </div>
-                      <Progress value={progress} className="h-3" />
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>${goal.currentAmount.toLocaleString()}</span>
-                        <span>${goal.targetAmount.toLocaleString()}</span>
-                      </div>
+              <div className="grid md:grid-cols-2 gap-3">
+                {activeGoals.map((goal, index) => (
+                  <div key={index} className="bg-emerald-50 border border-emerald-200 p-3 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-emerald-600" />
+                      <span className="font-medium text-emerald-800">{goal}</span>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="text-center py-8">

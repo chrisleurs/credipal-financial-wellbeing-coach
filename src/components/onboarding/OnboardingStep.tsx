@@ -1,3 +1,4 @@
+
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
@@ -83,7 +84,7 @@ const OnboardingStep: React.FC<OnboardingStepProps> = ({
               </div>
             ) : (
               <div className="flex items-center justify-center">
-                {nextButtonText}
+                {currentStep === totalSteps - 1 ? 'Ir al Dashboard' : nextButtonText}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </div>
             )}

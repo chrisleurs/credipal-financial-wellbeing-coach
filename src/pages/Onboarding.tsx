@@ -8,20 +8,19 @@ import Step3Debts from '@/components/onboarding/Step3Debts'
 import Step4Savings from '@/components/onboarding/Step4Savings'
 import Step5Goals from '@/components/onboarding/Step5Goals'
 import Step6WhatsApp from '@/components/onboarding/Step6WhatsApp'
-import Step7Summary from '@/components/onboarding/Step7Summary'
-import Step8Processing from '@/components/onboarding/Step8Processing'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate()
-  const { currentStep, setCurrentStep } = useFinancialStore()
+  const { currentStep, setCurrentStep, completeOnboarding } = useFinancialStore()
 
-  const handleNext = () => {
-    if (currentStep < 8) {
+  const handleNext = async () => {
+    if (currentStep < 5) {
       setCurrentStep(currentStep + 1)
     } else {
-      // Completar onboarding y ir al plan
-      navigate('/plan')
+      // Completar onboarding y ir al dashboard
+      await completeOnboarding()
+      navigate('/dashboard')
     }
   }
 
@@ -47,10 +46,6 @@ const Onboarding: React.FC = () => {
         return <Step5Goals onNext={handleNext} onBack={handleBack} />
       case 5:
         return <Step6WhatsApp onNext={handleNext} onBack={handleBack} />
-      case 6:
-        return <Step7Summary onNext={handleNext} onBack={handleBack} />
-      case 7:
-        return <Step8Processing onNext={handleNext} onBack={handleBack} />
       default:
         return <LoadingSpinner />
     }

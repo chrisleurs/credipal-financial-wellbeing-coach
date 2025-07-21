@@ -1,14 +1,14 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { FinancialData, AIGeneratedPlan, ActionPlan } from '@/types';
-
+import { FinancialData, AIPlan, ActionTask } from '@/types';
 
 interface FinancialStore {
   // Data
   currentStep: number;
   financialData: FinancialData;
-  aiPlan: AIGeneratedPlan | null;
-  actionPlan: ActionPlan | null;
+  aiPlan: AIPlan | null;
+  actionTasks: ActionTask[];
   
   // States
   isLoading: boolean;
@@ -21,7 +21,7 @@ interface FinancialStore {
   
   // API Actions
   generateAIPlan: () => Promise<void>;
-  generateActionPlan: () => Promise<void>;
+  generateActionTasks: () => Promise<void>;
   saveToSupabase: () => Promise<void>;
   loadFromSupabase: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
@@ -44,7 +44,7 @@ const initialFinancialData: FinancialData = {
   debts: [],
   currentSavings: 0,
   monthlySavingsCapacity: 0,
-  financialGoals: [],
+  financialGoals: [], // Array simple de strings
   whatsappOptin: false
 };
 
@@ -55,7 +55,7 @@ export const useFinancialStore = create<FinancialStore>()(
       currentStep: 0,
       financialData: initialFinancialData,
       aiPlan: null,
-      actionPlan: null,
+      actionTasks: [],
       isLoading: false,
       isOnboardingComplete: false,
       error: null,
@@ -71,11 +71,11 @@ export const useFinancialStore = create<FinancialStore>()(
       generateAIPlan: async () => {
         set({ isLoading: true, error: null })
         try {
-          // TODO: Implement OpenAI integration
           console.log('Generating AI plan...')
           await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
           
-          const mockPlan: AIGeneratedPlan = {
+          const mockPlan: AIPlan = {
+            id: '1',
             recommendations: [
               'Crear un fondo de emergencia',
               'Reducir gastos variables en 15%',
@@ -90,7 +90,8 @@ export const useFinancialStore = create<FinancialStore>()(
               emergency: 200
             },
             timeEstimate: '6-12 meses',
-            motivationalMessage: '¡Estás en el camino correcto hacia la estabilidad financiera!'
+            motivationalMessage: '¡Estás en el camino correcto hacia la estabilidad financiera!',
+            createdAt: new Date().toISOString()
           }
           
           set({ aiPlan: mockPlan })
@@ -101,61 +102,44 @@ export const useFinancialStore = create<FinancialStore>()(
         }
       },
 
-      generateActionPlan: async () => {
+      generateActionTasks: async () => {
         set({ isLoading: true, error: null })
         try {
-          // TODO: Implement action plan generation
-          console.log('Generating action plan...')
+          console.log('Generating action tasks...')
           await new Promise(resolve => setTimeout(resolve, 1500))
           
-          const mockActionPlan: ActionPlan = {
-            tasks: [
-              {
-                id: '1',
-                title: 'Registrar gastos diarios',
-                description: 'Anota todos tus gastos durante una semana',
-                priority: 'high',
-                dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                completed: false,
-                steps: [
-                  'Descarga una app de gastos',
-                  'Anota cada compra',
-                  'Revisa al final del día'
-                ]
-              },
-              {
-                id: '2',
-                title: 'Abrir cuenta de ahorros',
-                description: 'Separa tus ahorros en una cuenta dedicada',
-                priority: 'medium',
-                dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                completed: false,
-                steps: [
-                  'Investigar opciones de cuentas',
-                  'Comparar tasas de interés',
-                  'Abrir la cuenta'
-                ]
-              }
-            ],
-            nextReviewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            whatsappReminders: get().financialData.whatsappOptin
-          }
+          const mockTasks: ActionTask[] = [
+            {
+              id: '1',
+              title: 'Registrar gastos diarios',
+              description: 'Anota todos tus gastos durante una semana',
+              priority: 'high',
+              dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              completed: false
+            },
+            {
+              id: '2',
+              title: 'Abrir cuenta de ahorros',
+              description: 'Separa tus ahorros en una cuenta dedicada',
+              priority: 'medium',
+              dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              completed: false
+            }
+          ]
           
-          set({ actionPlan: mockActionPlan })
+          set({ actionTasks: mockTasks })
         } catch (error) {
-          set({ error: 'Error generando plan de acción' })
+          set({ error: 'Error generando tareas' })
         } finally {
           set({ isLoading: false })
         }
       },
 
       saveToSupabase: async () => {
-        // TODO: Implement Supabase save
         console.log('Saving to Supabase...', get().financialData)
       },
 
       loadFromSupabase: async () => {
-        // TODO: Implement Supabase load
         console.log('Loading from Supabase...')
       },
 
@@ -195,7 +179,7 @@ export const useFinancialStore = create<FinancialStore>()(
         currentStep: 0,
         financialData: initialFinancialData,
         aiPlan: null,
-        actionPlan: null,
+        actionTasks: [],
         isLoading: false,
         isOnboardingComplete: false,
         error: null
@@ -209,7 +193,7 @@ export const useFinancialStore = create<FinancialStore>()(
       partialize: (state) => ({
         financialData: state.financialData,
         aiPlan: state.aiPlan,
-        actionPlan: state.actionPlan,
+        actionTasks: state.actionTasks,
         isOnboardingComplete: state.isOnboardingComplete
       })
     }

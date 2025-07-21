@@ -7,27 +7,6 @@ export interface User {
   createdAt: string
 }
 
-export interface LoanInfo {
-  id: string
-  userId: string
-  amount: number
-  paymentAmount: number
-  paymentFrequency: 'quincenal' | 'mensual'
-  origin: string
-  startDate: string
-  status: 'active' | 'completed'
-}
-
-export interface FinancialGoal {
-  id: string
-  type: 'emergency' | 'vacation' | 'home' | 'car' | 'education' | 'retirement' | 'other'
-  description: string
-  targetAmount: number
-  currentAmount: number
-  targetDate: string
-  priority: 'high' | 'medium' | 'low'
-}
-
 export interface FinancialData {
   monthlyIncome: number
   extraIncome: number
@@ -36,7 +15,7 @@ export interface FinancialData {
   debts: Debt[]
   currentSavings: number
   monthlySavingsCapacity: number
-  financialGoals: FinancialGoal[]
+  financialGoals: string[] // CAMBIO: Array simple de strings
   whatsappOptin: boolean
 }
 
@@ -45,12 +24,10 @@ export interface Debt {
   name: string
   amount: number
   monthlyPayment: number
-  paymentDueDate: number
-  termInMonths: number
-  estimatedPayoffDate?: string
 }
 
-export interface AIGeneratedPlan {
+export interface AIPlan {
+  id: string
   recommendations: string[]
   monthlyBalance: number
   savingsSuggestion: number
@@ -62,6 +39,7 @@ export interface AIGeneratedPlan {
   }
   timeEstimate: string
   motivationalMessage: string
+  createdAt: string
 }
 
 export interface ActionTask {
@@ -71,18 +49,4 @@ export interface ActionTask {
   priority: 'high' | 'medium' | 'low'
   dueDate: string
   completed: boolean
-  steps: string[]
-}
-
-export interface ActionPlan {
-  tasks: ActionTask[]
-  nextReviewDate: string
-  whatsappReminders: boolean
-}
-
-export interface ChatMessage {
-  id: string
-  content: string
-  isUser: boolean
-  timestamp: Date
 }
