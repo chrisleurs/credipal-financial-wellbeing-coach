@@ -16,9 +16,35 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
   const [whatsappOptIn, setWhatsappOptInLocal] = useState(financialData.whatsappOptin)
 
   const handleFinish = (optIn: boolean) => {
-    setWhatsAppOptIn(optIn)
-    completeOnboarding()
-    navigate('/dashboard')
+    console.log('handleFinish called with optIn:', optIn)
+    
+    try {
+      // Update WhatsApp opt-in preference
+      setWhatsAppOptIn(optIn)
+      console.log('WhatsApp opt-in set to:', optIn)
+      
+      // Mark onboarding as complete
+      completeOnboarding()
+      console.log('Onboarding completed')
+      
+      // Navigate to dashboard
+      console.log('Navigating to dashboard...')
+      navigate('/dashboard')
+      console.log('Navigation to dashboard triggered')
+      
+    } catch (error) {
+      console.error('Error in handleFinish:', error)
+    }
+  }
+
+  const handleYesClick = () => {
+    console.log('Yes button clicked - accepting WhatsApp')
+    handleFinish(true)
+  }
+
+  const handleNoClick = () => {
+    console.log('No button clicked - declining WhatsApp')
+    handleFinish(false)
   }
 
   return (
@@ -73,7 +99,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
         {/* Action buttons */}
         <div className="space-y-3">
           <Button
-            onClick={() => handleFinish(true)}
+            onClick={handleYesClick}
             className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-4 rounded-xl"
           >
             <Smartphone className="h-5 w-5 mr-2" />
@@ -81,7 +107,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
           </Button>
 
           <Button
-            onClick={() => handleFinish(false)}
+            onClick={handleNoClick}
             variant="outline"
             className="w-full border-2 border-gray-300 text-gray-700 py-4 rounded-xl hover:bg-gray-50"
           >

@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Brain, TrendingUp, Target, PiggyBank, CreditCard, Loader2 } from 'lucide-react'
 
 const Dashboard: React.FC = () => {
+  console.log('Dashboard component rendering')
+  
   const { 
     financialData, 
     aiPlan, 
@@ -17,6 +19,8 @@ const Dashboard: React.FC = () => {
   const totalIncome = financialData.monthlyIncome + financialData.extraIncome
   const balance = totalIncome - financialData.monthlyExpenses
   const totalDebtPayments = financialData.debts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
+
+  console.log('Dashboard state:', { totalIncome, balance, aiPlan })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 p-4">
