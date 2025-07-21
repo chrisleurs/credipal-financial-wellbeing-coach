@@ -96,7 +96,7 @@ export default function Debts() {
   }
 
   const totalDebt = financialData.debts.reduce((sum, debt) => {
-    const remaining = getRemainingAmount(debt.id, debt.totalAmount)
+    const remaining = getRemainingAmount(debt.id, debt.amount)
     return sum + remaining
   }, 0)
 
