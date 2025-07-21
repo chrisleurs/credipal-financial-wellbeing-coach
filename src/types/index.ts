@@ -15,7 +15,7 @@ export interface FinancialData {
   debts: Debt[]
   currentSavings: number
   monthlySavingsCapacity: number
-  financialGoals: string[] // CAMBIO: Array simple de strings
+  financialGoals: string[] // Array simple de strings
   whatsappOptin: boolean
 }
 
@@ -24,6 +24,9 @@ export interface Debt {
   name: string
   amount: number
   monthlyPayment: number
+  paymentDueDate?: number
+  termInMonths?: number
+  estimatedPayoffDate?: string
 }
 
 export interface AIPlan {
@@ -49,4 +52,25 @@ export interface ActionTask {
   priority: 'high' | 'medium' | 'low'
   dueDate: string
   completed: boolean
+}
+
+// Add missing interfaces for services/openai.ts
+export interface AIGeneratedPlan {
+  recommendations: string[]
+  monthlyBalance: number
+  savingsSuggestion: number
+  budgetBreakdown: {
+    fixedExpenses: number
+    variableExpenses: number
+    savings: number
+    emergency: number
+  }
+  timeEstimate: string
+  motivationalMessage: string
+}
+
+export interface ActionPlan {
+  tasks: ActionTask[]
+  nextReviewDate: string
+  whatsappReminders: boolean
 }

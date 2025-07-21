@@ -21,7 +21,7 @@ interface FinancialStore {
   
   // API Actions
   generateAIPlan: () => Promise<void>;
-  generateActionTasks: () => Promise<void>;
+  generateActionPlan: () => Promise<void>;
   saveToSupabase: () => Promise<void>;
   loadFromSupabase: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
@@ -67,7 +67,7 @@ export const useFinancialStore = create<FinancialStore>()(
         financialData: { ...state.financialData, ...data }
       })),
 
-      // API actions (placeholders for now)
+      // API actions
       generateAIPlan: async () => {
         set({ isLoading: true, error: null })
         try {
@@ -102,10 +102,10 @@ export const useFinancialStore = create<FinancialStore>()(
         }
       },
 
-      generateActionTasks: async () => {
+      generateActionPlan: async () => {
         set({ isLoading: true, error: null })
         try {
-          console.log('Generating action tasks...')
+          console.log('Generating action plan...')
           await new Promise(resolve => setTimeout(resolve, 1500))
           
           const mockTasks: ActionTask[] = [

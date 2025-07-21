@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -75,8 +74,8 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
 
   return (
     <OnboardingStep
-      currentStep={2}
-      totalSteps={9}
+      currentStep={3}
+      totalSteps={6}
       title="¿Tienes deudas activas?"
       subtitle="Agrega tus tarjetas de crédito, préstamos personales y otras deudas. Si no tienes ninguna, puedes continuar."
       onNext={handleNext}
@@ -186,21 +185,25 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
                         <span>Pago mensual: ${(debt.monthlyPayment || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>Pago el {debt.paymentDueDate} de cada mes</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{debt.termInMonths} meses</span>
-                        </div>
+                        {debt.paymentDueDate && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>Pago el {debt.paymentDueDate} de cada mes</span>
+                          </div>
+                        )}
+                        {debt.termInMonths && (
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{debt.termInMonths} meses</span>
+                          </div>
+                        )}
                       </div>
                       {debt.estimatedPayoffDate && (
                         <div className="text-xs text-gray-600">
                           Estimado de liquidación: {new Date(debt.estimatedPayoffDate).toLocaleDateString()}
                         </div>
                       )}
-                      {!isPaymentSufficient(debt.monthlyPayment, debt.amount, debt.termInMonths) && (
+                      {debt.termInMonths && !isPaymentSufficient(debt.monthlyPayment, debt.amount, debt.termInMonths) && (
                         <div className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
                           ⚠️ Pago insuficiente para el plazo deseado
                         </div>
@@ -217,7 +220,6 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
               </div>
             ))}
             
-            {/* Resumen de deudas */}
             <div className="bg-gradient-to-r from-red-100 to-orange-100 p-4 rounded-xl border border-red-200">
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>

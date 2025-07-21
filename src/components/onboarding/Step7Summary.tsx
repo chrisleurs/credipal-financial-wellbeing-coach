@@ -21,13 +21,13 @@ const Step7Summary: React.FC<Step7SummaryProps> = ({ onNext, onBack }) => {
   return (
     <OnboardingStep
       currentStep={6}
-      totalSteps={9}
+      totalSteps={6}
       title="Resumen de tu información financiera"
-      subtitle="Revisa que toda la información esté correcta antes de generar tu plan personalizado"
+      subtitle="Revisa que toda la información esté correcta antes de continuar al dashboard"
       onNext={onNext}
       onBack={onBack}
       canProceed={canProceed}
-      nextButtonText="Generar mi plan"
+      nextButtonText="Ir al Dashboard"
     >
       <div className="space-y-4">
         {/* Ingresos */}
@@ -116,11 +116,8 @@ const Step7Summary: React.FC<Step7SummaryProps> = ({ onNext, onBack }) => {
             </div>
             <div className="space-y-2">
               {financialData.financialGoals.map((goal, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span className="text-emerald-700">{goal.description}</span>
-                  <span className="text-emerald-800 font-medium">
-                    ${goal.targetAmount.toLocaleString()}
-                  </span>
+                <div key={index} className="text-sm text-emerald-700">
+                  • {goal}
                 </div>
               ))}
             </div>
