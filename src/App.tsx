@@ -11,7 +11,12 @@ import Auth from '@/pages/Auth'
 import Onboarding from '@/pages/Onboarding'
 import Plan from '@/pages/Plan'
 import Dashboard from '@/pages/Dashboard'
+import Expenses from '@/pages/Expenses'
+import Debts from '@/pages/Debts'
+import Profile from '@/pages/Profile'
+import Calendar from '@/pages/Calendar'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
+import { AppLayout } from '@/components/layout/AppLayout'
 
 const queryClient = new QueryClient();
 
@@ -23,7 +28,7 @@ const App: React.FC = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Router>
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
+            <div className="min-h-screen bg-background">
               <Routes>
                 <Route path="/" element={<Welcome />} />
                 <Route path="/auth" element={<Auth />} />
@@ -36,18 +41,62 @@ const App: React.FC = () => {
                   } 
                 />
                 <Route 
-                  path="/plan" 
+                  path="/dashboard" 
                   element={
                     <ProtectedRoute>
-                      <Plan />
+                      <AppLayout>
+                        <Dashboard />
+                      </AppLayout>
                     </ProtectedRoute>
                   } 
                 />
                 <Route 
-                  path="/dashboard" 
+                  path="/expenses" 
                   element={
                     <ProtectedRoute>
-                      <Dashboard />
+                      <AppLayout>
+                        <Expenses />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/debts" 
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Debts />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Profile />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/calendar" 
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Calendar />
+                      </AppLayout>
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/plan" 
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout>
+                        <Plan />
+                      </AppLayout>
                     </ProtectedRoute>
                   } 
                 />
