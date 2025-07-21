@@ -34,7 +34,7 @@ export const FinancialDashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        loadFromSupabase(user.id);
+        loadFromSupabase();
       }
     };
     
