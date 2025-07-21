@@ -17,6 +17,7 @@ interface FinancialStore {
   
   // Onboarding Actions
   setCurrentStep: (step: number) => void
+  updateFinancialData: (data: Partial<FinancialData>) => void
   updateIncome: (monthly: number, extra: number) => void
   updateExpenses: (categories: Record<string, number>, total: number) => void
   updateDebts: (debts: Debt[]) => void
@@ -27,8 +28,9 @@ interface FinancialStore {
   
   // Dashboard Actions
   generateAIPlan: () => Promise<void>
-  generateActionTasks: () => Promise<void>
+  generateActionPlan: () => Promise<void>
   addExpense: (name: string, amount: number) => void
+  loadFromSupabase: () => Promise<void>
   
   // Utils
   reset: () => void
@@ -62,6 +64,10 @@ export const useFinancialStore = create<FinancialStore>()(
 
       // Onboarding actions
       setCurrentStep: (step) => set({ currentStep: step }),
+      
+      updateFinancialData: (data) => set((state) => ({
+        financialData: { ...state.financialData, ...data }
+      })),
       
       updateIncome: (monthly, extra) => set((state) => ({
         financialData: { ...state.financialData, monthlyIncome: monthly, extraIncome: extra }
@@ -129,10 +135,10 @@ export const useFinancialStore = create<FinancialStore>()(
         }
       },
 
-      generateActionTasks: async () => {
+      generateActionPlan: async () => {
         set({ isLoading: true, error: null })
         try {
-          console.log('Generating action tasks...')
+          console.log('Generating action plan...')
           await new Promise(resolve => setTimeout(resolve, 1500))
           
           const mockTasks: ActionTask[] = [
@@ -156,10 +162,15 @@ export const useFinancialStore = create<FinancialStore>()(
           
           set({ actionTasks: mockTasks })
         } catch (error) {
-          set({ error: 'Error generando tareas' })
+          set({ error: 'Error generando plan de acción' })
         } finally {
           set({ isLoading: false })
         }
+      },
+
+      loadFromSupabase: async () => {
+        // Mock implementation for now
+        console.log('Loading from Supabase...')
       },
 
       addExpense: (name, amount) => {
