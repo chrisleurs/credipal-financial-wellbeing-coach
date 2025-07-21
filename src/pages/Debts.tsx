@@ -34,7 +34,14 @@ export default function Debts() {
   const [paymentAmount, setPaymentAmount] = useState('')
 
   const handleAddDebt = () => {
-    if (!newDebt.name || !newDebt.totalAmount || !newDebt.monthlyPayment) return
+    if (!newDebt.name || !newDebt.totalAmount || !newDebt.monthlyPayment) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos requeridos.",
+        variant: "destructive",
+      })
+      return
+    }
 
     const debt = {
       id: Date.now().toString(),
@@ -56,7 +63,14 @@ export default function Debts() {
   }
 
   const handleRegisterPayment = () => {
-    if (!paymentAmount || !selectedDebtId) return
+    if (!paymentAmount || !selectedDebtId) {
+      toast({
+        title: "Error",
+        description: "Por favor ingresa un monto válido.",
+        variant: "destructive",
+      })
+      return
+    }
 
     const payment: DebtPayment = {
       id: Date.now().toString(),
@@ -125,7 +139,7 @@ export default function Debts() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Nombre de la deuda</Label>
+                <Label htmlFor="name">Nombre de la deuda *</Label>
                 <Input
                   id="name"
                   placeholder="Ej: Tarjeta de crédito, Préstamo..."
@@ -135,7 +149,7 @@ export default function Debts() {
               </div>
               
               <div>
-                <Label htmlFor="totalAmount">Monto total</Label>
+                <Label htmlFor="totalAmount">Monto total *</Label>
                 <Input
                   id="totalAmount"
                   type="number"
@@ -146,7 +160,7 @@ export default function Debts() {
               </div>
               
               <div>
-                <Label htmlFor="monthlyPayment">Pago mensual</Label>
+                <Label htmlFor="monthlyPayment">Pago mensual *</Label>
                 <Input
                   id="monthlyPayment"
                   type="number"
@@ -244,7 +258,10 @@ export default function Debts() {
                       {debt.name}
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+                      <Dialog open={isPaymentDialogOpen && selectedDebtId === debt.id} onOpenChange={(open) => {
+                        setIsPaymentDialogOpen(open)
+                        if (!open) setSelectedDebtId('')
+                      }}>
                         <DialogTrigger asChild>
                           <Button 
                             size="sm" 
@@ -335,7 +352,7 @@ export default function Debts() {
                   return (
                     <div key={payment.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
                       <div>
-                        <h4 className="font-medium text-foreground">{debt?.name}</h4>
+                        <h4 className="font-medium text-foreground">{debt?.name || 'Deuda eliminada'}</h4>
                         <p className="text-sm text-muted-foreground">
                           {payment.date.toLocaleDateString('es-ES')}
                         </p>
