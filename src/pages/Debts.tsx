@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Plus, CreditCard, DollarSign, Calendar, Calculator } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -96,11 +97,11 @@ export default function Debts() {
   }
 
   const totalDebt = financialData.debts.reduce((sum, debt) => {
-    const remaining = getRemainingAmount(debt.id, debt.amount)
+    const remaining = getRemainingAmount(debt.id, debt.amount || 0)
     return sum + remaining
   }, 0)
 
-  const totalMonthlyPayments = financialData.debts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
+  const totalMonthlyPayments = financialData.debts.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0)
 
   return (
     <div className="space-y-6">
@@ -228,9 +229,11 @@ export default function Debts() {
       ) : (
         <div className="space-y-4">
           {financialData.debts.map((debt) => {
-            const progress = getDebtProgress(debt.id, debt.amount)
-            const remaining = getRemainingAmount(debt.id, debt.amount)
-            const monthsToPayOff = calculateMonthsToPayOff(remaining, debt.monthlyPayment)
+            const debtAmount = debt.amount || 0
+            const monthlyPayment = debt.monthlyPayment || 0
+            const progress = getDebtProgress(debt.id, debtAmount)
+            const remaining = getRemainingAmount(debt.id, debtAmount)
+            const monthsToPayOff = calculateMonthsToPayOff(remaining, monthlyPayment)
             
             return (
               <Card key={debt.id}>
@@ -290,7 +293,7 @@ export default function Debts() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Monto original</p>
-                        <p className="font-medium">${debt.amount.toLocaleString()}</p>
+                        <p className="font-medium">${debtAmount.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Restante</p>
@@ -298,7 +301,7 @@ export default function Debts() {
                       </div>
                       <div>
                         <p className="text-muted-foreground">Pago mensual</p>
-                        <p className="font-medium">${debt.monthlyPayment.toLocaleString()}</p>
+                        <p className="font-medium">${monthlyPayment.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Meses restantes</p>

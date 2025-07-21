@@ -1,3 +1,4 @@
+
 import React from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { 
@@ -39,12 +40,6 @@ export function AppSidebar() {
   const { signOut } = useAuth()
   const currentPath = location.pathname
 
-  const isActive = (path: string) => currentPath === path
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-      : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-
   return (
     <Sidebar
       className={open ? 'w-64' : 'w-14'}
@@ -75,7 +70,11 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       end 
-                      className={getNavCls}
+                      className={({ isActive }) =>
+                        isActive 
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      }
                     >
                       <item.icon className="h-4 w-4" />
                       {open && <span>{item.title}</span>}
