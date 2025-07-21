@@ -18,6 +18,16 @@ export interface LoanInfo {
   status: 'active' | 'completed'
 }
 
+export interface FinancialGoal {
+  id: string
+  type: 'emergency' | 'vacation' | 'home' | 'car' | 'education' | 'retirement' | 'other'
+  description: string
+  targetAmount: number
+  currentAmount: number
+  targetDate: string
+  priority: 'high' | 'medium' | 'low'
+}
+
 export interface FinancialData {
   monthlyIncome: number
   extraIncome: number
@@ -26,7 +36,7 @@ export interface FinancialData {
   debts: Debt[]
   currentSavings: number
   monthlySavingsCapacity: number
-  financialGoals: string[]
+  financialGoals: FinancialGoal[]
   whatsappOptin: boolean
 }
 

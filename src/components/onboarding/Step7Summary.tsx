@@ -99,7 +99,7 @@ const Step7Summary: React.FC<Step7SummaryProps> = ({ onNext, onBack }) => {
                 <div key={index} className="flex justify-between text-sm">
                   <span className="text-purple-700">{debt.name}</span>
                   <span className="text-purple-800 font-medium">
-                    ${debt.totalAmount.toLocaleString()}
+                    ${debt.amount.toLocaleString()}
                   </span>
                 </div>
               ))}
