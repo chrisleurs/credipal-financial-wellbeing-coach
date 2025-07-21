@@ -19,12 +19,12 @@ import { supabase } from '@/integrations/supabase/client';
 export const FinancialDashboard = () => {
   const { 
     financialData, 
-    goals, 
-    transactions, 
+    aiPlan,
+    actionPlan,
     isLoading, 
-    fetchFinancialData, 
-    fetchGoals, 
-    fetchTransactions 
+    setCurrentStep,
+    generateAIPlan,
+    loadFromSupabase
   } = useFinancialStore();
   
   const [user, setUser] = useState<any>(null);
@@ -34,14 +34,12 @@ export const FinancialDashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        fetchFinancialData(user.id);
-        fetchGoals(user.id);
-        fetchTransactions(user.id);
+        loadFromSupabase(user.id);
       }
     };
     
     initializeUser();
-  }, [fetchFinancialData, fetchGoals, fetchTransactions]);
+  }, [loadFromSupabase]);
 
   if (isLoading) {
     return (
@@ -54,11 +52,12 @@ export const FinancialDashboard = () => {
     );
   }
 
-  const totalSavings = financialData?.savings_goal || 0;
-  const emergencyFund = financialData?.emergency_fund_goal || 0;
-  const monthlyBalance = financialData?.monthly_balance || 0;
-  const activeGoals = goals.filter(goal => goal.status === 'active');
-  const recentTransactions = transactions.slice(0, 5);
+  // Mock data for demonstration
+  const totalSavings = financialData?.currentSavings || 0;
+  const emergencyFund = (financialData?.monthlySavingsCapacity || 0) * 6; // 6 months
+  const monthlyBalance = (financialData?.monthlyIncome || 0) - (financialData?.monthlyExpenses || 0);
+  const activeGoals = financialData?.financialGoals || [];
+  const recentTransactions: any[] = []; // Empty for now
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -88,7 +87,7 @@ export const FinancialDashboard = () => {
               </div>
               <p className="text-xs text-muted-foreground">
                 {monthlyBalance > 0 ? '+' : ''}
-                {((monthlyBalance / (financialData?.monthly_income || 1)) * 100).toFixed(1)}% de tus ingresos
+                {((monthlyBalance / (financialData?.monthlyIncome || 1)) * 100).toFixed(1)}% de tus ingresos
               </p>
             </CardContent>
           </Card>
@@ -118,7 +117,7 @@ export const FinancialDashboard = () => {
                 ${emergencyFund.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                {(emergencyFund / (financialData?.monthly_expenses || 1)).toFixed(1)} meses cubiertos
+                {(emergencyFund / (financialData?.monthlyExpenses || 1)).toFixed(1)} meses cubiertos
               </p>
             </CardContent>
           </Card>
@@ -156,20 +155,24 @@ export const FinancialDashboard = () => {
           <CardContent>
             {activeGoals.length > 0 ? (
               <div className="space-y-4">
-                {activeGoals.slice(0, 3).map((goal) => {
-                  const progress = (goal.current_amount / goal.target_amount) * 100;
+                {activeGoals.slice(0, 3).map((goalName, index) => {
+                  // Mock progress for demonstration
+                  const progress = Math.random() * 100;
+                  const currentAmount = Math.random() * 10000;
+                  const targetAmount = 10000;
+                  
                   return (
-                    <div key={goal.id} className="space-y-2">
+                    <div key={index} className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{goal.goal_name}</h4>
-                        <Badge variant={goal.priority === 'high' ? 'destructive' : 'secondary'}>
-                          {goal.priority}
+                        <h4 className="font-medium">{goalName}</h4>
+                        <Badge variant="secondary">
+                          medium
                         </Badge>
                       </div>
                       <Progress value={progress} className="h-3" />
                       <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>${goal.current_amount.toLocaleString()}</span>
-                        <span>${goal.target_amount.toLocaleString()}</span>
+                        <span>${currentAmount.toLocaleString()}</span>
+                        <span>${targetAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   );
