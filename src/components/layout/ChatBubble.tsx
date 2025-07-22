@@ -5,34 +5,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/hooks/use-toast'
-
-interface Message {
-  id: string
-  text: string
-  isUser: boolean
-  timestamp: Date
-  functionExecuted?: string
-  isLoading?: boolean
-}
+import { useChatAI } from '@/hooks/useChatAI'
 
 export function ChatBubble() {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: '¡Hola! Soy tu asistente financiero personal de Credipal 💰 Puedo ayudarte a agregar gastos, registrar pagos, analizar tus finanzas y mucho más. ¿En qué puedo ayudarte hoy?',
-      isUser: false,
-      timestamp: new Date()
-    }
-  ])
-  const [isLoading, setIsLoading] = useState(false)
-  const { user } = useAuth()
-  const { toast } = useToast()
+  const { messages, isLoading, sendMessage, addInitialMessage } = useChatAI()
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Initialize with welcome message
+  useEffect(() => {
+    if (messages.length === 0) {
+      addInitialMessage('¡Hola! Soy tu asistente financiero personal de Credipal 💰 Puedo ayudarte a agregar gastos, registrar pagos, analizar tus finanzas y mucho más. ¿En qué puedo ayudarte hoy?')
+    }
+  }, [messages.length, addInitialMessage])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -44,96 +31,38 @@ export function ChatBubble() {
     }
   }, [messages])
 
+  // Focus input when chat opens or after sending a message
+  useEffect(() => {
+    if (isOpen && inputRef.current && !isLoading) {
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+    }
+  }, [isOpen, isLoading])
+
   const handleSendMessage = async () => {
-    if (!message.trim() || !user) return
+    if (!message.trim() || isLoading) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: message,
-      isUser: true,
-      timestamp: new Date()
-    }
+    const messageToSend = message.trim()
+    setMessage('') // Clear input immediately
+    
+    // Focus back to input after sending
+    setTimeout(() => {
+      inputRef.current?.focus()
+    }, 50)
 
-    const loadingMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: 'Procesando...',
-      isUser: false,
-      timestamp: new Date(),
-      isLoading: true
-    }
-
-    setMessages(prev => [...prev, userMessage, loadingMessage])
-    setMessage('')
-    setIsLoading(true)
-
-    try {
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
-        body: {
-          message: message,
-          userId: user.id
-        }
-      })
-
-      if (error) throw error
-
-      // Remove loading message and add AI response
-      setMessages(prev => {
-        const withoutLoading = prev.filter(msg => !msg.isLoading)
-        const aiMessage: Message = {
-          id: (Date.now() + 2).toString(),
-          text: data.message,
-          isUser: false,
-          timestamp: new Date(),
-          functionExecuted: data.functionExecuted
-        }
-        return [...withoutLoading, aiMessage]
-      })
-
-      // Show toast if a function was executed
-      if (data.functionExecuted) {
-        const functionNames = {
-          'add_expense': 'Gasto agregado exitosamente',
-          'add_debt_payment': 'Pago registrado exitosamente',
-          'get_expenses_summary': 'Resumen generado',
-          'analyze_spending_patterns': 'Análisis completado'
-        }
-        
-        toast({
-          title: "Acción ejecutada",
-          description: functionNames[data.functionExecuted as keyof typeof functionNames] || 'Acción completada',
-          duration: 3000
-        })
-      }
-
-    } catch (error: any) {
-      console.error('Error in chat:', error)
-      
-      setMessages(prev => {
-        const withoutLoading = prev.filter(msg => !msg.isLoading)
-        const errorMessage: Message = {
-          id: (Date.now() + 2).toString(),
-          text: 'Lo siento, hubo un error procesando tu mensaje. Por favor intenta de nuevo.',
-          isUser: false,
-          timestamp: new Date()
-        }
-        return [...withoutLoading, errorMessage]
-      })
-
-      toast({
-        title: "Error",
-        description: "No se pudo procesar tu mensaje",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
-    }
+    await sendMessage(messageToSend)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
       e.preventDefault()
       handleSendMessage()
     }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value)
   }
 
   const getSuggestions = () => {
@@ -143,6 +72,11 @@ export function ChatBubble() {
       "Analiza mis patrones de gasto",
       "¿Cómo van mis finanzas este mes?"
     ]
+  }
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setMessage(suggestion)
+    inputRef.current?.focus()
   }
 
   if (!isOpen) {
@@ -217,8 +151,8 @@ export function ChatBubble() {
             </div>
           </ScrollArea>
 
-          {/* Suggestions */}
-          {messages.length <= 1 && (
+          {/* Suggestions - only show when conversation is short */}
+          {messages.length <= 2 && (
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Prueba preguntando:</p>
               <div className="flex flex-wrap gap-1">
@@ -228,7 +162,8 @@ export function ChatBubble() {
                     variant="outline"
                     size="sm"
                     className="text-xs h-6 px-2"
-                    onClick={() => setMessage(suggestion)}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    disabled={isLoading}
                   >
                     {suggestion}
                   </Button>
@@ -239,12 +174,14 @@ export function ChatBubble() {
           
           <div className="flex gap-2">
             <Input
+              ref={inputRef}
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder="Escribe tu mensaje..."
               className="flex-1"
               disabled={isLoading}
+              autoComplete="off"
             />
             <Button
               onClick={handleSendMessage}
