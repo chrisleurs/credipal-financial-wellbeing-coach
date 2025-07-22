@@ -118,8 +118,8 @@ export function ChatBubble() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-80 h-[500px]">
-      <Card className="h-full flex flex-col shadow-2xl border-border">
+    <div className="fixed bottom-6 right-6 z-[100] w-[380px] h-[600px] max-h-[80vh] max-w-[90vw]">
+      <Card className="h-full flex flex-col shadow-2xl border-border bg-background/95 backdrop-blur-sm rounded-2xl overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
