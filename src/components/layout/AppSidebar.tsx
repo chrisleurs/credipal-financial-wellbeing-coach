@@ -72,14 +72,36 @@ export function AppSidebar() {
           className={({ isActive }) =>
             `group flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 relative ${
               isActive 
-                ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-white before:rounded-r-full before:-ml-4' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 hover:translate-x-1'
+                ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg border-l-4 border-l-teal-500' 
+                : 'text-gray-600 bg-transparent hover:bg-gray-100 hover:text-gray-900 hover:translate-x-1'
             }`
           }
+          style={{
+            color: currentPath === item.url ? '#FFFFFF !important' : '#374151 !important'
+          }}
         >
-          <item.icon className="h-5 w-5 flex-shrink-0" strokeWidth={1.8} />
+          <item.icon 
+            className={`h-5 w-5 flex-shrink-0 ${
+              currentPath === item.url ? 'text-white' : 'text-gray-500'
+            }`} 
+            strokeWidth={1.8}
+            style={{
+              color: currentPath === item.url ? '#FFFFFF !important' : '#6B7280 !important'
+            }}
+          />
           {open && (
-            <span className="text-sm font-medium">{item.title}</span>
+            <span 
+              className={`text-sm font-medium ${
+                currentPath === item.url ? 'text-white' : 'text-gray-600'
+              }`}
+              style={{
+                color: currentPath === item.url ? '#FFFFFF !important' : '#374151 !important',
+                fontWeight: '500',
+                fontSize: '14px'
+              }}
+            >
+              {item.title}
+            </span>
           )}
         </NavLink>
       </SidebarMenuButton>
@@ -130,7 +152,17 @@ export function AppSidebar() {
         <div className="flex-1 py-6 overflow-auto">
           {/* Principal Section */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 mb-3">
+            <SidebarGroupLabel 
+              className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-6 mb-3"
+              style={{
+                color: '#9CA3AF !important',
+                fontSize: '12px',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: '20px 16px 8px 16px'
+              }}
+            >
               {open ? 'Principal' : ''}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -142,7 +174,17 @@ export function AppSidebar() {
 
           {/* Personal Section */}
           <SidebarGroup className="mt-8">
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 mb-3">
+            <SidebarGroupLabel 
+              className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-6 mb-3"
+              style={{
+                color: '#9CA3AF !important',
+                fontSize: '12px',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                margin: '20px 16px 8px 16px'
+              }}
+            >
               {open ? 'Personal' : ''}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -155,17 +197,50 @@ export function AppSidebar() {
 
         {/* Footer */}
         <div className="p-3 border-t border-gray-100 bg-gray-50/50 space-y-1">
-          <SidebarMenuButton className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:translate-x-1 transition-all duration-200">
-            <HelpCircle className="h-5 w-5 flex-shrink-0" strokeWidth={1.8} />
-            {open && <span className="text-sm font-medium">Ayuda</span>}
+          <SidebarMenuButton 
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-800 hover:translate-x-1 transition-all duration-200"
+            style={{
+              color: '#374151 !important'
+            }}
+          >
+            <HelpCircle 
+              className="h-5 w-5 flex-shrink-0 text-gray-500" 
+              strokeWidth={1.8}
+              style={{ color: '#6B7280 !important' }}
+            />
+            {open && (
+              <span 
+                className="text-sm font-medium"
+                style={{
+                  color: '#374151 !important',
+                  fontWeight: '500',
+                  fontSize: '14px'
+                }}
+              >
+                Ayuda
+              </span>
+            )}
           </SidebarMenuButton>
           
           <SidebarMenuButton 
             onClick={signOut}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-600 hover:bg-red-50 hover:text-red-700 hover:translate-x-1 transition-all duration-200"
           >
-            <LogOut className="h-5 w-5 flex-shrink-0" strokeWidth={1.8} />
-            {open && <span className="text-sm font-medium">Cerrar Sesión</span>}
+            <LogOut 
+              className="h-5 w-5 flex-shrink-0 text-red-500" 
+              strokeWidth={1.8}
+            />
+            {open && (
+              <span 
+                className="text-sm font-medium text-red-600"
+                style={{
+                  fontWeight: '500',
+                  fontSize: '14px'
+                }}
+              >
+                Cerrar Sesión
+              </span>
+            )}
           </SidebarMenuButton>
         </div>
       </SidebarContent>
