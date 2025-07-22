@@ -3,14 +3,11 @@ import React from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { 
   LayoutDashboard, 
+  Receipt, 
   CreditCard, 
-  Target, 
-  Building2,
+  Calendar,
   FileText,
-  GraduationCap,
-  Shield,
   User, 
-  Settings,
   HelpCircle,
   LogOut,
   MessageCircle
@@ -27,24 +24,17 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/hooks/useAuth'
-import { Badge } from '@/components/ui/badge'
 
 const principalItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Tarjetas', url: '/cards', icon: CreditCard, badge: '3' },
-  { title: 'Metas', url: '/goals', icon: Target },
-  { title: 'Préstamos', url: '/loans', icon: Building2 },
-]
-
-const analysisItems = [
-  { title: 'Reportes', url: '/reports', icon: FileText },
-  { title: 'Educación', url: '/education', icon: GraduationCap },
-  { title: 'Seguridad', url: '/security', icon: Shield },
+  { title: 'Gastos', url: '/expenses', icon: Receipt },
+  { title: 'Deudas', url: '/debts', icon: CreditCard },
+  { title: 'Calendario', url: '/calendar', icon: Calendar },
+  { title: 'Plan', url: '/plan', icon: FileText },
 ]
 
 const personalItems = [
   { title: 'Perfil', url: '/profile', icon: User },
-  { title: 'Configuración', url: '/settings', icon: Settings },
 ]
 
 export function AppSidebar() {
@@ -89,17 +79,7 @@ export function AppSidebar() {
         >
           <item.icon className="h-[18px] w-[18px] flex-shrink-0" strokeWidth={1.5} />
           {open && (
-            <div className="flex items-center justify-between flex-1">
-              <span className="text-sm font-medium">{item.title}</span>
-              {item.badge && (
-                <Badge 
-                  variant="secondary"
-                  className="h-5 px-1.5 text-xs font-semibold bg-primary/10 text-primary border-primary/20"
-                >
-                  {item.badge}
-                </Badge>
-              )}
-            </div>
+            <span className="text-sm font-medium">{item.title}</span>
           )}
         </NavLink>
       </SidebarMenuButton>
@@ -156,18 +136,6 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1 px-3">
                 {principalItems.map(renderMenuItem)}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          {/* Analysis Section */}
-          <SidebarGroup className="mt-8">
-            <SidebarGroupLabel className="text-xs font-semibold text-tertiary uppercase tracking-wider px-6 mb-3">
-              {open ? 'Análisis' : ''}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="space-y-1 px-3">
-                {analysisItems.map(renderMenuItem)}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
