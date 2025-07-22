@@ -2,141 +2,154 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Credipal - Bienestar Financiero Design System
-Financial wellness platform with professional, trustworthy colors
+/* CREDIPAL MODERN DESIGN SYSTEM - Apple/Notion Inspired
+Clean, minimal, professional financial platform
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* Core financial theme - blues and greens for trust and prosperity */
-    --background: 210 40% 98%;
-    --foreground: 215 25% 15%;
+    /* Modern neutral background - clean white/gray */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Primary - Professional blue for financial trust */
-    --primary: 214 100% 25%;
+    /* Primary - Modern teal (#14B8A6) */
+    --primary: 173 80% 40%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 214 85% 45%;
-    --primary-glow: 214 100% 85%;
+    --primary-light: 173 80% 50%;
+    --primary-glow: 173 80% 85%;
 
-    /* Secondary - Success green for financial wellness */
-    --secondary: 142 76% 36%;
+    /* Secondary - Modern blue (#0EA5E9) */
+    --secondary: 199 89% 48%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-light: 142 69% 58%;
+    --secondary-light: 199 89% 60%;
 
-    /* Financial accent colors */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* Success - Financial green */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
 
-    --accent: 210 40% 94%;
-    --accent-foreground: 215 25% 15%;
+    /* Error - Financial red */
+    --error: 0 84% 60%;
+    --error-foreground: 0 0% 100%;
 
-    /* Warning for financial alerts */
+    /* Modern neutral grays */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+
+    /* Warning amber */
     --warning: 43 96% 56%;
-    --warning-foreground: 26 83% 14%;
+    --warning-foreground: 0 0% 9%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 214 100% 25%;
+    /* Subtle borders */
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 173 80% 40%;
 
-    /* Financial gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
-    --gradient-success: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
-    --gradient-wellness: linear-gradient(135deg, hsl(var(--primary-light)), hsl(var(--secondary-light)));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    /* Modern gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(173 80% 40%), hsl(173 80% 50%));
+    --gradient-secondary: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 60%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.8), hsl(0 0% 100% / 0.4));
 
-    /* Professional shadows */
-    --shadow-financial: 0 10px 30px -10px hsl(var(--primary) / 0.15);
-    --shadow-wellness: 0 5px 20px -5px hsl(var(--secondary) / 0.2);
-    --shadow-card: 0 4px 12px -4px hsl(215 25% 15% / 0.1);
+    /* Subtle shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
 
-    /* Smooth transitions for financial UX */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-financial: all 0.2s ease-out;
+    /* Smooth animations */
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --radius: 0.5rem;
 
+    /* Modern sidebar */
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 0 0% 15%;
+    --sidebar-primary: 173 80% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 15%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 173 80% 40%;
   }
 
   .dark {
-    /* Dark mode for financial platform */
-    --background: 215 28% 8%;
-    --foreground: 210 40% 95%;
+    /* Modern dark mode */
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
 
-    --card: 215 28% 10%;
-    --card-foreground: 210 40% 95%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 215 28% 10%;
-    --popover-foreground: 210 40% 95%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
 
-    /* Maintain brand colors in dark mode */
-    --primary: 214 100% 40%;
+    /* Dark mode brand colors */
+    --primary: 173 80% 45%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 214 85% 55%;
-    --primary-glow: 214 100% 75%;
+    --primary-light: 173 80% 55%;
+    --primary-glow: 173 80% 85%;
 
-    --secondary: 142 76% 40%;
+    --secondary: 199 89% 55%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-light: 142 69% 55%;
+    --secondary-light: 199 89% 65%;
 
-    --muted: 215 28% 15%;
-    --muted-foreground: 215 16% 65%;
+    --success: 142 71% 50%;
+    --success-foreground: 0 0% 100%;
 
-    --accent: 215 28% 18%;
-    --accent-foreground: 210 40% 95%;
+    --error: 0 84% 60%;
+    --error-foreground: 0 0% 100%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 95%;
 
     --warning: 43 96% 56%;
-    --warning-foreground: 26 83% 14%;
+    --warning-foreground: 0 0% 9%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 28% 18%;
-    --input: 215 28% 18%;
-    --ring: 214 100% 40%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 173 80% 45%;
 
     /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
-    --gradient-success: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
-    --gradient-wellness: linear-gradient(135deg, hsl(var(--primary-light)), hsl(var(--secondary-light)));
-    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-primary: linear-gradient(135deg, hsl(173 80% 45%), hsl(173 80% 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(199 89% 55%), hsl(199 89% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 5%), hsl(0 0% 8%));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 8% / 0.8), hsl(0 0% 8% / 0.4));
 
     /* Dark mode shadows */
-    --shadow-financial: 0 10px 30px -10px hsl(0 0% 0% / 0.3);
-    --shadow-wellness: 0 5px 20px -5px hsl(var(--secondary) / 0.3);
-    --shadow-card: 0 4px 12px -4px hsl(0 0% 0% / 0.2);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.2), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.2), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+
+    /* Dark sidebar */
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 173 80% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 173 80% 45%;
   }
 }
 
@@ -146,6 +159,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 }

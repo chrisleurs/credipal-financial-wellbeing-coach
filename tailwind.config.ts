@@ -18,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -34,6 +37,14 @@ export default {
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))',
 					light: 'hsl(var(--secondary-light))'
+				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				error: {
+					DEFAULT: 'hsl(var(--error))',
+					foreground: 'hsl(var(--error-foreground))'
 				},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
@@ -77,18 +88,19 @@ export default {
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
-				'gradient-success': 'var(--gradient-success)',
-				'gradient-wellness': 'var(--gradient-wellness)',
-				'gradient-subtle': 'var(--gradient-subtle)'
+				'gradient-secondary': 'var(--gradient-secondary)',
+				'gradient-subtle': 'var(--gradient-subtle)',
+				'gradient-glass': 'var(--gradient-glass)'
 			},
 			boxShadow: {
-				'financial': 'var(--shadow-financial)',
-				'wellness': 'var(--shadow-wellness)',
+				'sm': 'var(--shadow-sm)',
+				'md': 'var(--shadow-md)',
+				'lg': 'var(--shadow-lg)',
 				'card': 'var(--shadow-card)'
 			},
 			transitionTimingFunction: {
-				'financial': 'var(--transition-financial)',
-				'smooth': 'var(--transition-smooth)'
+				'smooth': 'var(--transition-smooth)',
+				'bounce': 'var(--transition-bounce)'
 			},
 			keyframes: {
 				'accordion-down': {
