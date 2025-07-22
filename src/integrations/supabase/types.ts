@@ -86,6 +86,127 @@ export type Database = {
         }
         Relationships: []
       }
+      debt_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          debt_id: string
+          id: string
+          notes: string | null
+          payment_date: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          debt_id: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          debt_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_payments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debt_reminders: {
+        Row: {
+          created_at: string
+          days_before: number
+          debt_id: string
+          id: string
+          is_active: boolean
+          reminder_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_before: number
+          debt_id: string
+          id?: string
+          is_active?: boolean
+          reminder_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_before?: number
+          debt_id?: string
+          id?: string
+          is_active?: boolean
+          reminder_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_reminders_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debts: {
+        Row: {
+          annual_interest_rate: number
+          created_at: string
+          creditor_name: string
+          current_balance: number
+          description: string | null
+          due_day: number
+          id: string
+          minimum_payment: number
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annual_interest_rate?: number
+          created_at?: string
+          creditor_name: string
+          current_balance: number
+          description?: string | null
+          due_day: number
+          id?: string
+          minimum_payment: number
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annual_interest_rate?: number
+          created_at?: string
+          creditor_name?: string
+          current_balance?: number
+          description?: string | null
+          due_day?: number
+          id?: string
+          minimum_payment?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number

@@ -190,3 +190,105 @@ export const deleteExpense = async (id: string) => {
     .eq('id', id);
   return { error };
 };
+
+// Add new debt helpers
+export const insertDebt = async (debt: {
+  user_id: string;
+  creditor_name: string;
+  total_amount: number;
+  current_balance: number;
+  annual_interest_rate: number;
+  minimum_payment: number;
+  due_day: number;
+  description?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('debts')
+    .insert(debt)
+    .select()
+    .single();
+  return { data, error };
+};
+
+export const getDebts = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('debts')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  return { data, error };
+};
+
+export const updateDebt = async (id: string, updates: {
+  creditor_name?: string;
+  total_amount?: number;
+  current_balance?: number;
+  annual_interest_rate?: number;
+  minimum_payment?: number;
+  due_day?: number;
+  description?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('debts')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  return { data, error };
+};
+
+export const deleteDebt = async (id: string) => {
+  const { error } = await supabase
+    .from('debts')
+    .delete()
+    .eq('id', id);
+  return { error };
+};
+
+export const insertDebtPayment = async (payment: {
+  user_id: string;
+  debt_id: string;
+  amount: number;
+  payment_date: string;
+  notes?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('debt_payments')
+    .insert(payment)
+    .select()
+    .single();
+  return { data, error };
+};
+
+export const getDebtPayments = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('debt_payments')
+    .select('*')
+    .eq('user_id', userId)
+    .order('payment_date', { ascending: false });
+  return { data, error };
+};
+
+export const insertDebtReminder = async (reminder: {
+  user_id: string;
+  debt_id: string;
+  days_before: number;
+  is_active: boolean;
+  reminder_type: string;
+}) => {
+  const { data, error } = await supabase
+    .from('debt_reminders')
+    .insert(reminder)
+    .select()
+    .single();
+  return { data, error };
+};
+
+export const getDebtReminders = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('debt_reminders')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  return { data, error };
+};
