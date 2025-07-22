@@ -18,7 +18,15 @@ import Calendar from '@/pages/Calendar'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 
-const queryClient = new QueryClient();
+// Create QueryClient with proper error handling
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const App: React.FC = () => {
   console.log('App component rendering')
@@ -112,4 +120,4 @@ const App: React.FC = () => {
   )
 }
 
-export default App;
+export default App
