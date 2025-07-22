@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,6 +14,13 @@ const Index = () => {
   const handleSignOut = async () => {
     await logout();
   };
+
+  // Redirect authenticated users directly to dashboard
+  useEffect(() => {
+    if (user && !loading) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (

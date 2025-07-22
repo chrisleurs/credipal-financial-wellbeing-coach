@@ -27,9 +27,9 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       completeOnboarding()
       console.log('Onboarding completed')
       
-      // Navigate to dashboard
+      // Navigate to dashboard - Fixed navigation
       console.log('Navigating to dashboard...')
-      navigate('/dashboard')
+      navigate('/dashboard', { replace: true })
       console.log('Navigation to dashboard triggered')
       
     } catch (error) {
@@ -45,6 +45,11 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
   const handleNoClick = () => {
     console.log('No button clicked - declining WhatsApp')
     handleFinish(false)
+  }
+
+  const handleSkip = () => {
+    console.log('Skip button clicked - going directly to dashboard')
+    navigate('/dashboard', { replace: true })
   }
 
   return (
@@ -113,6 +118,15 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
           >
             <X className="h-5 w-5 mr-2" />
             Continuar sin WhatsApp por ahora
+          </Button>
+
+          {/* Skip button for direct access */}
+          <Button
+            onClick={handleSkip}
+            variant="ghost"
+            className="w-full text-gray-500 py-2 rounded-xl hover:bg-gray-50"
+          >
+            Saltar configuración e ir al dashboard
           </Button>
         </div>
 
