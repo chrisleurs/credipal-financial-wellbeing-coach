@@ -8,11 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-);
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -21,10 +16,15 @@ serve(async (req) => {
   try {
     const { message, userId } = await req.json();
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!openaiApiKey) {
       throw new Error('OpenAI API key not configured');
     }
+
+    // Crear cliente con service role para operaciones de base de datos
+    const supabase = createClient(supabaseUrl ?? '', supabaseServiceKey ?? '');
 
     // Obtener contexto financiero del usuario
     const [expensesResult, debtsResult, financialDataResult] = await Promise.all([
@@ -48,7 +48,11 @@ serve(async (req) => {
           type: "object",
           properties: {
             amount: { type: "number", description: "Cantidad del gasto" },
-            category: { type: "string", enum: ["Comida", "Transporte", "Entretenimiento", "Salud", "Servicios", "Otros"] },
+            category: { 
+              type: "string", 
+              enum: ["Comida", "Transporte", "Entretenimiento", "Salud", "Servicios", "Otros"],
+              description: "Categoría del gasto" 
+            },
             description: { type: "string", description: "Descripción del gasto" },
             expense_date: { type: "string", format: "date", description: "Fecha del gasto (YYYY-MM-DD)" }
           },
@@ -92,13 +96,14 @@ serve(async (req) => {
       }
     ];
 
-    const systemPrompt = `Eres Credipal AI, un asistente financiero personal cálido, estratégico y motivacional. Tu rol es ayudar al usuario a gestionar sus finanzas de manera inteligente y proactiva.
+    const systemPrompt = `Eres CrediPal Assistant, un coach financiero personal cálido, estratégico y motivacional. Tu rol es ayudar al usuario a gestionar sus finanzas de manera inteligente y proactiva.
 
 PERSONALIDAD:
 - Tono cálido pero profesional
 - Coach financiero que se preocupa genuinamente por el bienestar del usuario
 - Celebra los logros y motiva durante los desafíos
 - Ofrece consejos prácticos y personalizados
+- Siempre confirma antes de ejecutar acciones que involucren dinero
 
 CONTEXTO DEL USUARIO:
 - Gastos recientes: ${JSON.stringify(userContext.recentExpenses.slice(0, 5))}
@@ -116,6 +121,7 @@ INSTRUCCIONES:
 - Ofrece análisis proactivos cuando detectes oportunidades de mejora
 - Mantén un balance entre ser útil y no abrumar con información
 - Usa emojis moderadamente para hacer la conversación más amigable
+- SIEMPRE confirma antes de ejecutar acciones que involucren dinero
 
 Responde en español y mantén las respuestas concisas pero completas.`;
 
@@ -127,7 +133,7 @@ Responde en español y mantén las respuestas concisas pero completas.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4-1106-preview',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
@@ -163,7 +169,10 @@ Responde en español y mantén las respuestas concisas pero completas.`;
             .select()
             .single();
 
-          if (expenseError) throw expenseError;
+          if (expenseError) {
+            console.error('Error inserting expense:', expenseError);
+            throw expenseError;
+          }
           functionResult = { success: true, expense: expenseData };
           break;
 
@@ -180,7 +189,10 @@ Responde en español y mantén las respuestas concisas pero completas.`;
             .select()
             .single();
 
-          if (paymentError) throw paymentError;
+          if (paymentError) {
+            console.error('Error inserting payment:', paymentError);
+            throw paymentError;
+          }
           functionResult = { success: true, payment: paymentData };
           break;
 
@@ -201,7 +213,13 @@ Responde en español y mantén las respuestas concisas pero completas.`;
             query = query.eq('category', functionArgs.category);
           }
 
-          const { data: summaryData } = await query.order('expense_date', { ascending: false });
+          const { data: summaryData, error: summaryError } = await query.order('expense_date', { ascending: false });
+          
+          if (summaryError) {
+            console.error('Error fetching expenses summary:', summaryError);
+            throw summaryError;
+          }
+
           const total = summaryData?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
           
           functionResult = {
@@ -213,16 +231,24 @@ Responde en español y mantén las respuestas concisas pero completas.`;
           break;
 
         case 'analyze_spending_patterns':
-          const { data: allExpenses } = await supabase
+          const { data: allExpenses, error: analysisError } = await supabase
             .from('expenses')
             .select('*')
             .eq('user_id', userId)
             .order('expense_date', { ascending: false })
             .limit(50);
 
+          if (analysisError) {
+            console.error('Error fetching expenses for analysis:', analysisError);
+            throw analysisError;
+          }
+
           const analysis = analyzeSpendingPatterns(allExpenses || [], functionArgs.analysis_type);
           functionResult = analysis;
           break;
+
+        default:
+          throw new Error(`Unknown function: ${functionName}`);
       }
 
       // Segunda llamada a OpenAI con el resultado de la función
@@ -233,7 +259,7 @@ Responde en español y mantén las respuestas concisas pero completas.`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4-1106-preview',
+          model: 'gpt-4.1-2025-04-14',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: message },
