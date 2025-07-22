@@ -13,7 +13,8 @@ export async function generateFinancialPlan(data: FinancialData): Promise<AIGene
       'Crea un presupuesto 50/30/20: 50% gastos esenciales, 30% gastos personales, 20% ahorros',
       'Establece un fondo de emergencia equivalente a 3-6 meses de gastos',
       'Paga primero las deudas con mayor tasa de interés',
-      'Automatiza tus ahorros para que se transfieran automáticamente'
+      'Automatiza tus ahorros para que se transfieran automáticamente',
+      'Utiliza el chat AI para monitorear tus gastos diarios y recibir alertas proactivas'
     ],
     monthlyBalance,
     savingsSuggestion: Math.max(monthlyBalance * 0.2, 0),
@@ -24,7 +25,7 @@ export async function generateFinancialPlan(data: FinancialData): Promise<AIGene
       emergency: Math.max(monthlyBalance * 0.1, 0)
     },
     timeEstimate: '6-12 meses para ver resultados significativos',
-    motivationalMessage: '¡Estás en el camino correcto! Con disciplina y estos ajustes, mejorarás tu situación financiera.'
+    motivationalMessage: '¡Estás en el camino correcto! Con disciplina y estos ajustes, mejorarás tu situación financiera. Usa el chat AI para mantener el seguimiento.'
   }
 }
 
@@ -37,7 +38,7 @@ export async function generateActionPlan(data: FinancialData): Promise<ActionPla
       {
         id: '1',
         title: 'Registrar gastos diarios',
-        description: 'Anota todos tus gastos durante una semana',
+        description: 'Anota todos tus gastos durante una semana usando el chat AI',
         priority: 'high',
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         completed: false
@@ -49,9 +50,33 @@ export async function generateActionPlan(data: FinancialData): Promise<ActionPla
         priority: 'medium',
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         completed: false
+      },
+      {
+        id: '3',
+        title: 'Configurar alertas inteligentes',
+        description: 'Permite que el AI te notifique sobre patrones de gasto inusuales',
+        priority: 'medium',
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        completed: false
       }
     ],
     nextReviewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     whatsappReminders: data.whatsappOptin
   }
+}
+
+// New AI-powered functions for real-time assistance
+export interface ChatAIResponse {
+  message: string;
+  functionExecuted?: string;
+  functionResult?: any;
+  suggestions?: string[];
+}
+
+export interface FinancialInsight {
+  type: 'alert' | 'celebration' | 'suggestion' | 'trend';
+  title: string;
+  message: string;
+  priority: 'high' | 'medium' | 'low';
+  actionable: boolean;
 }
