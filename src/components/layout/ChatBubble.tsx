@@ -31,31 +31,49 @@ export function ChatBubble() {
     }
   }, [messages])
 
-  // Focus input when chat opens or after sending a message
+  // Focus input when chat opens and ensure it stays focusable
   useEffect(() => {
-    if (isOpen && inputRef.current && !isLoading) {
-      setTimeout(() => {
+    if (isOpen && inputRef.current) {
+      // Small delay to ensure DOM is ready
+      const timeoutId = setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
+      return () => clearTimeout(timeoutId)
     }
-  }, [isOpen, isLoading])
+  }, [isOpen])
+
+  // Re-focus input after loading state changes
+  useEffect(() => {
+    if (!isLoading && isOpen && inputRef.current) {
+      const timeoutId = setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [isLoading, isOpen])
 
   const handleSendMessage = async () => {
     if (!message.trim() || isLoading) return
 
     const messageToSend = message.trim()
-    setMessage('') // Clear input immediately
     
-    // Focus back to input after sending
-    setTimeout(() => {
-      inputRef.current?.focus()
-    }, 50)
-
-    await sendMessage(messageToSend)
+    // Clear input immediately for better UX
+    setMessage('')
+    
+    // Send message
+    try {
+      await sendMessage(messageToSend)
+    } catch (error) {
+      console.error('Error sending message:', error)
+      // Re-focus input even on error
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading && message.trim()) {
       e.preventDefault()
       handleSendMessage()
     }
@@ -75,8 +93,13 @@ export function ChatBubble() {
   }
 
   const handleSuggestionClick = (suggestion: string) => {
+    if (isLoading) return
+    
     setMessage(suggestion)
-    inputRef.current?.focus()
+    // Focus input after setting suggestion
+    setTimeout(() => {
+      inputRef.current?.focus()
+    }, 50)
   }
 
   if (!isOpen) {
@@ -182,6 +205,7 @@ export function ChatBubble() {
               className="flex-1"
               disabled={isLoading}
               autoComplete="off"
+              autoFocus={false}
             />
             <Button
               onClick={handleSendMessage}
