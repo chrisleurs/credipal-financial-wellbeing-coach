@@ -142,3 +142,51 @@ export const getActionPlan = async (userId: string) => {
     .maybeSingle();
   return { data, error };
 };
+
+// Add new expense helpers
+export const insertExpense = async (expense: {
+  user_id: string;
+  amount: number;
+  category: string;
+  description: string;
+  expense_date: string;
+}) => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .insert(expense)
+    .select()
+    .single();
+  return { data, error };
+};
+
+export const getExpenses = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*')
+    .eq('user_id', userId)
+    .order('expense_date', { ascending: false });
+  return { data, error };
+};
+
+export const updateExpense = async (id: string, updates: {
+  amount?: number;
+  category?: string;
+  description?: string;
+  expense_date?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  return { data, error };
+};
+
+export const deleteExpense = async (id: string) => {
+  const { error } = await supabase
+    .from('expenses')
+    .delete()
+    .eq('id', id);
+  return { error };
+};
