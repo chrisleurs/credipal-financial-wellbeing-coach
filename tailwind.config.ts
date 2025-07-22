@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -79,7 +80,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// New Credipal specific colors
+				'credipal-teal': 'hsl(var(--credipal-teal))',
+				'credipal-blue': 'hsl(var(--credipal-blue))',
+				'text-primary': 'hsl(var(--text-primary))',
+				'text-secondary': 'hsl(var(--text-secondary))',
+				'tertiary': 'hsl(var(--tertiary))',
+				'gray-50': 'hsl(var(--gray-50))',
+				'gray-100': 'hsl(var(--gray-100))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
