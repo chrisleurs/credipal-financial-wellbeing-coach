@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,7 +8,8 @@ import { Heart, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
 
 const Auth: React.FC = () => {
   const navigate = useNavigate()
-  const { signIn, signUp, loading, error } = useAuth()
+  const location = useLocation()
+  const { signIn, signUp, loading, error, user, session } = useAuth()
   const [isSignUp, setIsSignUp] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -18,25 +19,45 @@ const Auth: React.FC = () => {
     lastName: ''
   })
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user && session) {
+      const from = location.state?.from?.pathname || '/dashboard'
+      console.log('Auth - user already authenticated, redirecting to:', from)
+      navigate(from, { replace: true })
+    }
+  }, [user, session, navigate, location])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     try {
+      let result
       if (isSignUp) {
-        await signUp(formData.email, formData.password, formData.firstName, formData.lastName)
+        console.log('Auth - attempting sign up')
+        result = await signUp(formData.email, formData.password, formData.firstName, formData.lastName)
       } else {
-        await signIn(formData.email, formData.password)
+        console.log('Auth - attempting sign in')
+        result = await signIn(formData.email, formData.password)
       }
       
-      // Redirect to onboarding on successful auth
-      navigate('/onboarding')
+      if (result && !result.error) {
+        console.log('Auth - authentication successful')
+        const from = location.state?.from?.pathname || '/dashboard'
+        navigate(from, { replace: true })
+      }
     } catch (error) {
-      console.error('Auth error:', error)
+      console.error('Auth - authentication error:', error)
     }
   }
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Don't render if already authenticated
+  if (user && session) {
+    return null
   }
 
   return (

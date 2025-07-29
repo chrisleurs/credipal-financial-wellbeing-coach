@@ -15,10 +15,10 @@ export const ProtectedRoute = ({
   requireAuth = true, 
   redirectTo = '/auth' 
 }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
+  const { user, session, loading } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute - user:', user, 'loading:', loading, 'path:', location.pathname);
+  console.log('ProtectedRoute - user:', user?.email, 'session:', !!session, 'loading:', loading, 'path:', location.pathname);
 
   if (loading) {
     console.log('ProtectedRoute - showing loading spinner');
@@ -29,16 +29,13 @@ export const ProtectedRoute = ({
     );
   }
 
-  if (requireAuth && !user) {
-    console.log('ProtectedRoute - redirecting to auth, no user found');
-    // Save the attempted location for redirecting after login
+  if (requireAuth && (!user || !session)) {
+    console.log('ProtectedRoute - redirecting to auth, no user or session found');
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  if (!requireAuth && user) {
+  if (!requireAuth && user && session) {
     console.log('ProtectedRoute - user authenticated but route does not require auth');
-    // If user is authenticated but route doesn't require auth (like login page)
-    // redirect to dashboard or home
     const from = location.state?.from?.pathname || '/dashboard';
     return <Navigate to={from} replace />;
   }
