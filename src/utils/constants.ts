@@ -1,3 +1,4 @@
+
 export const EXPENSE_CATEGORIES = [
   { value: 'housing', label: 'Vivienda', icon: '🏠' },
   { value: 'food', label: 'Alimentación', icon: '🍽️' },
@@ -52,14 +53,14 @@ export const MONTHS = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
-export const CURRENCY_FORMAT = new Intl.NumberFormat('es-MX', {
+export const CURRENCY_FORMAT = new Intl.NumberFormat('en-US', {
   style: 'currency',
-  currency: 'MXN',
+  currency: 'USD',
   minimumFractionDigits: 0,
   maximumFractionDigits: 0
 });
 
-export const PERCENTAGE_FORMAT = new Intl.NumberFormat('es-MX', {
+export const PERCENTAGE_FORMAT = new Intl.NumberFormat('en-US', {
   style: 'percent',
   minimumFractionDigits: 1,
   maximumFractionDigits: 2

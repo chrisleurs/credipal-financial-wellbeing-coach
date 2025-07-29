@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -23,17 +24,26 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    const formatUSD = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount);
+    };
+
     const prompt = `
 Basándote en el siguiente plan financiero y datos del usuario, crea un plan de acción específico con tareas concretas:
 
 PLAN FINANCIERO:
 - Recomendaciones: ${financialPlan.recommendations?.join(', ') || 'N/A'}
-- Ahorro sugerido: $${financialPlan.savingsSuggestion?.toLocaleString() || 0}
-- Balance mensual: $${financialPlan.monthlyBalance?.toLocaleString() || 0}
+- Ahorro sugerido: ${formatUSD(financialPlan.savingsSuggestion || 0)}
+- Balance mensual: ${formatUSD(financialPlan.monthlyBalance || 0)}
 
 DATOS DEL USUARIO:
-- Ingresos: $${userData.monthlyIncome?.toLocaleString() || 0}
-- Gastos: $${userData.monthlyExpenses?.toLocaleString() || 0}
+- Ingresos: ${formatUSD(userData.monthlyIncome || 0)}
+- Gastos: ${formatUSD(userData.monthlyExpenses || 0)}
 - Número de deudas: ${userData.debts?.length || 0}
 - Acepta WhatsApp: ${userData.whatsappOptin ? 'Sí' : 'No'}
 
@@ -70,7 +80,7 @@ Responde en formato JSON:
         messages: [
           { 
             role: 'system', 
-            content: 'Eres un coach financiero que crea planes de acción específicos y realizables. Enfócate en tareas concretas que el usuario pueda completar.' 
+            content: 'Eres un coach financiero que crea planes de acción específicos y realizables para usuarios americanos usando USD. Enfócate en tareas concretas que el usuario pueda completar.' 
           },
           { role: 'user', content: prompt }
         ],

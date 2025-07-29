@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -28,22 +29,31 @@ serve(async (req) => {
     const totalDebts = financialData.debts?.reduce((sum: number, debt: any) => sum + debt.monthlyPayment, 0) || 0;
     const monthlyBalance = totalIncome - totalExpenses - totalDebts;
 
+    const formatUSD = (amount: number) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount);
+    };
+
     const prompt = `
 Eres un asesor financiero experto. Analiza la siguiente información financiera y genera un plan personalizado en español:
 
 INFORMACIÓN FINANCIERA:
-- Ingresos mensuales: $${totalIncome.toLocaleString()}
-- Gastos mensuales: $${totalExpenses.toLocaleString()}
-- Pagos de deudas: $${totalDebts.toLocaleString()}
-- Balance mensual: $${monthlyBalance.toLocaleString()}
+- Ingresos mensuales: ${formatUSD(totalIncome)}
+- Gastos mensuales: ${formatUSD(totalExpenses)}
+- Pagos de deudas: ${formatUSD(totalDebts)}
+- Balance mensual: ${formatUSD(monthlyBalance)}
 
 DEUDAS:
 ${financialData.debts?.map((debt: any) => 
-  `- ${debt.name}: $${debt.amount.toLocaleString()} (pago mensual: $${debt.monthlyPayment.toLocaleString()}, tasa: ${debt.interestRate}%)`
+  `- ${debt.name}: ${formatUSD(debt.amount)} (pago mensual: ${formatUSD(debt.monthlyPayment)}, tasa: ${debt.interestRate}%)`
 ).join('\n') || 'Sin deudas registradas'}
 
 OBJETIVO DE AHORRO:
-- Meta: $${financialData.savingsGoal?.toLocaleString() || 0}
+- Meta: ${formatUSD(financialData.savingsGoal || 0)}
 
 Por favor, proporciona:
 1. 4-5 recomendaciones específicas y accionables
@@ -78,7 +88,7 @@ Responde en formato JSON con esta estructura:
         messages: [
           { 
             role: 'system', 
-            content: 'Eres un asesor financiero experto especializado en finanzas personales para el mercado latino. Proporciona consejos prácticos y realistas.' 
+            content: 'Eres un asesor financiero experto especializado en finanzas personales para el mercado americano usando USD. Proporciona consejos prácticos y realistas.' 
           },
           { role: 'user', content: prompt }
         ],

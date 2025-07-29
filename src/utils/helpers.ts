@@ -1,3 +1,4 @@
+
 import { CURRENCY_FORMAT, PERCENTAGE_FORMAT } from './constants';
 
 export const formatCurrency = (amount: number): string => {
@@ -19,7 +20,7 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const validatePhone = (phone: string): boolean => {
-  const phoneRegex = /^(\+52|52)?[\s\-]?[1-9][\d\s\-]{8,}$/;
+  const phoneRegex = /^(\+1|1)?[\s\-]?[2-9][\d\s\-]{8,}$/;
   return phoneRegex.test(phone.replace(/\s/g, ''));
 };
 
@@ -41,7 +42,7 @@ export const generateId = (): string => {
 
 export const formatDate = (date: Date | string): string => {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('es-MX', {
+  return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
