@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DollarSign } from 'lucide-react';
 import type { Expense } from '@/hooks/useExpenses';
 
 const EXPENSE_CATEGORIES = [
@@ -110,16 +111,19 @@ export function ExpenseModal({ isOpen, onClose, onSubmit, expense, title }: Expe
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="amount">Monto *</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={formData.amount}
-              onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-              className={errors.amount ? 'border-destructive' : ''}
-            />
+            <Label htmlFor="amount">Monto (USD) *</Label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={formData.amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                className={`pl-10 ${errors.amount ? 'border-destructive' : ''}`}
+              />
+            </div>
             {errors.amount && <p className="text-sm text-destructive mt-1">{errors.amount}</p>}
           </div>
 

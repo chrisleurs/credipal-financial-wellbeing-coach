@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { DollarSign, Calendar, CreditCard } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { formatCurrency } from '@/utils/helpers'
 import type { Debt } from '@/types/debt'
 
 interface PaymentModalProps {
@@ -102,10 +103,10 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
               <div className="text-center space-y-2">
                 <p className="text-sm text-muted-foreground">Saldo Actual</p>
                 <p className="text-2xl font-bold text-destructive">
-                  ${debt.current_balance.toLocaleString()}
+                  {formatCurrency(debt.current_balance)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  de ${debt.total_amount.toLocaleString()} total
+                  de {formatCurrency(debt.total_amount)} total
                 </p>
               </div>
             </CardContent>
@@ -123,7 +124,7 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
               >
                 Mínimo
                 <br />
-                <span className="text-xs">${debt.minimum_payment.toLocaleString()}</span>
+                <span className="text-xs">{formatCurrency(debt.minimum_payment)}</span>
               </Button>
               <Button
                 type="button"
@@ -133,7 +134,7 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
               >
                 Doble
                 <br />
-                <span className="text-xs">${(debt.minimum_payment * 2).toLocaleString()}</span>
+                <span className="text-xs">{formatCurrency(debt.minimum_payment * 2)}</span>
               </Button>
               <Button
                 type="button"
@@ -143,20 +144,21 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
               >
                 Total
                 <br />
-                <span className="text-xs">${debt.current_balance.toLocaleString()}</span>
+                <span className="text-xs">{formatCurrency(debt.current_balance)}</span>
               </Button>
             </div>
           </div>
 
           {/* Payment Amount */}
           <div>
-            <Label htmlFor="amount">Monto del Pago *</Label>
+            <Label htmlFor="amount">Monto del Pago (USD) *</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="amount"
                 type="number"
-                placeholder="0"
+                step="0.01"
+                placeholder="0.00"
                 className="pl-10"
                 value={formData.amount}
                 onChange={(e) => handleAmountChange(e.target.value)}
@@ -202,7 +204,7 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nuevo saldo:</span>
                     <span className="font-medium text-destructive">
-                      ${paymentImpact.newBalance.toLocaleString()}
+                      {formatCurrency(paymentImpact.newBalance)}
                     </span>
                   </div>
                   <div className="flex justify-between">
