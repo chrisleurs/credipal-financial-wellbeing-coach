@@ -39,12 +39,14 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
       if (error) {
         console.error('Error checking onboarding status:', error);
+        // If profile doesn't exist, user hasn't completed onboarding
         setOnboardingCompleted(false);
         return;
       }
 
-      console.log('Onboarding status:', data?.onboarding_completed);
-      setOnboardingCompleted(data?.onboarding_completed || false);
+      const completed = data?.onboarding_completed || false;
+      console.log('Onboarding status:', completed);
+      setOnboardingCompleted(completed);
     } catch (error) {
       console.error('Exception checking onboarding status:', error);
       setOnboardingCompleted(false);
@@ -54,23 +56,42 @@ export const useOnboardingStatus = (): OnboardingStatus => {
   };
 
   const updateOnboardingStatus = async (completed: boolean) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found when updating onboarding status');
+      return;
+    }
 
     try {
-      console.log('Updating onboarding status to:', completed);
+      console.log('Updating onboarding status to:', completed, 'for user:', user.id);
       
-      const { error } = await supabase
+      // First, try to update existing profile
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({ onboarding_completed: completed })
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error updating onboarding status:', error);
-        return;
+      if (updateError) {
+        console.log('Update failed, trying to insert profile:', updateError);
+        
+        // If update fails, try to insert new profile
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ 
+            user_id: user.id, 
+            onboarding_completed: completed,
+            email: user.email,
+            first_name: user.user_metadata?.first_name || null,
+            last_name: user.user_metadata?.last_name || null
+          });
+
+        if (insertError) {
+          console.error('Error inserting profile:', insertError);
+          return;
+        }
       }
 
       setOnboardingCompleted(completed);
-      console.log('Onboarding status updated successfully');
+      console.log('Onboarding status updated successfully to:', completed);
     } catch (error) {
       console.error('Exception updating onboarding status:', error);
     }

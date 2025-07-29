@@ -13,12 +13,12 @@ interface Step6WhatsAppProps {
 
 const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
   const navigate = useNavigate()
-  const { financialData, setWhatsAppOptIn, completeOnboarding } = useFinancialStore()
+  const { setWhatsAppOptIn, completeOnboarding } = useFinancialStore()
   const { updateOnboardingStatus } = useOnboardingStatus()
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleFinish = async (optIn: boolean) => {
-    console.log('handleFinish called with optIn:', optIn)
+  const handleCompleteOnboarding = async (optIn: boolean) => {
+    console.log('handleCompleteOnboarding called with optIn:', optIn)
     
     try {
       setIsLoading(true)
@@ -35,13 +35,14 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       await updateOnboardingStatus(true)
       console.log('Database onboarding status updated')
       
-      // Navigate to dashboard - Fixed navigation
+      // Navigate to dashboard
       console.log('Navigating to dashboard...')
       navigate('/dashboard', { replace: true })
-      console.log('Navigation to dashboard triggered')
       
     } catch (error) {
-      console.error('Error in handleFinish:', error)
+      console.error('Error completing onboarding:', error)
+      // Even if database update fails, still navigate to dashboard
+      navigate('/dashboard', { replace: true })
     } finally {
       setIsLoading(false)
     }
@@ -49,29 +50,22 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
 
   const handleYesClick = () => {
     console.log('Yes button clicked - accepting WhatsApp')
-    handleFinish(true)
+    handleCompleteOnboarding(true)
   }
 
   const handleNoClick = () => {
     console.log('No button clicked - declining WhatsApp')
-    handleFinish(false)
+    handleCompleteOnboarding(false)
   }
 
-  const handleSkip = async () => {
+  const handleSkipToDashboard = () => {
     console.log('Skip button clicked - going directly to dashboard')
-    try {
-      setIsLoading(true)
-      
-      // Mark onboarding as complete even if skipped
-      completeOnboarding()
-      await updateOnboardingStatus(true)
-      
-      navigate('/dashboard', { replace: true })
-    } catch (error) {
-      console.error('Error in handleSkip:', error)
-    } finally {
-      setIsLoading(false)
-    }
+    handleCompleteOnboarding(false)
+  }
+
+  const handleGoToDashboard = () => {
+    console.log('Go to dashboard button clicked')
+    handleCompleteOnboarding(false)
   }
 
   return (
@@ -80,10 +74,10 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       totalSteps={6}
       title="¿Te gustaría recibir consejos por WhatsApp?"
       subtitle="Credipal puede enviarte recordatorios, tips financieros y responder tus preguntas por WhatsApp."
-      onNext={() => {}} // No se usa
+      onNext={handleGoToDashboard}
       onBack={onBack}
       canProceed={true}
-      nextButtonText="Continuar"
+      nextButtonText="Ir al Dashboard"
       isLoading={isLoading}
     >
       <div className="space-y-6">
@@ -165,12 +159,12 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
 
           {/* Skip button for direct access */}
           <Button
-            onClick={handleSkip}
+            onClick={handleSkipToDashboard}
             disabled={isLoading}
             variant="ghost"
             className="w-full text-gray-500 py-2 rounded-xl hover:bg-gray-50"
           >
-            {isLoading ? 'Cargando...' : 'Saltar configuración e ir al dashboard'}
+            {isLoading ? 'Cargando...' : 'Saltar e ir al dashboard'}
           </Button>
         </div>
 

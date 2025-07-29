@@ -15,12 +15,18 @@ const Onboarding: React.FC = () => {
   const { currentStep, setCurrentStep } = useFinancialStore()
 
   const handleNext = () => {
+    console.log('handleNext called, currentStep:', currentStep)
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1)
+    } else {
+      // If we're at the last step, navigate to dashboard
+      console.log('Last step reached, navigating to dashboard')
+      navigate('/dashboard', { replace: true })
     }
   }
 
   const handleBack = () => {
+    console.log('handleBack called, currentStep:', currentStep)
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
     } else {
@@ -29,6 +35,7 @@ const Onboarding: React.FC = () => {
   }
 
   const renderStep = () => {
+    console.log('Rendering step:', currentStep)
     switch (currentStep) {
       case 0:
         return <Step1Income onNext={handleNext} onBack={handleBack} />
