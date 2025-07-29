@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { MessageCircle, Smartphone, CheckCircle, X } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
 import { useNavigate } from 'react-router-dom'
 
 interface Step6WhatsAppProps {
@@ -13,19 +14,26 @@ interface Step6WhatsAppProps {
 const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
   const navigate = useNavigate()
   const { financialData, setWhatsAppOptIn, completeOnboarding } = useFinancialStore()
-  const [whatsappOptIn, setWhatsappOptInLocal] = useState(financialData.whatsappOptin)
+  const { updateOnboardingStatus } = useOnboardingStatus()
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleFinish = (optIn: boolean) => {
+  const handleFinish = async (optIn: boolean) => {
     console.log('handleFinish called with optIn:', optIn)
     
     try {
+      setIsLoading(true)
+      
       // Update WhatsApp opt-in preference
       setWhatsAppOptIn(optIn)
       console.log('WhatsApp opt-in set to:', optIn)
       
-      // Mark onboarding as complete
+      // Mark onboarding as complete in local store
       completeOnboarding()
-      console.log('Onboarding completed')
+      console.log('Local onboarding completed')
+      
+      // Update onboarding status in database
+      await updateOnboardingStatus(true)
+      console.log('Database onboarding status updated')
       
       // Navigate to dashboard - Fixed navigation
       console.log('Navigating to dashboard...')
@@ -34,6 +42,8 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       
     } catch (error) {
       console.error('Error in handleFinish:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -47,9 +57,21 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
     handleFinish(false)
   }
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
     console.log('Skip button clicked - going directly to dashboard')
-    navigate('/dashboard', { replace: true })
+    try {
+      setIsLoading(true)
+      
+      // Mark onboarding as complete even if skipped
+      completeOnboarding()
+      await updateOnboardingStatus(true)
+      
+      navigate('/dashboard', { replace: true })
+    } catch (error) {
+      console.error('Error in handleSkip:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -62,6 +84,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       onBack={onBack}
       canProceed={true}
       nextButtonText="Continuar"
+      isLoading={isLoading}
     >
       <div className="space-y-6">
         {/* WhatsApp preview */}
@@ -105,28 +128,49 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
         <div className="space-y-3">
           <Button
             onClick={handleYesClick}
+            disabled={isLoading}
             className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-4 rounded-xl"
           >
-            <Smartphone className="h-5 w-5 mr-2" />
-            Sí, quiero recibir ayuda por WhatsApp
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Completando...
+              </div>
+            ) : (
+              <>
+                <Smartphone className="h-5 w-5 mr-2" />
+                Sí, quiero recibir ayuda por WhatsApp
+              </>
+            )}
           </Button>
 
           <Button
             onClick={handleNoClick}
+            disabled={isLoading}
             variant="outline"
             className="w-full border-2 border-gray-300 text-gray-700 py-4 rounded-xl hover:bg-gray-50"
           >
-            <X className="h-5 w-5 mr-2" />
-            Continuar sin WhatsApp por ahora
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                Completando...
+              </div>
+            ) : (
+              <>
+                <X className="h-5 w-5 mr-2" />
+                Continuar sin WhatsApp por ahora
+              </>
+            )}
           </Button>
 
           {/* Skip button for direct access */}
           <Button
             onClick={handleSkip}
+            disabled={isLoading}
             variant="ghost"
             className="w-full text-gray-500 py-2 rounded-xl hover:bg-gray-50"
           >
-            Saltar configuración e ir al dashboard
+            {isLoading ? 'Cargando...' : 'Saltar configuración e ir al dashboard'}
           </Button>
         </div>
 

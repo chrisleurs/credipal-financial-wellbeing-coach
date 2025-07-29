@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { AuthRedirect } from '@/components/auth/AuthRedirect';
 import { Welcome } from '@/pages/Welcome'
 import Auth from '@/pages/Auth'
 import Onboarding from '@/pages/Onboarding'
@@ -36,83 +37,85 @@ const App: React.FC = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Router>
-            <div className="min-h-screen bg-background">
-              <Routes>
-                <Route path="/" element={<Welcome />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route 
-                  path="/onboarding" 
-                  element={
-                    <ProtectedRoute>
-                      <Onboarding />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/dashboard" 
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout>
-                        <Dashboard />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/expenses" 
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout>
-                        <Expenses />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/debts" 
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout>
-                        <Debts />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/profile" 
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout>
-                        <Profile />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/calendar" 
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout>
-                        <Calendar />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/plan" 
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout>
-                        <Plan />
-                      </AppLayout>
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-              <Toaster />
-              <Sonner />
-            </div>
+            <AuthRedirect>
+              <div className="min-h-screen bg-background">
+                <Routes>
+                  <Route path="/" element={<Welcome />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route 
+                    path="/onboarding" 
+                    element={
+                      <ProtectedRoute>
+                        <Onboarding />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/dashboard" 
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout>
+                          <Dashboard />
+                        </AppLayout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/expenses" 
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout>
+                          <Expenses />
+                        </AppLayout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/debts" 
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout>
+                          <Debts />
+                        </AppLayout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/profile" 
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout>
+                          <Profile />
+                        </AppLayout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/calendar" 
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout>
+                          <Calendar />
+                        </AppLayout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/plan" 
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout>
+                          <Plan />
+                        </AppLayout>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+                <Toaster />
+                <Sonner />
+              </div>
+            </AuthRedirect>
           </Router>
         </TooltipProvider>
       </QueryClientProvider>
