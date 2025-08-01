@@ -18,13 +18,13 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
   const [newGoal, setNewGoal] = useState('')
 
   const predefinedGoals = [
-    'Fondo de emergencia',
-    'Vacaciones',
-    'Comprar casa',
-    'Comprar auto',
-    'Educación',
-    'Jubilación',
-    'Inversiones'
+    'Emergency fund',
+    'Vacation',
+    'Buy a house',
+    'Buy a car',
+    'Education',
+    'Retirement',
+    'Investments'
   ]
 
   const addGoal = (goal: string) => {
@@ -45,17 +45,18 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
     onNext()
   }
 
-  const canProceed = true // Permitir continuar sin metas
+  const canProceed = true // Allow continuing without goals
 
   return (
     <OnboardingStep
       currentStep={4}
       totalSteps={6}
-      title="¿Cuáles son tus metas financieras?"
-      subtitle="Selecciona o agrega las metas que quieres alcanzar. Esto nos ayudará a personalizar tu plan."
+      title="What are your financial goals?"
+      subtitle="Select or add the goals you want to achieve. This helps us personalize your plan - but don't stress if you're not sure yet!"
       onNext={handleNext}
       onBack={onBack}
       canProceed={canProceed}
+      nextButtonText="Awesome, let's finish up!"
     >
       <div className="space-y-6">
         <div className="flex justify-center mb-6">
@@ -64,9 +65,9 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
           </div>
         </div>
 
-        {/* Metas predefinidas */}
+        {/* Predefined goals */}
         <div className="space-y-3">
-          <h3 className="font-medium text-gray-900">Metas comunes</h3>
+          <h3 className="font-medium text-gray-900">Popular goals</h3>
           <div className="grid grid-cols-2 gap-2">
             {predefinedGoals.map((goal) => (
               <Button
@@ -86,12 +87,12 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
           </div>
         </div>
 
-        {/* Agregar meta personalizada */}
+        {/* Add custom goal */}
         <div className="space-y-3">
-          <h3 className="font-medium text-gray-900">Meta personalizada</h3>
+          <h3 className="font-medium text-gray-900">Custom goal</h3>
           <div className="flex gap-2">
             <Input
-              placeholder="Escribe tu meta financiera"
+              placeholder="Write your financial goal"
               value={newGoal}
               onChange={(e) => setNewGoal(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addGoal(newGoal)}
@@ -107,10 +108,10 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
           </div>
         </div>
 
-        {/* Metas seleccionadas */}
+        {/* Selected goals */}
         {goals.length > 0 && (
           <div className="space-y-3">
-            <h3 className="font-medium text-gray-900">Tus metas seleccionadas</h3>
+            <h3 className="font-medium text-gray-900">Your selected goals</h3>
             <div className="space-y-2">
               {goals.map((goal) => (
                 <div
@@ -132,11 +133,11 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
           </div>
         )}
 
-        {/* Mensaje motivacional */}
+        {/* Encouraging message */}
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
           <p className="text-sm text-blue-800 text-center">
-            <strong>💡 Tip:</strong> No te preocupes si no estás seguro. 
-            Puedes agregar o modificar tus metas más tarde en el dashboard.
+            <strong>💡 Don't worry!</strong> You don't have to be sure about everything right now. 
+            You can always add or change your goals later from your dashboard.
           </p>
         </div>
       </div>

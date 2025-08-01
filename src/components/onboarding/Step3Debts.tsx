@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -74,25 +75,26 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
 
   return (
     <OnboardingStep
-      currentStep={3}
+      currentStep={2}
       totalSteps={6}
-      title="¿Tienes deudas activas?"
-      subtitle="Agrega tus tarjetas de crédito, préstamos personales y otras deudas. Si no tienes ninguna, puedes continuar."
+      title="Do you have any debts we should know about?"
+      subtitle="Add your credit cards, personal loans, and other debts. If you don't have any, no worries - you can skip this step!"
       onNext={handleNext}
       onBack={onBack}
       canProceed={true}
+      nextButtonText="Got it, let's continue!"
     >
       <div className="space-y-6">
-        {/* Formulario para agregar deuda */}
+        {/* Add debt form */}
         <div className="bg-white border-2 border-gray-200 rounded-xl p-4 space-y-4">
           <div className="flex items-center gap-2 text-gray-700">
             <CreditCard className="h-5 w-5" />
-            <h3 className="font-medium">Agregar nueva deuda</h3>
+            <h3 className="font-medium">Add a new debt</h3>
           </div>
           
           <div className="space-y-3">
             <Input
-              placeholder="Nombre de la deuda (ej: Tarjeta Visa, Préstamo personal)"
+              placeholder="Debt name (e.g., Visa Card, Personal Loan, Student Loan)"
               value={newDebt.name}
               onChange={(e) => setNewDebt({ ...newDebt, name: e.target.value })}
               className="rounded-xl border-gray-300 focus:border-emerald-500"
@@ -103,7 +105,7 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <Input
                   type="number"
-                  placeholder="Deuda total"
+                  placeholder="Total debt amount"
                   value={newDebt.amount}
                   onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value })}
                   className="pl-8 rounded-xl border-gray-300 focus:border-emerald-500"
@@ -114,7 +116,7 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <Input
                   type="number"
-                  placeholder="Pago mensual"
+                  placeholder="Monthly payment"
                   value={newDebt.monthlyPayment}
                   onChange={(e) => setNewDebt({ ...newDebt, monthlyPayment: e.target.value })}
                   className="pl-8 rounded-xl border-gray-300 focus:border-emerald-500"
@@ -125,11 +127,11 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Día de pago mensual
+                  Payment due date (day of month)
                 </label>
                 <Select value={newDebt.paymentDueDate} onValueChange={(value) => setNewDebt({ ...newDebt, paymentDueDate: value })}>
                   <SelectTrigger className="rounded-xl border-gray-300 focus:border-emerald-500">
-                    <SelectValue placeholder="Día del mes" />
+                    <SelectValue placeholder="Day of month" />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
@@ -143,11 +145,11 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Plazo en meses
+                  Term (months)
                 </label>
                 <Input
                   type="number"
-                  placeholder="Ej: 24"
+                  placeholder="e.g., 24"
                   value={newDebt.termInMonths}
                   onChange={(e) => setNewDebt({ ...newDebt, termInMonths: e.target.value })}
                   className="rounded-xl border-gray-300 focus:border-emerald-500"
@@ -161,17 +163,17 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Agregar deuda
+              Add debt
             </Button>
           </div>
         </div>
 
-        {/* Lista de deudas */}
+        {/* Debts list */}
         {debts.length > 0 && (
           <div className="space-y-3">
             <h4 className="font-medium text-gray-700 flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
-              Tus deudas actuales
+              Your current debts
             </h4>
             {debts.map((debt) => (
               <div key={debt.id} className="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -182,30 +184,30 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
                       <div>
                         <span>Total: ${(debt.amount || 0).toLocaleString()}</span>
                         <span className="mx-2">•</span>
-                        <span>Pago mensual: ${(debt.monthlyPayment || 0).toLocaleString()}</span>
+                        <span>Monthly payment: ${(debt.monthlyPayment || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex items-center gap-4">
                         {debt.paymentDueDate && (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            <span>Pago el {debt.paymentDueDate} de cada mes</span>
+                            <span>Due on {debt.paymentDueDate}th of each month</span>
                           </div>
                         )}
                         {debt.termInMonths && (
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span>{debt.termInMonths} meses</span>
+                            <span>{debt.termInMonths} months</span>
                           </div>
                         )}
                       </div>
                       {debt.estimatedPayoffDate && (
                         <div className="text-xs text-gray-600">
-                          Estimado de liquidación: {new Date(debt.estimatedPayoffDate).toLocaleDateString()}
+                          Estimated payoff: {new Date(debt.estimatedPayoffDate).toLocaleDateString()}
                         </div>
                       )}
                       {debt.termInMonths && !isPaymentSufficient(debt.monthlyPayment, debt.amount, debt.termInMonths) && (
                         <div className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
-                          ⚠️ Pago insuficiente para el plazo deseado
+                          ⚠️ Payment may not cover the desired term
                         </div>
                       )}
                     </div>
@@ -223,11 +225,11 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
             <div className="bg-gradient-to-r from-red-100 to-orange-100 p-4 rounded-xl border border-red-200">
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
-                  <p className="text-sm text-red-700">Deuda total</p>
+                  <p className="text-sm text-red-700">Total debt</p>
                   <p className="text-lg font-bold text-red-800">${totalDebtAmount.toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-700">Pagos mensuales</p>
+                  <p className="text-sm text-orange-700">Monthly payments</p>
                   <p className="text-lg font-bold text-orange-800">${totalMonthlyPayments.toLocaleString()}</p>
                 </div>
               </div>
@@ -235,37 +237,37 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
           </div>
         )}
 
-        {/* Estado sin deudas */}
+        {/* No debts state */}
         {debts.length === 0 && (
           <div className="text-center py-8">
             <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <CreditCard className="h-8 w-8 text-green-600" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Sin deudas registradas</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No debts added yet</h3>
             <p className="text-gray-600 mb-4">
-              Si no tienes deudas activas, ¡excelente! Puedes continuar al siguiente paso.
+              If you don't have any active debts, that's awesome! You can continue to the next step.
             </p>
             <p className="text-sm text-green-700 bg-green-50 inline-block px-4 py-2 rounded-lg">
-              Estar libre de deudas te da más flexibilidad financiera
+              Being debt-free gives you more financial flexibility! 🎉
             </p>
           </div>
         )}
 
-        {/* Impacto en el balance */}
+        {/* Budget impact */}
         {debts.length > 0 && financialData.monthlyIncome > 0 && (
           <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-yellow-800 mb-1">
-                  Impacto en tu presupuesto
+                  Impact on your budget
                 </p>
                 <p className="text-sm text-yellow-700">
-                  Tus pagos de deuda representan el{' '}
+                  Your debt payments make up{' '}
                   <strong>
                     {Math.round((totalMonthlyPayments / (financialData.monthlyIncome + financialData.extraIncome)) * 100)}%
                   </strong>{' '}
-                  de tus ingresos. Credipal te ayudará a optimizar esto.
+                  of your income. Credipal will help you optimize this.
                 </p>
               </div>
             </div>

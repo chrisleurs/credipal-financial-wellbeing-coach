@@ -90,12 +90,12 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
     <OnboardingStep
       currentStep={5}
       totalSteps={6}
-      title="¿Te gustaría recibir consejos por WhatsApp?"
-      subtitle="Credipal puede enviarte recordatorios, tips financieros y responder tus preguntas por WhatsApp."
+      title="Would you like to receive tips via WhatsApp?"
+      subtitle="Credipal can send you reminders, financial tips, and answer your questions via WhatsApp."
       onNext={handleGoToDashboard}
       onBack={onBack}
       canProceed={true}
-      nextButtonText="Ir al Dashboard"
+      nextButtonText="Take me to my dashboard!"
       isLoading={isLoading}
     >
       <div className="space-y-6">
@@ -108,10 +108,10 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
             <div className="flex-1">
               <div className="bg-white rounded-2xl rounded-tl-none p-4 shadow-sm">
                 <p className="text-sm text-gray-800">
-                  ¡Hola! Te escribo para recordarte que hoy es un buen día para revisar tu presupuesto. ¿Cómo vas con tus metas? 💪
+                  Hey! Just a friendly reminder that today is a great day to check your budget. How are you doing with your goals? 💪
                 </p>
               </div>
-              <p className="text-xs text-green-600 mt-1">Credipal • ahora</p>
+              <p className="text-xs text-green-600 mt-1">Credipal • now</p>
             </div>
           </div>
         </div>
@@ -120,19 +120,19 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <CheckCircle className="h-5 w-5 text-emerald-500" />
-            <span className="text-gray-700">Recordatorios amigables para tus metas</span>
+            <span className="text-gray-700">Friendly reminders for your goals</span>
           </div>
           <div className="flex items-center space-x-3">
             <CheckCircle className="h-5 w-5 text-emerald-500" />
-            <span className="text-gray-700">Tips financieros personalizados</span>
+            <span className="text-gray-700">Personalized financial tips</span>
           </div>
           <div className="flex items-center space-x-3">
             <CheckCircle className="h-5 w-5 text-emerald-500" />
-            <span className="text-gray-700">Respuestas rápidas a tus dudas</span>
+            <span className="text-gray-700">Quick answers to your questions</span>
           </div>
           <div className="flex items-center space-x-3">
             <CheckCircle className="h-5 w-5 text-emerald-500" />
-            <span className="text-gray-700">Resúmenes mensuales de tu progreso</span>
+            <span className="text-gray-700">Monthly progress summaries</span>
           </div>
         </div>
 
@@ -146,12 +146,12 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Completando...
+                Setting up...
               </div>
             ) : (
               <>
                 <Smartphone className="h-5 w-5 mr-2" />
-                Sí, quiero recibir ayuda por WhatsApp
+                Yes, I'd love WhatsApp tips!
               </>
             )}
           </Button>
@@ -165,12 +165,12 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-                Completando...
+                Setting up...
               </div>
             ) : (
               <>
                 <X className="h-5 w-5 mr-2" />
-                Continuar sin WhatsApp por ahora
+                No thanks, maybe later
               </>
             )}
           </Button>
@@ -182,7 +182,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
             variant="ghost"
             className="w-full text-gray-500 py-2 rounded-xl hover:bg-gray-50"
           >
-            {isLoading ? 'Cargando...' : 'Saltar e ir al dashboard'}
+            {isLoading ? 'Loading...' : 'Skip and go to dashboard'}
           </Button>
 
           {/* Emergency escape button - only shown if loading takes too long */}
@@ -192,7 +192,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
               variant="destructive"
               className="w-full py-2 rounded-xl mt-4"
             >
-              🚨 Escape de emergencia al dashboard
+              🚨 Emergency: Go to dashboard now
             </Button>
           )}
         </div>
@@ -200,7 +200,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
         {/* Note */}
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
           <p className="text-sm text-blue-800 text-center">
-            Puedes cambiar esta configuración en cualquier momento desde tu dashboard.
+            You can change this setting anytime from your dashboard settings.
           </p>
         </div>
       </div>

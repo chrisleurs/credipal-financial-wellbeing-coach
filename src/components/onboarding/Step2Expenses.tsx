@@ -28,52 +28,52 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
   const initialCategories: ExpenseCategory[] = [
     {
       id: 'rent',
-      name: 'Renta/Hipoteca',
+      name: 'Rent/Mortgage',
       icon: Home,
-      description: 'Vivienda principal',
-      examples: 'Ej: $800 (renta $650, seguro $50, mantenimiento $100)',
-      placeholder: 'Tu renta o pago mensual de hipoteca',
-      tooltip: 'Incluye renta, hipoteca, seguro de vivienda y gastos de mantenimiento regulares',
+      description: 'Your main housing costs',
+      examples: 'e.g., $1,200 (rent $800, utilities $200, insurance $200)',
+      placeholder: 'Your rent or monthly mortgage payment',
+      tooltip: '🏠 Expenses you pay every month without fail - rent, mortgage, home insurance, and regular maintenance costs',
       amount: financialData.expenseCategories.rent || 0
     },
     {
       id: 'transport',
-      name: 'Transporte',
+      name: 'Transportation',
       icon: Car,
-      description: 'Movilidad y desplazamientos',
-      examples: 'Ej: $120 (gasolina $80, Uber $40)',
-      placeholder: 'Gasolina, transporte público, Uber',
-      tooltip: 'Todo lo relacionado con moverte: gasolina, transporte público, servicios como Uber, mantenimiento del auto',
+      description: 'Getting around costs',
+      examples: 'e.g., $300 (gas $150, car payment $100, Uber $50)',
+      placeholder: 'Gas, public transport, Uber, car payments',
+      tooltip: 'Everything related to getting around: gas, public transport, ride-sharing, car payments, maintenance',
       amount: financialData.expenseCategories.transport || 0
     },
     {
       id: 'food',
-      name: 'Comida',
+      name: 'Food & Dining',
       icon: Utensils,
-      description: 'Alimentación y restaurantes',
-      examples: 'Ej: $400 (supermercado $250, restaurantes $100, delivery $50)',
-      placeholder: 'Supermercado, restaurantes, delivery',
-      tooltip: 'Incluye todo lo que gastas en alimentación: supermercado, restaurantes, pedidos a domicilio, cafés',
+      description: 'All your food expenses',
+      examples: 'e.g., $600 (groceries $400, restaurants $150, delivery $50)',
+      placeholder: 'Groceries, restaurants, delivery, coffee',
+      tooltip: 'All food-related spending: groceries, restaurants, delivery apps, coffee shops, snacks',
       amount: financialData.expenseCategories.food || 0
     },
     {
       id: 'utilities',
-      name: 'Servicios',
+      name: 'Bills & Services',
       icon: CreditCard,
-      description: 'Servicios básicos del hogar',
-      examples: 'Ej: $200 (luz $60, internet $40, celular $30, agua $25, gas $45)',
-      placeholder: 'Luz, agua, internet, teléfono',
-      tooltip: 'Servicios esenciales como electricidad, agua, internet, teléfono, gas, cable o streaming',
+      description: 'Monthly bills and services',
+      examples: 'e.g., $250 (phone $50, internet $60, electricity $80, water $60)',
+      placeholder: 'Phone, internet, electricity, water',
+      tooltip: 'Essential monthly services: phone, internet, electricity, water, gas, streaming services',
       amount: financialData.expenseCategories.utilities || 0
     },
     {
       id: 'other',
-      name: 'Otros gastos',
+      name: 'Entertainment & Personal',
       icon: MoreHorizontal,
-      description: 'Entretenimiento y gastos personales',
-      examples: 'Ej: $150 (Netflix $15, gym $30, ropa $50, salidas $55)',
-      placeholder: 'Entretenimiento, ropa, suscripciones',
-      tooltip: 'Todo lo demás: entretenimiento, ropa, suscripciones, gastos personales, hobbies',
+      description: 'Fun stuff and personal care',
+      examples: 'e.g., $400 (shopping $200, gym $50, entertainment $100, personal care $50)',
+      placeholder: 'Shopping, gym, movies, personal care',
+      tooltip: '📱 Include apps like Netflix, Spotify, Uber Eats, plus shopping, gym, movies, personal care',
       amount: financialData.expenseCategories.other || 0
     }
   ]
@@ -113,12 +113,13 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
     <TooltipProvider>
       <OnboardingStep
         currentStep={1}
-        totalSteps={9}
-        title="Cuéntanos sobre tus gastos típicos del mes"
-        subtitle="No tiene que ser exacto, solo danos una idea general. Siempre puedes ajustar esto después 😊"
+        totalSteps={6}
+        title="What are your typical monthly expenses?"
+        subtitle="Help us understand your spending. Don't stress about being perfect - you can always adjust this later! 😊"
         onNext={handleNext}
         onBack={onBack}
         canProceed={canProceed}
+        nextButtonText="Perfect, let's continue!"
       >
         <div className="space-y-4">
           {categories.map((category) => {
@@ -169,7 +170,7 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <Calculator className="h-5 w-5 text-orange-600 mr-2" />
-                  <span className="text-orange-800 font-medium">Total mensual</span>
+                  <span className="text-orange-800 font-medium">Monthly total</span>
                 </div>
                 <span className="text-xl font-bold text-orange-800">
                   ${totalExpenses.toLocaleString()}
@@ -182,7 +183,7 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
           {totalExpenses > 0 && financialData.monthlyIncome > 0 && (
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
               <div className="text-center">
-                <p className="text-sm text-blue-700 mb-1">Tu balance estimado</p>
+                <p className="text-sm text-blue-700 mb-1">Your estimated balance</p>
                 <p className={`text-xl font-bold ${
                   (financialData.monthlyIncome + financialData.extraIncome - totalExpenses) >= 0 
                     ? 'text-green-700' 
@@ -192,18 +193,18 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   {(financialData.monthlyIncome + financialData.extraIncome - totalExpenses) >= 0 
-                    ? '¡Genial! Tienes un balance positivo 🎉' 
-                    : 'No te preocupes, vamos a encontrar el equilibrio ideal 💪'}
+                    ? "Great! You have a positive balance 🎉" 
+                    : "No worries, we'll find the perfect balance together 💪"}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Nota motivacional */}
+          {/* Encouraging note */}
           <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
             <p className="text-sm text-emerald-800 text-center">
-              <strong>Recuerda:</strong> Esto es solo para conocerte mejor. No tienes que ser súper exacto, 
-              solo danos una idea general de tus gastos típicos. ¡Siempre puedes ajustar después! 🙂
+              <strong>Remember:</strong> This is just to get to know you better. Don't stress about being super exact - 
+              just give us a general idea of your typical spending. You can always adjust later! 🙂
             </p>
           </div>
         </div>

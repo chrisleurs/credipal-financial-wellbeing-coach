@@ -79,7 +79,7 @@ const Onboarding: React.FC = () => {
   if (isLoadingProgress) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
-        <LoadingSpinner size="lg" text="Cargando tu progreso..." />
+        <LoadingSpinner size="lg" text="Loading your progress..." />
       </div>
     )
   }
@@ -94,11 +94,11 @@ const Onboarding: React.FC = () => {
               <RotateCcw className="h-8 w-8 text-emerald-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              ¡Continuemos donde te quedaste!
+              Let's pick up where you left off!
             </h1>
             <p className="text-gray-600">
-              Encontramos que habías avanzado hasta el paso {currentStep + 1} de 6. 
-              ¿Quieres continuar desde ahí o empezar de nuevo?
+              We found that you had progressed to step {currentStep + 1} of 6. 
+              Would you like to continue from there or start over?
             </p>
           </div>
 
@@ -107,7 +107,7 @@ const Onboarding: React.FC = () => {
               onClick={handleContinue}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 rounded-xl"
             >
-              Continuar desde el paso {currentStep + 1}
+              Continue from step {currentStep + 1}
             </Button>
             
             <Button 
@@ -115,7 +115,7 @@ const Onboarding: React.FC = () => {
               variant="outline"
               className="w-full border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl"
             >
-              Empezar de nuevo
+              Start fresh
             </Button>
           </div>
         </div>
