@@ -58,7 +58,7 @@ const initialFinancialData: FinancialData = {
 export const useFinancialStore = create<FinancialStore>()(
   persist(
     (set, get) => ({
-      // Initial state - completely clean
+      // Initial state - completely fresh after database cleanup
       currentStep: 0,
       financialData: initialFinancialData,
       aiPlan: null,
@@ -134,7 +134,7 @@ export const useFinancialStore = create<FinancialStore>()(
 
       completeOnboarding: () => set({ isOnboardingComplete: true }),
 
-      // Persistence methods - cleaned up for fresh start
+      // Persistence methods - updated for fresh database
       saveOnboardingProgress: async () => {
         const { currentStep, financialData } = get()
         
@@ -142,20 +142,23 @@ export const useFinancialStore = create<FinancialStore>()(
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) return
 
-          console.log('Saving fresh onboarding progress:', { currentStep, financialData })
+          console.log('Saving onboarding progress to clean database:', { currentStep, financialData })
 
           // Convert FinancialData to a plain object that matches Json type
           const financialDataJson = JSON.parse(JSON.stringify(financialData))
 
           await supabase
             .from('profiles')
-            .update({
+            .upsert({
+              user_id: user.id,
               onboarding_step: currentStep,
-              onboarding_data: financialDataJson
+              onboarding_data: financialDataJson,
+              email: user.email,
+              first_name: user.user_metadata?.first_name || null,
+              last_name: user.user_metadata?.last_name || null
             })
-            .eq('user_id', user.id)
 
-          console.log('Progress saved successfully')
+          console.log('Progress saved successfully to clean database')
         } catch (error) {
           console.error('Error saving onboarding progress:', error)
         }
@@ -166,7 +169,7 @@ export const useFinancialStore = create<FinancialStore>()(
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) return
 
-          console.log('Loading onboarding progress for user:', user.id)
+          console.log('Loading onboarding progress from clean database for user:', user.id)
 
           const { data, error } = await supabase
             .from('profiles')
@@ -180,12 +183,12 @@ export const useFinancialStore = create<FinancialStore>()(
           }
 
           if (data) {
-            console.log('Loaded progress:', data)
+            console.log('Loaded progress from clean database:', data)
             
-            // Start fresh since all data was cleared
+            // Since database was cleaned, all users start fresh
             if (data.onboarding_completed) {
-              console.log('Onboarding was completed but data was cleared, starting fresh')
-              // Reset everything to start fresh
+              console.log('User had completed onboarding before cleanup, resetting to start fresh')
+              // Reset to start fresh after cleanup
               set({ 
                 currentStep: 0,
                 financialData: initialFinancialData,
@@ -194,19 +197,20 @@ export const useFinancialStore = create<FinancialStore>()(
               return
             }
 
-            // Load any existing progress (should be minimal after cleanup)
+            // Load any existing progress
             if (data.onboarding_step && data.onboarding_step > 0) {
               set({ currentStep: data.onboarding_step })
             }
 
-            // Safely handle onboarding_data that might be null or empty
+            // Safely handle onboarding_data 
             if (data.onboarding_data && typeof data.onboarding_data === 'object' && Object.keys(data.onboarding_data).length > 0) {
-              // Type assertion since we know the structure matches FinancialData
               const savedData = data.onboarding_data as unknown as Partial<FinancialData>
               set({ financialData: { ...initialFinancialData, ...savedData } })
             }
 
-            console.log('Progress restored successfully')
+            console.log('Progress restored successfully from clean database')
+          } else {
+            console.log('No existing profile found in clean database - user will start fresh')
           }
         } catch (error) {
           console.error('Error loading onboarding progress:', error)
@@ -286,7 +290,7 @@ export const useFinancialStore = create<FinancialStore>()(
       },
 
       loadFromSupabase: async () => {
-        console.log('Loading from Supabase...')
+        console.log('Loading from clean Supabase database...')
       },
 
       addExpense: (name, amount) => {
