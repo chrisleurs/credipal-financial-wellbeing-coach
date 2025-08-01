@@ -324,6 +324,36 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          subcategory: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          id?: string
+          subcategory: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          subcategory?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -439,6 +469,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_categories: {
+        Row: {
+          created_at: string
+          id: string
+          main_category: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          main_category: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          main_category?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_financial_data: {
         Row: {
