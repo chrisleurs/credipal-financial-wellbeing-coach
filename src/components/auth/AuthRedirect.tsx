@@ -30,6 +30,13 @@ export const AuthRedirect = ({ children }: AuthRedirectProps) => {
 
     const currentPath = location.pathname;
     
+    // CRITICAL FIX: If user is trying to access dashboard, let them through
+    // This prevents the infinite redirect loop
+    if (currentPath === '/dashboard') {
+      console.log('AuthRedirect - User trying to access dashboard, allowing access');
+      return;
+    }
+    
     // Si el usuario está autenticado pero NO ha completado el onboarding
     if (onboardingCompleted === false) {
       // Solo redirigir si NO está ya en onboarding
@@ -72,7 +79,7 @@ export const AuthRedirect = ({ children }: AuthRedirectProps) => {
     }
 
     // Proteger rutas que requieren onboarding completado
-    const protectedRoutes = ['/dashboard', '/expenses', '/debts', '/profile', '/calendar', '/plan'];
+    const protectedRoutes = ['/expenses', '/debts', '/profile', '/calendar', '/plan'];
     const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
     
     if (isProtectedRoute && onboardingCompleted === false) {

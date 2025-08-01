@@ -35,30 +35,71 @@ export const useOnboardingStatus = (): OnboardingStatus => {
         .from('profiles')
         .select('onboarding_completed')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid errors
 
       if (error) {
         console.error('Error checking onboarding status:', error);
-        // If profile doesn't exist, user hasn't completed onboarding
-        setOnboardingCompleted(false);
+        
+        // If profile doesn't exist, create it with onboarding_completed = false
+        console.log('Profile does not exist, creating it...');
+        await createUserProfile(false);
         return;
       }
 
-      const completed = data?.onboarding_completed || false;
-      console.log('Onboarding status:', completed);
+      if (!data) {
+        // No profile found, create one
+        console.log('No profile found, creating one...');
+        await createUserProfile(false);
+        return;
+      }
+
+      const completed = data.onboarding_completed || false;
+      console.log('Onboarding status found:', completed);
       setOnboardingCompleted(completed);
     } catch (error) {
       console.error('Exception checking onboarding status:', error);
+      // Default to false if there's any error
       setOnboardingCompleted(false);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const createUserProfile = async (completed: boolean) => {
+    if (!user) return;
+
+    try {
+      console.log('Creating user profile with onboarding_completed:', completed);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .insert({ 
+          user_id: user.id, 
+          onboarding_completed: completed,
+          email: user.email,
+          first_name: user.user_metadata?.first_name || null,
+          last_name: user.user_metadata?.last_name || null
+        });
+
+      if (error) {
+        console.error('Error creating profile:', error);
+        // Even if creation fails, set the state to prevent infinite loops
+        setOnboardingCompleted(false);
+        return;
+      }
+
+      setOnboardingCompleted(completed);
+      console.log('Profile created successfully with onboarding_completed:', completed);
+    } catch (error) {
+      console.error('Exception creating profile:', error);
+      setOnboardingCompleted(false);
+    }
+  };
+
   const updateOnboardingStatus = async (completed: boolean) => {
     if (!user) {
       console.error('No user found when updating onboarding status');
-      return;
+      throw new Error('No user found');
     }
 
     try {
@@ -86,14 +127,17 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
         if (insertError) {
           console.error('Error inserting profile:', insertError);
-          return;
+          throw insertError;
         }
       }
 
+      // Update local state immediately
       setOnboardingCompleted(completed);
       console.log('Onboarding status updated successfully to:', completed);
+      
     } catch (error) {
       console.error('Exception updating onboarding status:', error);
+      throw error;
     }
   };
 

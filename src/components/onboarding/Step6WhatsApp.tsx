@@ -32,17 +32,29 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       console.log('Local onboarding completed')
       
       // Update onboarding status in database
+      console.log('Attempting to update database onboarding status...')
       await updateOnboardingStatus(true)
-      console.log('Database onboarding status updated')
+      console.log('Database onboarding status updated successfully')
       
-      // Navigate to dashboard
-      console.log('Navigating to dashboard...')
+      // Force navigation using both methods to ensure it works
+      console.log('Forcing navigation to dashboard...')
+      
+      // Try React Router first
       navigate('/dashboard', { replace: true })
+      
+      // Force navigation with window.location as backup after a short delay
+      setTimeout(() => {
+        console.log('Using window.location.href as backup navigation')
+        window.location.href = '/dashboard'
+      }, 1000)
       
     } catch (error) {
       console.error('Error completing onboarding:', error)
-      // Even if database update fails, still navigate to dashboard
-      navigate('/dashboard', { replace: true })
+      // Even if database update fails, force navigation to dashboard
+      console.log('Database update failed, forcing navigation anyway...')
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 500)
     } finally {
       setIsLoading(false)
     }
@@ -66,6 +78,12 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
   const handleGoToDashboard = () => {
     console.log('Go to dashboard button clicked')
     handleCompleteOnboarding(false)
+  }
+
+  // Emergency escape function - direct navigation without any checks
+  const forceEscapeToDashboard = () => {
+    console.log('EMERGENCY: Force escaping to dashboard')
+    window.location.href = '/dashboard'
   }
 
   return (
@@ -166,6 +184,17 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
           >
             {isLoading ? 'Cargando...' : 'Saltar e ir al dashboard'}
           </Button>
+
+          {/* Emergency escape button - only shown if loading takes too long */}
+          {isLoading && (
+            <Button
+              onClick={forceEscapeToDashboard}
+              variant="destructive"
+              className="w-full py-2 rounded-xl mt-4"
+            >
+              🚨 Escape de emergencia al dashboard
+            </Button>
+          )}
         </div>
 
         {/* Note */}
