@@ -1,3 +1,4 @@
+
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '@/integrations/supabase/client'
@@ -143,11 +144,14 @@ export const useFinancialStore = create<FinancialStore>()(
 
           console.log('Saving onboarding progress:', { currentStep, financialData })
 
+          // Convert FinancialData to a plain object that matches Json type
+          const financialDataJson = JSON.parse(JSON.stringify(financialData))
+
           await supabase
             .from('profiles')
             .update({
               onboarding_step: currentStep,
-              onboarding_data: financialData
+              onboarding_data: financialDataJson
             })
             .eq('user_id', user.id)
 
@@ -185,12 +189,15 @@ export const useFinancialStore = create<FinancialStore>()(
             }
 
             // Load saved step and data
-            if (data.onboarding_step > 0) {
+            if (data.onboarding_step && data.onboarding_step > 0) {
               set({ currentStep: data.onboarding_step })
             }
 
-            if (data.onboarding_data && Object.keys(data.onboarding_data).length > 0) {
-              set({ financialData: { ...initialFinancialData, ...data.onboarding_data } })
+            // Safely handle onboarding_data that might be null or empty
+            if (data.onboarding_data && typeof data.onboarding_data === 'object' && Object.keys(data.onboarding_data).length > 0) {
+              // Type assertion since we know the structure matches FinancialData
+              const savedData = data.onboarding_data as unknown as Partial<FinancialData>
+              set({ financialData: { ...initialFinancialData, ...savedData } })
             }
 
             console.log('Progress restored successfully')
