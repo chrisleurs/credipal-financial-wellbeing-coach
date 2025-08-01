@@ -1,7 +1,8 @@
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinancialStore } from '@/store/financialStore'
+import { useAuth } from '@/hooks/useAuth'
 import Step1Income from '@/components/onboarding/Step1Income'
 import Step2Expenses from '@/components/onboarding/Step2Expenses'
 import Step3Debts from '@/components/onboarding/Step3Debts'
@@ -9,17 +10,47 @@ import Step4Savings from '@/components/onboarding/Step4Savings'
 import Step5Goals from '@/components/onboarding/Step5Goals'
 import Step6WhatsApp from '@/components/onboarding/Step6WhatsApp'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { Button } from '@/components/ui/button'
+import { RotateCcw } from 'lucide-react'
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate()
-  const { currentStep, setCurrentStep } = useFinancialStore()
+  const { user } = useAuth()
+  const { currentStep, setCurrentStep, loadOnboardingProgress, reset } = useFinancialStore()
+  const [isLoadingProgress, setIsLoadingProgress] = useState(true)
+  const [hasExistingProgress, setHasExistingProgress] = useState(false)
+
+  useEffect(() => {
+    const initializeOnboarding = async () => {
+      if (!user) return
+
+      try {
+        console.log('Initializing onboarding for user:', user.id)
+        
+        // Load existing progress
+        await loadOnboardingProgress()
+        
+        // Check if there's existing progress (step > 0)
+        const store = useFinancialStore.getState()
+        if (store.currentStep > 0) {
+          setHasExistingProgress(true)
+          console.log('Found existing progress at step:', store.currentStep)
+        }
+      } catch (error) {
+        console.error('Error initializing onboarding:', error)
+      } finally {
+        setIsLoadingProgress(false)
+      }
+    }
+
+    initializeOnboarding()
+  }, [user, loadOnboardingProgress])
 
   const handleNext = () => {
     console.log('handleNext called, currentStep:', currentStep)
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1)
     } else {
-      // If we're at the last step, navigate to dashboard
       console.log('Last step reached, navigating to dashboard')
       navigate('/dashboard', { replace: true })
     }
@@ -32,6 +63,64 @@ const Onboarding: React.FC = () => {
     } else {
       navigate('/auth')
     }
+  }
+
+  const handleStartOver = () => {
+    console.log('Starting onboarding from beginning')
+    reset()
+    setHasExistingProgress(false)
+  }
+
+  const handleContinue = () => {
+    console.log('Continuing from saved progress')
+    setHasExistingProgress(false)
+  }
+
+  if (isLoadingProgress) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
+        <LoadingSpinner size="lg" text="Cargando tu progreso..." />
+      </div>
+    )
+  }
+
+  // Show continuation prompt if there's existing progress
+  if (hasExistingProgress) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <RotateCcw className="h-8 w-8 text-emerald-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              ¡Continuemos donde te quedaste!
+            </h1>
+            <p className="text-gray-600">
+              Encontramos que habías avanzado hasta el paso {currentStep + 1} de 6. 
+              ¿Quieres continuar desde ahí o empezar de nuevo?
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Button 
+              onClick={handleContinue}
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 rounded-xl"
+            >
+              Continuar desde el paso {currentStep + 1}
+            </Button>
+            
+            <Button 
+              onClick={handleStartOver}
+              variant="outline"
+              className="w-full border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl"
+            >
+              Empezar de nuevo
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const renderStep = () => {

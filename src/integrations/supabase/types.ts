@@ -332,6 +332,8 @@ export type Database = {
           id: string
           last_name: string | null
           onboarding_completed: boolean
+          onboarding_data: Json | null
+          onboarding_step: number | null
           updated_at: string
           user_id: string
         }
@@ -342,6 +344,8 @@ export type Database = {
           id?: string
           last_name?: string | null
           onboarding_completed?: boolean
+          onboarding_data?: Json | null
+          onboarding_step?: number | null
           updated_at?: string
           user_id: string
         }
@@ -352,6 +356,8 @@ export type Database = {
           id?: string
           last_name?: string | null
           onboarding_completed?: boolean
+          onboarding_data?: Json | null
+          onboarding_step?: number | null
           updated_at?: string
           user_id?: string
         }

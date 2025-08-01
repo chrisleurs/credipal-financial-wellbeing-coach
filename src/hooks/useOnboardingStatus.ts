@@ -33,21 +33,19 @@ export const useOnboardingStatus = (): OnboardingStatus => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('onboarding_completed')
+        .select('onboarding_completed, onboarding_step')
         .eq('user_id', user.id)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid errors
+        .maybeSingle();
 
       if (error) {
         console.error('Error checking onboarding status:', error);
         
-        // If profile doesn't exist, create it with onboarding_completed = false
         console.log('Profile does not exist, creating it...');
         await createUserProfile(false);
         return;
       }
 
       if (!data) {
-        // No profile found, create one
         console.log('No profile found, creating one...');
         await createUserProfile(false);
         return;
@@ -58,7 +56,6 @@ export const useOnboardingStatus = (): OnboardingStatus => {
       setOnboardingCompleted(completed);
     } catch (error) {
       console.error('Exception checking onboarding status:', error);
-      // Default to false if there's any error
       setOnboardingCompleted(false);
     } finally {
       setIsLoading(false);
@@ -76,6 +73,8 @@ export const useOnboardingStatus = (): OnboardingStatus => {
         .insert({ 
           user_id: user.id, 
           onboarding_completed: completed,
+          onboarding_step: 0,
+          onboarding_data: {},
           email: user.email,
           first_name: user.user_metadata?.first_name || null,
           last_name: user.user_metadata?.last_name || null
@@ -83,7 +82,6 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
       if (error) {
         console.error('Error creating profile:', error);
-        // Even if creation fails, set the state to prevent infinite loops
         setOnboardingCompleted(false);
         return;
       }
@@ -105,21 +103,29 @@ export const useOnboardingStatus = (): OnboardingStatus => {
     try {
       console.log('Updating onboarding status to:', completed, 'for user:', user.id);
       
-      // First, try to update existing profile
+      const updateData: any = { onboarding_completed: completed };
+      
+      // If marking as completed, also reset the progress fields
+      if (completed) {
+        updateData.onboarding_step = 0;
+        updateData.onboarding_data = {};
+      }
+
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ onboarding_completed: completed })
+        .update(updateData)
         .eq('user_id', user.id);
 
       if (updateError) {
         console.log('Update failed, trying to insert profile:', updateError);
         
-        // If update fails, try to insert new profile
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({ 
             user_id: user.id, 
             onboarding_completed: completed,
+            onboarding_step: completed ? 0 : undefined,
+            onboarding_data: completed ? {} : undefined,
             email: user.email,
             first_name: user.user_metadata?.first_name || null,
             last_name: user.user_metadata?.last_name || null
@@ -131,7 +137,6 @@ export const useOnboardingStatus = (): OnboardingStatus => {
         }
       }
 
-      // Update local state immediately
       setOnboardingCompleted(completed);
       console.log('Onboarding status updated successfully to:', completed);
       

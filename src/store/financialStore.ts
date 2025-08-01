@@ -1,6 +1,6 @@
-
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { supabase } from '@/integrations/supabase/client'
 import type { FinancialData, AIPlan, ActionTask, Debt } from '@/types'
 
 interface FinancialStore {
@@ -25,6 +25,10 @@ interface FinancialStore {
   updateGoals: (goals: string[]) => void
   setWhatsAppOptIn: (optin: boolean) => void
   completeOnboarding: () => void
+  
+  // New persistence actions
+  saveOnboardingProgress: () => Promise<void>
+  loadOnboardingProgress: () => Promise<void>
   
   // Dashboard Actions
   generateAIPlan: () => Promise<void>
@@ -63,43 +67,143 @@ export const useFinancialStore = create<FinancialStore>()(
       error: null,
 
       // Onboarding actions
-      setCurrentStep: (step) => set({ currentStep: step }),
+      setCurrentStep: (step) => {
+        set({ currentStep: step })
+        // Auto-save progress when step changes
+        const store = get()
+        store.saveOnboardingProgress()
+      },
       
-      updateFinancialData: (data) => set((state) => ({
-        financialData: { ...state.financialData, ...data }
-      })),
+      updateFinancialData: (data) => {
+        set((state) => ({
+          financialData: { ...state.financialData, ...data }
+        }))
+        // Auto-save progress when data changes
+        const store = get()
+        store.saveOnboardingProgress()
+      },
       
-      updateIncome: (monthly, extra) => set((state) => ({
-        financialData: { ...state.financialData, monthlyIncome: monthly, extraIncome: extra }
-      })),
+      updateIncome: (monthly, extra) => {
+        set((state) => ({
+          financialData: { ...state.financialData, monthlyIncome: monthly, extraIncome: extra }
+        }))
+        const store = get()
+        store.saveOnboardingProgress()
+      },
 
-      updateExpenses: (categories, total) => set((state) => ({
-        financialData: { ...state.financialData, expenseCategories: categories, monthlyExpenses: total }
-      })),
+      updateExpenses: (categories, total) => {
+        set((state) => ({
+          financialData: { ...state.financialData, expenseCategories: categories, monthlyExpenses: total }
+        }))
+        const store = get()
+        store.saveOnboardingProgress()
+      },
 
-      updateDebts: (debts) => set((state) => ({
-        financialData: { ...state.financialData, debts }
-      })),
+      updateDebts: (debts) => {
+        set((state) => ({
+          financialData: { ...state.financialData, debts }
+        }))
+        const store = get()
+        store.saveOnboardingProgress()
+      },
 
-      updateSavings: (current, monthly) => set((state) => ({
-        financialData: { ...state.financialData, currentSavings: current, monthlySavingsCapacity: monthly }
-      })),
+      updateSavings: (current, monthly) => {
+        set((state) => ({
+          financialData: { ...state.financialData, currentSavings: current, monthlySavingsCapacity: monthly }
+        }))
+        const store = get()
+        store.saveOnboardingProgress()
+      },
 
-      updateGoals: (goals) => set((state) => ({
-        financialData: { ...state.financialData, financialGoals: goals }
-      })),
+      updateGoals: (goals) => {
+        set((state) => ({
+          financialData: { ...state.financialData, financialGoals: goals }
+        }))
+        const store = get()
+        store.saveOnboardingProgress()
+      },
 
-      setWhatsAppOptIn: (optin) => set((state) => ({
-        financialData: { ...state.financialData, whatsappOptin: optin }
-      })),
+      setWhatsAppOptIn: (optin) => {
+        set((state) => ({
+          financialData: { ...state.financialData, whatsappOptin: optin }
+        }))
+        const store = get()
+        store.saveOnboardingProgress()
+      },
 
       completeOnboarding: () => set({ isOnboardingComplete: true }),
+
+      // New persistence methods
+      saveOnboardingProgress: async () => {
+        const { currentStep, financialData } = get()
+        
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) return
+
+          console.log('Saving onboarding progress:', { currentStep, financialData })
+
+          await supabase
+            .from('profiles')
+            .update({
+              onboarding_step: currentStep,
+              onboarding_data: financialData
+            })
+            .eq('user_id', user.id)
+
+          console.log('Progress saved successfully')
+        } catch (error) {
+          console.error('Error saving onboarding progress:', error)
+        }
+      },
+
+      loadOnboardingProgress: async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) return
+
+          console.log('Loading onboarding progress for user:', user.id)
+
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('onboarding_step, onboarding_data, onboarding_completed')
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+          if (error) {
+            console.error('Error loading onboarding progress:', error)
+            return
+          }
+
+          if (data) {
+            console.log('Loaded progress:', data)
+            
+            // If onboarding is completed, don't load progress
+            if (data.onboarding_completed) {
+              console.log('Onboarding already completed, not loading progress')
+              return
+            }
+
+            // Load saved step and data
+            if (data.onboarding_step > 0) {
+              set({ currentStep: data.onboarding_step })
+            }
+
+            if (data.onboarding_data && Object.keys(data.onboarding_data).length > 0) {
+              set({ financialData: { ...initialFinancialData, ...data.onboarding_data } })
+            }
+
+            console.log('Progress restored successfully')
+          }
+        } catch (error) {
+          console.error('Error loading onboarding progress:', error)
+        }
+      },
 
       // Dashboard actions
       generateAIPlan: async () => {
         set({ isLoading: true, error: null })
         try {
-          // Simulate OpenAI call
           await new Promise(resolve => setTimeout(resolve, 3000))
           
           const { financialData } = get()
@@ -169,7 +273,6 @@ export const useFinancialStore = create<FinancialStore>()(
       },
 
       loadFromSupabase: async () => {
-        // Mock implementation for now
         console.log('Loading from Supabase...')
       },
 
