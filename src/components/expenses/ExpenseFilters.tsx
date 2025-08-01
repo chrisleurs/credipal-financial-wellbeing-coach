@@ -1,20 +1,11 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Filter, X } from 'lucide-react';
-
-const EXPENSE_CATEGORIES = [
-  'Comida',
-  'Transporte', 
-  'Entretenimiento',
-  'Salud',
-  'Servicios',
-  'Otros'
-];
+import { CategorySelector } from './CategorySelector';
 
 interface ExpenseFiltersProps {
   filters: {
@@ -46,7 +37,7 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros
+            Filters
           </CardTitle>
           {hasActiveFilters && (
             <Button 
@@ -56,7 +47,7 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
               className="h-8"
             >
               <X className="h-4 w-4 mr-1" />
-              Limpiar
+              Clear
             </Button>
           )}
         </div>
@@ -64,27 +55,23 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <Label htmlFor="filter-category">Categoría</Label>
-            <Select 
-              value={filters.category} 
-              onValueChange={(value) => onFiltersChange({ ...filters, category: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las categorías</SelectItem>
-                {EXPENSE_CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="filter-category">Category</Label>
+            <div className="mt-1">
+              <CategorySelector
+                value={filters.category === 'all' ? '' : filters.category}
+                onValueChange={(value) => onFiltersChange({ ...filters, category: value || 'all' })}
+                showAddButton={false}
+              />
+              {filters.category === 'all' && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  All categories
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
-            <Label htmlFor="filter-date-from">Desde</Label>
+            <Label htmlFor="filter-date-from">From</Label>
             <Input
               id="filter-date-from"
               type="date"
@@ -94,7 +81,7 @@ export function ExpenseFilters({ filters, onFiltersChange }: ExpenseFiltersProps
           </div>
 
           <div>
-            <Label htmlFor="filter-date-to">Hasta</Label>
+            <Label htmlFor="filter-date-to">To</Label>
             <Input
               id="filter-date-to"
               type="date"

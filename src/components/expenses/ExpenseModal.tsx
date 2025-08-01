@@ -4,19 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { DollarSign } from 'lucide-react';
+import { CategorySelector } from './CategorySelector';
 import type { Expense } from '@/hooks/useExpenses';
-
-const EXPENSE_CATEGORIES = [
-  'Comida',
-  'Transporte', 
-  'Entretenimiento',
-  'Salud',
-  'Servicios',
-  'Otros'
-];
 
 interface ExpenseModalProps {
   isOpen: boolean;
@@ -64,16 +55,16 @@ export function ExpenseModal({ isOpen, onClose, onSubmit, expense, title }: Expe
     const newErrors: Record<string, string> = {};
 
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      newErrors.amount = 'El monto debe ser mayor a 0';
+      newErrors.amount = 'Amount must be greater than 0';
     }
     if (!formData.category) {
-      newErrors.category = 'Selecciona una categoría';
+      newErrors.category = 'Please select a category';
     }
     if (!formData.description.trim()) {
-      newErrors.description = 'La descripción es obligatoria';
+      newErrors.description = 'Description is required';
     }
     if (!formData.expense_date) {
-      newErrors.expense_date = 'La fecha es obligatoria';
+      newErrors.expense_date = 'Date is required';
     }
 
     setErrors(newErrors);
@@ -111,7 +102,7 @@ export function ExpenseModal({ isOpen, onClose, onSubmit, expense, title }: Expe
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="amount">Monto (USD) *</Label>
+            <Label htmlFor="amount">Amount (USD) *</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -128,30 +119,20 @@ export function ExpenseModal({ isOpen, onClose, onSubmit, expense, title }: Expe
           </div>
 
           <div>
-            <Label htmlFor="category">Categoría *</Label>
-            <Select 
-              value={formData.category} 
+            <Label htmlFor="category">Category *</Label>
+            <CategorySelector
+              value={formData.category}
               onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-            >
-              <SelectTrigger className={errors.category ? 'border-destructive' : ''}>
-                <SelectValue placeholder="Selecciona una categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                {EXPENSE_CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              error={!!errors.category}
+            />
             {errors.category && <p className="text-sm text-destructive mt-1">{errors.category}</p>}
           </div>
 
           <div>
-            <Label htmlFor="description">Descripción *</Label>
+            <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
-              placeholder="Describe el gasto..."
+              placeholder="Describe the expense..."
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               className={errors.description ? 'border-destructive' : ''}
@@ -161,7 +142,7 @@ export function ExpenseModal({ isOpen, onClose, onSubmit, expense, title }: Expe
           </div>
 
           <div>
-            <Label htmlFor="expense_date">Fecha *</Label>
+            <Label htmlFor="expense_date">Date *</Label>
             <Input
               id="expense_date"
               type="date"
@@ -174,10 +155,10 @@ export function ExpenseModal({ isOpen, onClose, onSubmit, expense, title }: Expe
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-              Cancelar
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting} className="flex-1 bg-gradient-primary">
-              {isSubmitting ? 'Guardando...' : (expense ? 'Actualizar' : 'Agregar')}
+              {isSubmitting ? 'Saving...' : (expense ? 'Update' : 'Add')}
             </Button>
           </div>
         </form>
