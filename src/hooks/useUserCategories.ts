@@ -2,17 +2,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
 
-export interface UserCategory {
-  id: string;
-  user_id: string;
-  name: string;
-  main_category: string;
-  created_at: string;
-  updated_at: string;
-}
+export type UserCategory = Tables<'user_categories'>;
 
 export const useUserCategories = () => {
   const { user } = useAuth();
