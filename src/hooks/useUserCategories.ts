@@ -2,11 +2,17 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Tables } from '@/integrations/supabase/types';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
 
-export type UserCategory = Tables<'user_categories'>;
+export interface UserCategory {
+  id: string;
+  user_id: string;
+  name: string;
+  main_category: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useUserCategories = () => {
   const { user } = useAuth();
@@ -38,7 +44,7 @@ export const useUserCategories = () => {
       }
       
       console.log('Fetched user categories:', data?.length || 0);
-      return data || [];
+      return data as UserCategory[] || [];
     },
     enabled: !!user,
   });
@@ -81,7 +87,7 @@ export const useUserCategories = () => {
         title: "Category created",
         description: `Added "${categoryData.name}" to ${categoryData.main_category}`
       });
-      return { success: true, data };
+      return { success: true, data: data as UserCategory };
     } catch (error: any) {
       console.error('Error adding category:', error);
       toast({
@@ -118,7 +124,7 @@ export const useUserCategories = () => {
         title: "Category updated",
         description: "Category updated successfully"
       });
-      return { success: true, data };
+      return { success: true, data: data as UserCategory };
     } catch (error: any) {
       console.error('Error updating category:', error);
       toast({
