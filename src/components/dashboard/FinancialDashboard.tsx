@@ -15,6 +15,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useFinancialStore } from '@/store/financialStore';
+import { useExpenses } from '@/hooks/useExpenses';
 import { supabase } from '@/integrations/supabase/client';
 
 export const FinancialDashboard = () => {
@@ -28,6 +29,8 @@ export const FinancialDashboard = () => {
     loadFromSupabase
   } = useFinancialStore();
   
+  // Use the expenses hook with React Query
+  const { expenses, isLoading: expensesLoading } = useExpenses();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -53,12 +56,29 @@ export const FinancialDashboard = () => {
     );
   }
 
-  // Mock data for demonstration
+  // Calculate totals from actual expenses data
+  const totalExpensesThisMonth = expenses
+    .filter(expense => {
+      const expenseDate = new Date(expense.expense_date);
+      const now = new Date();
+      return expenseDate.getMonth() === now.getMonth() && expenseDate.getFullYear() === now.getFullYear();
+    })
+    .reduce((total, expense) => total + Number(expense.amount), 0);
+
   const totalSavings = financialData?.currentSavings || 0;
   const emergencyFund = (financialData?.monthlySavingsCapacity || 0) * 6; // 6 months
-  const monthlyBalance = (financialData?.monthlyIncome || 0) - (financialData?.monthlyExpenses || 0);
+  const monthlyBalance = (financialData?.monthlyIncome || 0) - totalExpensesThisMonth;
   const activeGoals = financialData?.financialGoals || [];
-  const recentTransactions: any[] = []; // Empty for now
+
+  // Get recent transactions from expenses
+  const recentTransactions = expenses.slice(0, 5).map(expense => ({
+    id: expense.id,
+    description: expense.description,
+    category: expense.category,
+    amount: expense.amount,
+    transaction_type: 'expense',
+    transaction_date: expense.expense_date
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -95,6 +115,21 @@ export const FinancialDashboard = () => {
 
           <Card className="shadow-card hover:shadow-wellness transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Gastos Este Mes</CardTitle>
+              <CreditCard className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">
+                ${totalExpensesThisMonth.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {expensesLoading ? 'Cargando...' : `${expenses.length} transacciones`}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-card hover:shadow-financial transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Meta de Ahorro</CardTitle>
               <PiggyBank className="h-4 w-4 text-secondary" />
             </CardHeader>
@@ -118,22 +153,7 @@ export const FinancialDashboard = () => {
                 ${emergencyFund.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                {(emergencyFund / (financialData?.monthlyExpenses || 1)).toFixed(1)} meses cubiertos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card hover:shadow-financial transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Metas Activas</CardTitle>
-              <Target className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {activeGoals.length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Objetivos en progreso
+                {(emergencyFund / (totalExpensesThisMonth || 1)).toFixed(1)} meses cubiertos
               </p>
             </CardContent>
           </Card>
@@ -186,7 +206,12 @@ export const FinancialDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {recentTransactions.length > 0 ? (
+              {expensesLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-muted-foreground mt-2">Cargando transacciones...</p>
+                </div>
+              ) : recentTransactions.length > 0 ? (
                 <div className="space-y-3">
                   {recentTransactions.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">

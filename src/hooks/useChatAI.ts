@@ -1,5 +1,6 @@
 
 import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -24,6 +25,7 @@ export const useChatAI = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const sendMessage = useCallback(async (messageText: string): Promise<void> => {
     if (!messageText.trim() || !user || isLoading) return;
@@ -71,8 +73,11 @@ export const useChatAI = () => {
         return [...withoutLoading, aiMessage];
       });
 
-      // Show success toast for executed functions
+      // Handle successful function execution
       if (response.functionExecuted) {
+        // Invalidate relevant React Query caches
+        await handleFunctionSuccess(response.functionExecuted, response.functionResult);
+        
         const functionMessages = {
           'add_expense': 'Gasto agregado exitosamente',
           'add_debt_payment': 'Pago registrado exitosamente',
@@ -109,7 +114,46 @@ export const useChatAI = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, isLoading, toast]);
+  }, [user, isLoading, toast, queryClient]);
+
+  const handleFunctionSuccess = async (functionName: string, functionResult: any) => {
+    console.log('Function executed successfully:', functionName, functionResult);
+    
+    switch (functionName) {
+      case 'add_expense':
+        // Invalidate expenses queries to trigger refetch
+        await queryClient.invalidateQueries({ queryKey: ['expenses'] });
+        // Also invalidate any financial data queries that might show totals
+        await queryClient.invalidateQueries({ queryKey: ['financial-data'] });
+        await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        console.log('Invalidated expense-related queries after adding expense');
+        break;
+        
+      case 'add_debt_payment':
+        // Invalidate debt-related queries
+        await queryClient.invalidateQueries({ queryKey: ['debts'] });
+        await queryClient.invalidateQueries({ queryKey: ['debt-payments'] });
+        await queryClient.invalidateQueries({ queryKey: ['financial-data'] });
+        console.log('Invalidated debt-related queries after payment');
+        break;
+        
+      case 'get_expenses_summary':
+        // No need to invalidate for read operations
+        console.log('Generated expenses summary, no invalidation needed');
+        break;
+        
+      case 'analyze_spending_patterns':
+        // No need to invalidate for analysis operations
+        console.log('Completed spending analysis, no invalidation needed');
+        break;
+        
+      default:
+        // For unknown functions, invalidate common queries as a safety measure
+        await queryClient.invalidateQueries({ queryKey: ['expenses'] });
+        await queryClient.invalidateQueries({ queryKey: ['financial-data'] });
+        console.log('Unknown function, invalidated common queries');
+    }
+  };
 
   const addInitialMessage = useCallback((message: string) => {
     const initialMessage: ChatMessage = {
