@@ -28,54 +28,58 @@ export const AuthRedirect = ({ children }: AuthRedirectProps) => {
 
     console.log('AuthRedirect - User:', user.email, 'Onboarding completed:', onboardingCompleted, 'Current path:', location.pathname);
 
-    // Routing inteligente después del login/registro
-    const handleUserRouting = () => {
-      const currentPath = location.pathname;
-      
-      // Si el usuario está en auth y ya está autenticado
-      if (currentPath === '/auth') {
-        if (onboardingCompleted === false) {
-          console.log('AuthRedirect - Redirecting new user to onboarding');
-          navigate('/onboarding', { replace: true });
-        } else if (onboardingCompleted === true) {
-          console.log('AuthRedirect - Redirecting existing user to dashboard');
-          navigate('/dashboard', { replace: true });
-        }
+    const currentPath = location.pathname;
+    
+    // Si el usuario está autenticado pero NO ha completado el onboarding
+    if (onboardingCompleted === false) {
+      // Solo redirigir si NO está ya en onboarding
+      if (currentPath !== '/onboarding') {
+        console.log('AuthRedirect - User has not completed onboarding, redirecting to /onboarding');
+        navigate('/onboarding', { replace: true });
         return;
       }
+    }
 
-      // Si el usuario está en la página de inicio y ya está autenticado
-      if (currentPath === '/') {
-        if (onboardingCompleted === false) {
-          console.log('AuthRedirect - Redirecting new user from home to onboarding');
-          navigate('/onboarding', { replace: true });
-        } else if (onboardingCompleted === true) {
-          console.log('AuthRedirect - Redirecting existing user from home to dashboard');
-          navigate('/dashboard', { replace: true });
-        }
-        return;
-      }
+    // Si el usuario YA completó el onboarding pero está en onboarding, redirigir al dashboard
+    if (onboardingCompleted === true && currentPath === '/onboarding') {
+      console.log('AuthRedirect - User completed onboarding but is in onboarding page, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+      return;
+    }
 
-      // Si el usuario trata de acceder al dashboard sin completar onboarding
-      if (currentPath.startsWith('/dashboard') || currentPath.startsWith('/expenses') || 
-          currentPath.startsWith('/debts') || currentPath.startsWith('/profile') || 
-          currentPath.startsWith('/calendar') || currentPath.startsWith('/plan')) {
-        if (onboardingCompleted === false) {
-          console.log('AuthRedirect - User trying to access protected route without completing onboarding, redirecting to onboarding');
-          navigate('/onboarding', { replace: true });
-        }
-        return;
-      }
-
-      // Si el usuario está en onboarding pero ya lo completó
-      if (currentPath === '/onboarding' && onboardingCompleted === true) {
-        console.log('AuthRedirect - User completed onboarding, redirecting to dashboard');
+    // Si el usuario está en auth y ya está autenticado, redirigir según onboarding status
+    if (currentPath === '/auth' && user) {
+      if (onboardingCompleted === false) {
+        console.log('AuthRedirect - Authenticated user in auth page, redirecting to onboarding');
+        navigate('/onboarding', { replace: true });
+      } else if (onboardingCompleted === true) {
+        console.log('AuthRedirect - Authenticated user in auth page, redirecting to dashboard');
         navigate('/dashboard', { replace: true });
-        return;
       }
-    };
+      return;
+    }
 
-    handleUserRouting();
+    // Si el usuario está en la página de inicio y ya está autenticado
+    if (currentPath === '/' && user) {
+      if (onboardingCompleted === false) {
+        console.log('AuthRedirect - Authenticated user in home page, redirecting to onboarding');
+        navigate('/onboarding', { replace: true });
+      } else if (onboardingCompleted === true) {
+        console.log('AuthRedirect - Authenticated user in home page, redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
+      }
+      return;
+    }
+
+    // Proteger rutas que requieren onboarding completado
+    const protectedRoutes = ['/dashboard', '/expenses', '/debts', '/profile', '/calendar', '/plan'];
+    const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
+    
+    if (isProtectedRoute && onboardingCompleted === false) {
+      console.log('AuthRedirect - User trying to access protected route without completing onboarding, redirecting to onboarding');
+      navigate('/onboarding', { replace: true });
+      return;
+    }
   }, [user, onboardingCompleted, authLoading, onboardingLoading, navigate, location.pathname]);
 
   // Mostrar spinner mientras cargamos el estado de autenticación y onboarding

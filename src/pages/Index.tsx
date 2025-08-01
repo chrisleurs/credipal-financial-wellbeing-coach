@@ -17,21 +17,8 @@ const Index = () => {
     await logout();
   };
 
-  // Redirect based on onboarding status
-  useEffect(() => {
-    if (user && !loading && !onboardingLoading) {
-      console.log('Index - User:', user.email, 'Onboarding completed:', onboardingCompleted);
-      
-      if (onboardingCompleted === false) {
-        console.log('Index - Redirecting to onboarding');
-        navigate('/onboarding', { replace: true });
-      } else if (onboardingCompleted === true) {
-        console.log('Index - Redirecting to dashboard');
-        navigate('/dashboard', { replace: true });
-      }
-    }
-  }, [user, loading, onboardingCompleted, onboardingLoading, navigate]);
-
+  // Si hay un usuario autenticado, el AuthRedirect se encarga de la lógica de redirección
+  // Este componente solo maneja el caso cuando NO hay usuario
   if (loading || (user && onboardingLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
@@ -40,6 +27,8 @@ const Index = () => {
     );
   }
 
+  // Si hay usuario autenticado, AuthRedirect manejará la redirección
+  // Pero si por alguna razón llegamos aquí con usuario, mostramos el dashboard
   if (user) {
     return (
       <>
@@ -57,6 +46,7 @@ const Index = () => {
     );
   }
 
+  // Si no hay usuario, mostrar Welcome
   return <Welcome />;
 };
 
