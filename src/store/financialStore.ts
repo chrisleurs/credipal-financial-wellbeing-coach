@@ -58,7 +58,7 @@ const initialFinancialData: FinancialData = {
 export const useFinancialStore = create<FinancialStore>()(
   persist(
     (set, get) => ({
-      // Initial state
+      // Initial state - completely clean
       currentStep: 0,
       financialData: initialFinancialData,
       aiPlan: null,
@@ -134,7 +134,7 @@ export const useFinancialStore = create<FinancialStore>()(
 
       completeOnboarding: () => set({ isOnboardingComplete: true }),
 
-      // New persistence methods
+      // Persistence methods - cleaned up for fresh start
       saveOnboardingProgress: async () => {
         const { currentStep, financialData } = get()
         
@@ -142,7 +142,7 @@ export const useFinancialStore = create<FinancialStore>()(
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) return
 
-          console.log('Saving onboarding progress:', { currentStep, financialData })
+          console.log('Saving fresh onboarding progress:', { currentStep, financialData })
 
           // Convert FinancialData to a plain object that matches Json type
           const financialDataJson = JSON.parse(JSON.stringify(financialData))
@@ -182,13 +182,19 @@ export const useFinancialStore = create<FinancialStore>()(
           if (data) {
             console.log('Loaded progress:', data)
             
-            // If onboarding is completed, don't load progress
+            // Start fresh since all data was cleared
             if (data.onboarding_completed) {
-              console.log('Onboarding already completed, not loading progress')
+              console.log('Onboarding was completed but data was cleared, starting fresh')
+              // Reset everything to start fresh
+              set({ 
+                currentStep: 0,
+                financialData: initialFinancialData,
+                isOnboardingComplete: false 
+              })
               return
             }
 
-            // Load saved step and data
+            // Load any existing progress (should be minimal after cleanup)
             if (data.onboarding_step && data.onboarding_step > 0) {
               set({ currentStep: data.onboarding_step })
             }
@@ -297,7 +303,7 @@ export const useFinancialStore = create<FinancialStore>()(
         }))
       },
 
-      // Utils
+      // Reset to completely clean state
       reset: () => set({
         currentStep: 0,
         financialData: initialFinancialData,
