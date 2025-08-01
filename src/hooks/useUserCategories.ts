@@ -31,7 +31,8 @@ export const useUserCategories = () => {
       if (!user) return [];
       
       console.log('Fetching user categories for user:', user.id);
-      const { data, error } = await supabase
+      // Use type assertion to bypass TypeScript strict typing
+      const { data, error } = await (supabase as any)
         .from('user_categories')
         .select('*')
         .eq('user_id', user.id)
@@ -44,7 +45,7 @@ export const useUserCategories = () => {
       }
       
       console.log('Fetched user categories:', data?.length || 0);
-      return data as UserCategory[] || [];
+      return (data as UserCategory[]) || [];
     },
     enabled: !!user,
   });
@@ -68,7 +69,8 @@ export const useUserCategories = () => {
 
     try {
       console.log('Adding category:', categoryData);
-      const { data, error } = await supabase
+      // Use type assertion to bypass TypeScript strict typing
+      const { data, error } = await (supabase as any)
         .from('user_categories')
         .insert({
           ...categoryData,
@@ -107,7 +109,8 @@ export const useUserCategories = () => {
   }) => {
     try {
       console.log('Updating category:', id, categoryData);
-      const { data, error } = await supabase
+      // Use type assertion to bypass TypeScript strict typing
+      const { data, error } = await (supabase as any)
         .from('user_categories')
         .update(categoryData)
         .eq('id', id)
@@ -141,7 +144,8 @@ export const useUserCategories = () => {
   const deleteCategory = async (id: string) => {
     try {
       console.log('Deleting category:', id);
-      const { error } = await supabase
+      // Use type assertion to bypass TypeScript strict typing
+      const { error } = await (supabase as any)
         .from('user_categories')
         .delete()
         .eq('id', id);
