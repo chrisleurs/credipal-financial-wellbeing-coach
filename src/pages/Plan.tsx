@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useFinancialStore } from '@/store/financialStore';
 import { CheckCircle, Clock, TrendingUp, Target } from 'lucide-react';
+import { formatCurrency } from '@/utils/helpers';
 
 const Plan = () => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ const Plan = () => {
         </CardHeader>
         <CardContent>
           <div className="text-3xl font-bold text-secondary mb-2">
-            ${aiPlan.monthlyBalance.toLocaleString()}
+            {formatCurrency(aiPlan.monthlyBalance)}
           </div>
           <p className="text-muted-foreground">Dinero disponible cada mes</p>
         </CardContent>
@@ -100,28 +101,28 @@ const Plan = () => {
             <div>
               <div className="flex justify-between mb-2">
                 <span>Gastos Fijos</span>
-                <span>${aiPlan.budgetBreakdown.fixedExpenses.toLocaleString()}</span>
+                <span>{formatCurrency(aiPlan.budgetBreakdown.fixedExpenses)}</span>
               </div>
               <Progress value={60} className="h-2" />
             </div>
             <div>
               <div className="flex justify-between mb-2">
                 <span>Gastos Variables</span>
-                <span>${aiPlan.budgetBreakdown.variableExpenses.toLocaleString()}</span>
+                <span>{formatCurrency(aiPlan.budgetBreakdown.variableExpenses)}</span>
               </div>
               <Progress value={30} className="h-2" />
             </div>
             <div>
               <div className="flex justify-between mb-2">
                 <span>Ahorros</span>
-                <span>${aiPlan.budgetBreakdown.savings.toLocaleString()}</span>
+                <span>{formatCurrency(aiPlan.budgetBreakdown.savings)}</span>
               </div>
               <Progress value={15} className="h-2" />
             </div>
             <div>
               <div className="flex justify-between mb-2">
                 <span>Emergencias</span>
-                <span>${aiPlan.budgetBreakdown.emergency.toLocaleString()}</span>
+                <span>{formatCurrency(aiPlan.budgetBreakdown.emergency)}</span>
               </div>
               <Progress value={10} className="h-2" />
             </div>

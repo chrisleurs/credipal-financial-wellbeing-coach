@@ -17,6 +17,7 @@ import {
 import { useFinancialStore } from '@/store/financialStore';
 import { useExpenses } from '@/hooks/useExpenses';
 import { supabase } from '@/integrations/supabase/client';
+import { formatCurrency } from '@/utils/helpers';
 
 export const FinancialDashboard = () => {
   const { 
@@ -104,7 +105,7 @@ export const FinancialDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">
-                ${monthlyBalance.toLocaleString()}
+                {formatCurrency(monthlyBalance)}
               </div>
               <p className="text-xs text-muted-foreground">
                 {monthlyBalance > 0 ? '+' : ''}
@@ -120,7 +121,7 @@ export const FinancialDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">
-                ${totalExpensesThisMonth.toLocaleString()}
+                {formatCurrency(totalExpensesThisMonth)}
               </div>
               <p className="text-xs text-muted-foreground">
                 {expensesLoading ? 'Cargando...' : `${expenses.length} transacciones`}
@@ -135,7 +136,7 @@ export const FinancialDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-secondary">
-                ${totalSavings.toLocaleString()}
+                {formatCurrency(totalSavings)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Objetivo mensual
@@ -150,7 +151,7 @@ export const FinancialDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-warning">
-                ${emergencyFund.toLocaleString()}
+                {formatCurrency(emergencyFund)}
               </div>
               <p className="text-xs text-muted-foreground">
                 {(emergencyFund / (totalExpensesThisMonth || 1)).toFixed(1)} meses cubiertos
@@ -221,7 +222,7 @@ export const FinancialDashboard = () => {
                       </div>
                       <div className="text-right">
                         <p className={`font-medium ${transaction.transaction_type === 'income' ? 'text-secondary' : 'text-destructive'}`}>
-                          {transaction.transaction_type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                          {transaction.transaction_type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                         </p>
                         <p className="text-sm text-muted-foreground">{transaction.transaction_date}</p>
                       </div>

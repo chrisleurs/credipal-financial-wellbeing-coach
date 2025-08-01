@@ -9,6 +9,7 @@ import { useExpenses, type Expense } from '@/hooks/useExpenses';
 import { ExpenseModal } from '@/components/expenses/ExpenseModal';
 import { DeleteExpenseDialog } from '@/components/expenses/DeleteExpenseDialog';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
+import { formatCurrency } from '@/utils/helpers';
 
 export default function Expenses() {
   const { expenses, isLoading, addExpense, updateExpense, deleteExpense } = useExpenses();
@@ -60,14 +61,6 @@ export default function Expenses() {
     if (result.success) {
       setDeletingExpense(null);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2
-    }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
