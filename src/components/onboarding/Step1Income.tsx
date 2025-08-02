@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { OnboardingStep } from './OnboardingStep'
+import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
 import { useLoans } from '@/hooks/useLoans'
 import { DollarSign, TrendingUp, CreditCard, CheckCircle } from 'lucide-react'
@@ -16,25 +16,24 @@ interface Step1IncomeProps {
 }
 
 export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
-  const { ingresos, ingresosExtras, setIngresos, setIngresosExtras, saveProgress } = useFinancialStore()
+  const { financialData, updateIncome, saveOnboardingProgress } = useFinancialStore()
   const { kueskiLoan, isLoading: isLoadingLoan } = useLoans()
   
-  const [montoPrincipal, setMontoPrincipal] = useState(ingresos.toString())
-  const [montoExtras, setMontoExtras] = useState(ingresosExtras.toString())
+  const [montoPrincipal, setMontoPrincipal] = useState(financialData.monthlyIncome.toString())
+  const [montoExtras, setMontoExtras] = useState(financialData.extraIncome.toString())
 
   useEffect(() => {
-    setMontoPrincipal(ingresos.toString())
-    setMontoExtras(ingresosExtras.toString())
-  }, [ingresos, ingresosExtras])
+    setMontoPrincipal(financialData.monthlyIncome.toString())
+    setMontoExtras(financialData.extraIncome.toString())
+  }, [financialData.monthlyIncome, financialData.extraIncome])
 
   const handleNext = async () => {
     const ingresoPrincipal = parseFloat(montoPrincipal) || 0
     const ingresoExtra = parseFloat(montoExtras) || 0
 
-    setIngresos(ingresoPrincipal)
-    setIngresosExtras(ingresoExtra)
+    updateIncome(ingresoPrincipal, ingresoExtra)
     
-    await saveProgress()
+    await saveOnboardingProgress()
     onNext()
   }
 

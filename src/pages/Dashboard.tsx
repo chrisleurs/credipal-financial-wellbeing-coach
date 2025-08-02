@@ -7,6 +7,7 @@ import { Brain, TrendingUp, Target, PiggyBank, CreditCard, DollarSign } from 'lu
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { ChartSection } from '@/components/dashboard/ChartSection'
 import { AIPanel } from '@/components/dashboard/AIPanel'
+import { useLoans } from '@/hooks/useLoans'
 
 const Dashboard: React.FC = () => {
   console.log('Dashboard component rendering')
@@ -17,6 +18,8 @@ const Dashboard: React.FC = () => {
     isLoading, 
     generateAIPlan
   } = useFinancialStore()
+  
+  const { kueskiLoan } = useLoans()
 
   const totalIncome = financialData.monthlyIncome + financialData.extraIncome
   const balance = totalIncome - financialData.monthlyExpenses
@@ -84,9 +87,10 @@ const Dashboard: React.FC = () => {
           {/* AI Panel - Takes 1/3 width on large screens */}
           <div className="lg:col-span-1">
             <AIPanel 
-              hasAIPlan={!!aiPlan}
-              onGeneratePlan={generateAIPlan}
-              isLoading={isLoading}
+              totalIncome={totalIncome}
+              totalExpenses={financialData.monthlyExpenses}
+              totalDebts={totalDebtPayments}
+              kueskiLoan={kueskiLoan}
             />
           </div>
         </div>

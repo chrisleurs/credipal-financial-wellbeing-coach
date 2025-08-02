@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +8,11 @@ export const useFinancial = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Mock financial data - in real app this would come from database
+  const data = {
+    monthly_income: 1500, // Default mock value
+  };
 
   const saveFinancialData = async (data: FinancialData) => {
     if (!user) {
@@ -41,7 +47,8 @@ export const useFinancial = () => {
   };
 
   return {
-    saveFinancialData,
-    isLoading
+    data,
+    isLoading,
+    saveFinancialData
   };
 };

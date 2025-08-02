@@ -18,7 +18,7 @@ export const FinancialDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimeFrame>('30d')
   const { data: financialData, isLoading: isLoadingFinancial } = useFinancial()
   const { expenses, isLoading: isLoadingExpenses } = useExpenses()
-  const { debts, isLoading: isLoadingDebts } = useDebts()
+  const { debts, isLoadingDebts } = useDebts()
   const { kueskiLoan, activeLoans, isLoading: isLoadingLoans } = useLoans()
 
   if (isLoadingFinancial || isLoadingExpenses || isLoadingDebts || isLoadingLoans) {
@@ -39,39 +39,31 @@ export const FinancialDashboard = () => {
   const metrics = [
     {
       title: 'Ingresos Mensuales',
-      value: totalIncome,
-      change: 0,
-      trend: 'neutral' as const,
+      value: `$${totalIncome.toLocaleString()}`,
+      trend: { direction: 'up' as const, percentage: '+5%' },
       icon: TrendingUp,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10'
+      variant: 'positive' as const
     },
     {
       title: 'Gastos del Mes',
-      value: totalExpenses,
-      change: 0,
-      trend: 'neutral' as const,
+      value: `$${totalExpenses.toLocaleString()}`,
+      trend: { direction: 'down' as const, percentage: '-3%' },
       icon: TrendingDown,
-      color: 'text-warning',
-      bgColor: 'bg-warning/10'
+      variant: 'warning' as const
     },
     {
       title: 'Deudas Activas',
-      value: totalDebts,
-      change: 0,
-      trend: 'neutral' as const,
+      value: `$${totalDebts.toLocaleString()}`,
+      trend: { direction: 'down' as const, percentage: '-2%' },
       icon: CreditCard,
-      color: 'text-destructive',
-      bgColor: 'bg-destructive/10'
+      variant: 'warning' as const
     },
     {
       title: 'Balance Disponible',
-      value: totalIncome - totalExpenses - (totalDebts * 0.1), // Assuming 10% monthly debt payment
-      change: 0,
-      trend: totalIncome > totalExpenses ? 'up' as const : 'down' as const,
+      value: `$${(totalIncome - totalExpenses - (totalDebts * 0.1)).toLocaleString()}`,
+      trend: { direction: totalIncome > totalExpenses ? 'up' as const : 'down' as const, percentage: '8%' },
       icon: PiggyBank,
-      color: totalIncome > totalExpenses ? 'text-primary' : 'text-warning',
-      bgColor: totalIncome > totalExpenses ? 'bg-primary/10' : 'bg-warning/10'
+      variant: totalIncome > totalExpenses ? 'positive' as const : 'warning' as const
     }
   ]
 
@@ -90,8 +82,8 @@ export const FinancialDashboard = () => {
               </p>
             </div>
             <TimeFilter 
-              selected={selectedPeriod}
-              onSelect={setSelectedPeriod}
+              activeFilter={selectedPeriod}
+              onFilterChange={setSelectedPeriod}
             />
           </div>
         </div>
@@ -162,11 +154,7 @@ export const FinancialDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Chart Section - Takes up 2/3 of the width */}
           <div className="lg:col-span-2">
-            <ChartSection 
-              selectedPeriod={selectedPeriod}
-              expenses={expenses}
-              income={totalIncome}
-            />
+            <ChartSection />
           </div>
 
           {/* AI Panel - Takes up 1/3 of the width */}
