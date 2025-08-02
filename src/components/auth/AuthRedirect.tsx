@@ -5,11 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-interface AuthRedirectProps {
-  children: React.ReactNode;
-}
-
-export const AuthRedirect = ({ children }: AuthRedirectProps) => {
+export const AuthRedirect = () => {
   const { user, loading: authLoading } = useAuth();
   const { onboardingCompleted, isLoading: onboardingLoading } = useOnboardingStatus();
   const navigate = useNavigate();
@@ -98,5 +94,5 @@ export const AuthRedirect = ({ children }: AuthRedirectProps) => {
     );
   }
 
-  return <>{children}</>;
+  return null;
 };
