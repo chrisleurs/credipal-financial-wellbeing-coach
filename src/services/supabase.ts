@@ -292,3 +292,31 @@ export const getDebtReminders = async (userId: string) => {
     .order('created_at', { ascending: false });
   return { data, error };
 };
+
+export const getLoans = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('loans')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  return { data, error };
+};
+
+export const getLoanById = async (loanId: string) => {
+  const { data, error } = await supabase
+    .from('loans')
+    .select('*')
+    .eq('id', loanId)
+    .single();
+  return { data, error };
+};
+
+export const updateLoan = async (loanId: string, updates: any) => {
+  const { data, error } = await supabase
+    .from('loans')
+    .update(updates)
+    .eq('id', loanId)
+    .select()
+    .single();
+  return { data, error };
+};

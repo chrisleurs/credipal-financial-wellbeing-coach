@@ -1,231 +1,185 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Target, 
-  PiggyBank, 
-  AlertCircle,
-  Plus,
-  CreditCard
-} from 'lucide-react';
-import { useFinancialStore } from '@/store/financialStore';
-import { useExpenses } from '@/hooks/useExpenses';
-import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency } from '@/utils/helpers';
-import { MetricCard } from './MetricCard';
-import { ChartSection } from './ChartSection';
-import { AIPanel } from './AIPanel';
+import React, { useState } from 'react'
+import { MetricCard } from './MetricCard'
+import { TimeFilter } from './TimeFilter'
+import { AIPanel } from './AIPanel'
+import { ChartSection } from './ChartSection'
+import { LoanCard } from './LoanCard'
+import { useFinancial } from '@/hooks/useFinancial'
+import { useExpenses } from '@/hooks/useExpenses'
+import { useDebts } from '@/hooks/useDebts'
+import { useLoans } from '@/hooks/useLoans'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { TrendingUp, TrendingDown, PiggyBank, CreditCard, Target, AlertTriangle } from 'lucide-react'
+
+type TimeFrame = '7d' | '30d' | '90d' | '1y'
 
 export const FinancialDashboard = () => {
-  const { 
-    financialData, 
-    aiPlan,
-    isLoading, 
-    generateAIPlan,
-    loadFromSupabase
-  } = useFinancialStore();
-  
-  const { expenses, isLoading: expensesLoading } = useExpenses();
-  const [user, setUser] = useState<any>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<TimeFrame>('30d')
+  const { data: financialData, isLoading: isLoadingFinancial } = useFinancial()
+  const { expenses, isLoading: isLoadingExpenses } = useExpenses()
+  const { debts, isLoading: isLoadingDebts } = useDebts()
+  const { kueskiLoan, activeLoans, isLoading: isLoadingLoans } = useLoans()
 
-  useEffect(() => {
-    const initializeUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        loadFromSupabase();
-      }
-    };
-    
-    initializeUser();
-  }, [loadFromSupabase]);
-
-  if (isLoading) {
+  if (isLoadingFinancial || isLoadingExpenses || isLoadingDebts || isLoadingLoans) {
     return (
-      <div className="min-h-screen bg-clean flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-16 h-16 border-4 border-credipal-green border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Cargando tu información financiera...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Cargando tu información financiera..." />
       </div>
-    );
+    )
   }
 
-  // Calculate totals from actual expenses data
-  const totalExpensesThisMonth = expenses
-    .filter(expense => {
-      const expenseDate = new Date(expense.expense_date);
-      const now = new Date();
-      return expenseDate.getMonth() === now.getMonth() && expenseDate.getFullYear() === now.getFullYear();
-    })
-    .reduce((total, expense) => total + Number(expense.amount), 0);
+  // Calculate metrics
+  const totalIncome = financialData?.monthly_income || 0
+  const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
+  const totalDebts = debts.reduce((sum, debt) => sum + Number(debt.current_balance), 0)
+  const loanAmount = activeLoans.reduce((sum, loan) => sum + Number(loan.amount), 0)
+  const totalObligations = totalDebts + loanAmount
 
-  const totalSavings = financialData?.currentSavings || 0;
-  const emergencyFund = (financialData?.monthlySavingsCapacity || 0) * 6;
-  const monthlyBalance = (financialData?.monthlyIncome || 0) - totalExpensesThisMonth;
-  const activeGoals = financialData?.financialGoals || [];
-
-  const recentTransactions = expenses.slice(0, 5).map(expense => ({
-    id: expense.id,
-    description: expense.description,
-    category: expense.category,
-    amount: expense.amount,
-    transaction_type: 'expense',
-    transaction_date: expense.expense_date
-  }));
+  const metrics = [
+    {
+      title: 'Ingresos Mensuales',
+      value: totalIncome,
+      change: 0,
+      trend: 'neutral' as const,
+      icon: TrendingUp,
+      color: 'text-primary',
+      bgColor: 'bg-primary/10'
+    },
+    {
+      title: 'Gastos del Mes',
+      value: totalExpenses,
+      change: 0,
+      trend: 'neutral' as const,
+      icon: TrendingDown,
+      color: 'text-warning',
+      bgColor: 'bg-warning/10'
+    },
+    {
+      title: 'Deudas Activas',
+      value: totalDebts,
+      change: 0,
+      trend: 'neutral' as const,
+      icon: CreditCard,
+      color: 'text-destructive',
+      bgColor: 'bg-destructive/10'
+    },
+    {
+      title: 'Balance Disponible',
+      value: totalIncome - totalExpenses - (totalDebts * 0.1), // Assuming 10% monthly debt payment
+      change: 0,
+      trend: totalIncome > totalExpenses ? 'up' as const : 'down' as const,
+      icon: PiggyBank,
+      color: totalIncome > totalExpenses ? 'text-primary' : 'text-warning',
+      bgColor: totalIncome > totalExpenses ? 'bg-primary/10' : 'bg-warning/10'
+    }
+  ]
 
   return (
-    <div className="min-h-screen bg-clean">
-      {/* Clean Header - No blue background */}
-      <div className="bg-white border-b border-gray-100 p-8 shadow-sm">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2 text-slate-900">
-            ¡Hola! Bienvenido a tu Dashboard Financiero
-          </h1>
-          <p className="text-slate-600">
-            Gestiona tu bienestar financiero de manera inteligente
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Metrics Cards - Green themed */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <MetricCard
-            title="Balance Mensual"
-            value={formatCurrency(monthlyBalance)}
-            icon={DollarSign}
-            variant={monthlyBalance > 0 ? 'positive' : 'warning'}
-            trend={{ 
-              direction: monthlyBalance > 0 ? 'up' : 'down', 
-              percentage: `${((monthlyBalance / (financialData?.monthlyIncome || 1)) * 100).toFixed(1)}%`
-            }}
-          />
-
-          <MetricCard
-            title="Gastos Este Mes"
-            value={formatCurrency(totalExpensesThisMonth)}
-            icon={CreditCard}
-            variant="warning"
-          />
-
-          <MetricCard
-            title="Meta de Ahorro"
-            value={formatCurrency(totalSavings)}
-            icon={PiggyBank}
-            variant="positive"
-          />
-
-          <MetricCard
-            title="Fondo de Emergencia"
-            value={formatCurrency(emergencyFund)}
-            icon={AlertCircle}
-            variant="neutral"
-          />
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Chart Section */}
-          <div className="lg:col-span-2">
-            <ChartSection />
-          </div>
-
-          {/* AI Panel */}
-          <div className="lg:col-span-1">
-            <AIPanel 
-              hasAIPlan={!!aiPlan}
-              onGeneratePlan={generateAIPlan}
-              isLoading={isLoading}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-white border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-text-primary">
+                Panel Financiero
+              </h1>
+              <p className="text-text-secondary">
+                Gestiona tus finanzas de manera inteligente
+              </p>
+            </div>
+            <TimeFilter 
+              selected={selectedPeriod}
+              onSelect={setSelectedPeriod}
             />
           </div>
         </div>
+      </div>
 
-        {/* Goals and Transactions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-          {/* Goals Progress */}
-          <Card className="shadow-clean border border-gray-100 bg-white">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-credipal-green" />
-                  Tus Metas Financieras
-                </CardTitle>
-                <Button size="sm" className="bg-credipal-green hover:bg-green-600">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Meta
-                </Button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Kueski Loan Welcome Section */}
+        {kueskiLoan && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-6 border border-primary/20">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-primary/20 rounded-lg">
+                  <CreditCard className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-semibold text-primary mb-2">
+                    ¡Tu préstamo Kueski está activo!
+                  </h2>
+                  <p className="text-text-secondary mb-4">
+                    Ahora Credipal administra tu préstamo de ${kueskiLoan.amount} USD. 
+                    Tu próximo pago es el {new Date(kueskiLoan.next_payment_date).toLocaleDateString('es-ES')}.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-white/70 rounded-lg p-3">
+                      <p className="text-sm text-text-secondary">Monto Total</p>
+                      <p className="font-bold text-primary">${kueskiLoan.amount}</p>
+                    </div>
+                    <div className="bg-white/70 rounded-lg p-3">
+                      <p className="text-sm text-text-secondary">Pago Quincenal</p>
+                      <p className="font-bold text-primary">${kueskiLoan.payment_amount}</p>
+                    </div>
+                    <div className="bg-white/70 rounded-lg p-3">
+                      <p className="text-sm text-text-secondary">Pagos Restantes</p>
+                      <p className="font-bold text-primary">{kueskiLoan.remaining_payments}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              {activeGoals.length > 0 ? (
-                <div className="space-y-3">
-                  {activeGoals.map((goal, index) => (
-                    <div key={index} className="bg-credipal-green-bg border border-green-100 p-4 rounded-xl hover-clean">
-                      <div className="flex items-center gap-3">
-                        <Target className="h-5 w-5 text-credipal-green" />
-                        <span className="font-medium text-credipal-green-dark">{goal}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Target className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-500">
-                    Aún no tienes metas financieras. ¡Crea tu primera meta!
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        )}
 
-          {/* Recent Transactions */}
-          <Card className="shadow-clean border border-gray-100 bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-credipal-green" />
-                Transacciones Recientes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {expensesLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-credipal-green mx-auto"></div>
-                  <p className="text-slate-500 mt-2">Cargando transacciones...</p>
-                </div>
-              ) : recentTransactions.length > 0 ? (
-                <div className="space-y-3">
-                  {recentTransactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover-clean">
-                      <div>
-                        <p className="font-medium text-slate-900">{transaction.description || 'Sin descripción'}</p>
-                        <p className="text-sm text-slate-500">{transaction.category}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-amber-500">
-                          -{formatCurrency(transaction.amount)}
-                        </p>
-                        <p className="text-sm text-slate-500">{transaction.transaction_date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <CreditCard className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-500">
-                    No hay transacciones registradas
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {metrics.map((metric, index) => (
+            <MetricCard key={index} {...metric} />
+          ))}
+        </div>
+
+        {/* Active Loans Section */}
+        {activeLoans.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold text-text-primary">
+                Préstamos Activos
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {activeLoans.map((loan) => (
+                <LoanCard key={loan.id} loan={loan} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Chart Section - Takes up 2/3 of the width */}
+          <div className="lg:col-span-2">
+            <ChartSection 
+              selectedPeriod={selectedPeriod}
+              expenses={expenses}
+              income={totalIncome}
+            />
+          </div>
+
+          {/* AI Panel - Takes up 1/3 of the width */}
+          <div className="lg:col-span-1">
+            <AIPanel 
+              totalIncome={totalIncome}
+              totalExpenses={totalExpenses}
+              totalDebts={totalObligations}
+              kueskiLoan={kueskiLoan}
+            />
+          </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

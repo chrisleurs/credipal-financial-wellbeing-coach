@@ -324,6 +324,54 @@ export type Database = {
         }
         Relationships: []
       }
+      loans: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          lender: string
+          next_payment_date: string
+          payment_amount: number
+          payment_dates: number[]
+          remaining_payments: number
+          status: string
+          total_payments: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          lender: string
+          next_payment_date: string
+          payment_amount: number
+          payment_dates: number[]
+          remaining_payments: number
+          status?: string
+          total_payments: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          lender?: string
+          next_payment_date?: string
+          payment_amount?: number
+          payment_dates?: number[]
+          remaining_payments?: number
+          status?: string
+          total_payments?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       onboarding_expenses: {
         Row: {
           amount: number
