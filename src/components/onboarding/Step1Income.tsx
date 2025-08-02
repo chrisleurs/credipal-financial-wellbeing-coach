@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -38,13 +37,18 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
   }
 
   const totalIngresos = (parseFloat(montoPrincipal) || 0) + (parseFloat(montoExtras) || 0)
+  const canProceed = montoPrincipal && parseFloat(montoPrincipal) > 0
 
   return (
     <OnboardingStep
+      currentStep={0}
+      totalSteps={6}
       title="¡Bienvenido a Credipal!"
       subtitle="Tu préstamo Kueski ya está registrado. Ahora vamos a configurar tus ingresos."
-      step={1}
-      totalSteps={6}
+      onNext={handleNext}
+      onBack={onBack}
+      canProceed={canProceed}
+      nextButtonText="Continuar"
     >
       <div className="space-y-6">
         {/* Kueski Loan Confirmation */}

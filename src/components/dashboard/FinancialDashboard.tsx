@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { MetricCard } from './MetricCard'
 import { TimeFilter } from './TimeFilter'
@@ -12,10 +11,10 @@ import { useLoans } from '@/hooks/useLoans'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { TrendingUp, TrendingDown, PiggyBank, CreditCard, Target, AlertTriangle } from 'lucide-react'
 
-type TimeFrame = '7d' | '30d' | '90d' | '1y'
+type TimeFrame = 'week' | 'month' | 'quarter' | 'year'
 
 export const FinancialDashboard = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState<TimeFrame>('30d')
+  const [selectedPeriod, setSelectedPeriod] = useState<TimeFrame>('month')
   const { data: financialData, isLoading: isLoadingFinancial } = useFinancial()
   const { expenses, isLoading: isLoadingExpenses } = useExpenses()
   const { debts, isLoadingDebts } = useDebts()
@@ -27,6 +26,17 @@ export const FinancialDashboard = () => {
         <LoadingSpinner size="lg" text="Cargando tu información financiera..." />
       </div>
     )
+  }
+
+  // Map TimeFilter string values to TimeFrame values
+  const handleFilterChange = (filter: string) => {
+    const filterMap: Record<string, TimeFrame> = {
+      'week': 'week',
+      'month': 'month', 
+      'quarter': 'quarter',
+      'year': 'year'
+    }
+    setSelectedPeriod(filterMap[filter] || 'month')
   }
 
   // Calculate metrics
@@ -83,7 +93,7 @@ export const FinancialDashboard = () => {
             </div>
             <TimeFilter 
               activeFilter={selectedPeriod}
-              onFilterChange={setSelectedPeriod}
+              onFilterChange={handleFilterChange}
             />
           </div>
         </div>
