@@ -18,7 +18,7 @@ export const ChartSection: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState('month');
 
   return (
-    <Card className="shadow-xl border border-gray-100 bg-white">
+    <Card className="shadow-clean border border-gray-100 bg-white">
       <CardHeader className="border-b border-gray-50">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <CardTitle className="text-xl font-bold text-slate-900">
@@ -82,7 +82,7 @@ export const ChartSection: React.FC = () => {
         {/* Legend */}
         <div className="flex justify-center gap-6 mt-4">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-credipal-green rounded-full"></div>
             <span className="text-sm font-medium text-slate-600">Ingresos</span>
           </div>
           <div className="flex items-center gap-2">

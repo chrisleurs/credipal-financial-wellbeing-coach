@@ -15,15 +15,22 @@ interface MetricCardProps {
 }
 
 const variantStyles = {
-  default: 'text-primary',
-  positive: 'text-emerald-600',
+  default: 'text-credipal-green',
+  positive: 'text-credipal-green',
   warning: 'text-amber-500',
   neutral: 'text-slate-600'
 };
 
+const iconVariantStyles = {
+  default: 'text-credipal-green bg-credipal-green-bg',
+  positive: 'text-credipal-green bg-credipal-green-bg', 
+  warning: 'text-amber-500 bg-amber-50',
+  neutral: 'text-slate-600 bg-slate-100'
+};
+
 const trendColors = {
-  up: 'text-emerald-600',
-  down: 'text-red-500'
+  up: 'text-credipal-green',
+  down: 'text-amber-500'
 };
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -34,10 +41,12 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   variant = 'default'
 }) => {
   return (
-    <Card className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group">
+    <Card className="bg-white rounded-2xl p-6 shadow-clean border border-gray-100 hover-clean group">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between mb-3">
-          <Icon className={`h-5 w-5 ${variantStyles[variant]} group-hover:scale-110 transition-transform duration-200`} />
+        <div className="flex items-center justify-between mb-4">
+          <div className={`p-3 rounded-xl ${iconVariantStyles[variant]} group-hover:scale-110 transition-transform duration-200`}>
+            <Icon className="h-5 w-5" />
+          </div>
           {trend && (
             <div className={`flex items-center text-sm font-medium ${trendColors[trend.direction]}`}>
               <span className="text-xs mr-1">
@@ -48,18 +57,13 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           )}
         </div>
         
-        <div className="space-y-1">
+        <div className="space-y-2">
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
             {title}
           </p>
           <p className={`text-3xl font-bold ${variantStyles[variant]} group-hover:scale-105 transition-transform duration-200`}>
             {value}
           </p>
-        </div>
-        
-        {/* Mini trend line background - subtle */}
-        <div className="absolute inset-0 opacity-5 overflow-hidden rounded-2xl">
-          <div className="h-full w-full bg-gradient-to-br from-blue-500 to-cyan-500"></div>
         </div>
       </CardContent>
     </Card>

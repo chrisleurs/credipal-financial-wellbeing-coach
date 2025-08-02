@@ -3,15 +3,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CREDIPAL MODERN DESIGN SYSTEM - Apple/Notion Inspired
-Clean, minimal, professional financial platform
+/* CREDIPAL DESIGN SYSTEM - Green Brand Colors
+Clean, minimal, professional financial platform with Credipal green branding
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* Modern neutral background - clean white/gray */
-    --background: 0 0% 100%;
+    /* Clean neutral backgrounds */
+    --background: 220 13% 97%;
     --foreground: 220 13% 9%;
 
     --card: 0 0% 100%;
@@ -20,86 +20,85 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 220 13% 9%;
 
-    /* Primary - Modern teal (#14B8A6) */
-    --primary: 173 80% 40%;
+    /* Credipal GREEN brand colors */
+    --primary: 160 84% 39%; /* #10b981 - Credipal green */
     --primary-foreground: 0 0% 100%;
-    --primary-light: 173 80% 50%;
-    --primary-glow: 173 80% 85%;
+    --primary-light: 160 84% 55%; /* #34d399 - Light green */
+    --primary-dark: 160 84% 25%; /* #059669 - Dark green */
+    --primary-bg: 151 81% 96%; /* #ecfdf5 - Very light green background */
 
-    /* Secondary - Modern blue (#0EA5E9) */
-    --secondary: 199 89% 48%;
-    --secondary-foreground: 0 0% 100%;
-    --secondary-light: 199 89% 60%;
+    /* Secondary neutral */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 9%;
 
-    /* Success - Financial green */
-    --success: 142 71% 45%;
+    /* Success - Same as primary green */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
 
-    /* Error - Financial red */
+    /* Error - Clean red */
     --error: 0 84% 60%;
     --error-foreground: 0 0% 100%;
 
-    /* Modern neutral grays - Updated for better contrast */
+    /* Clean neutral grays */
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
     --accent: 220 14% 96%;
     --accent-foreground: 220 13% 9%;
 
-    /* Text colors for hierarchy */
-    --text-primary: 220 13% 9%;
-    --text-secondary: 215 16% 22%;
+    /* Text hierarchy */
+    --text-primary: 215 16% 22%; /* #1e293b */
+    --text-secondary: 215 16% 47%; /* #64748b */
     --tertiary: 215 13% 42%;
 
-    /* Warning amber */
-    --warning: 43 96% 56%;
+    /* Warning orange */
+    --warning: 43 96% 56%; /* #f59e0b */
     --warning-foreground: 0 0% 9%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Subtle borders */
-    --border: 220 13% 91%;
+    /* Clean borders */
+    --border: 220 13% 91%; /* #e2e8f0 */
     --input: 220 13% 91%;
-    --ring: 173 80% 40%;
+    --ring: 160 84% 39%; /* Credipal green ring */
 
-    /* Modern gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(173 80% 40%), hsl(199 89% 48%));
-    --gradient-secondary: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 60%));
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 14% 98%));
-    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.8), hsl(0 0% 100% / 0.4));
+    /* Clean backgrounds */
+    --clean-bg: 220 13% 97%; /* #f8fafc */
+    --card-bg: 0 0% 100%; /* Pure white */
 
-    /* Subtle shadows */
+    /* Clean shadows */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.1);
+    --shadow-hover: 0 4px 12px hsl(0 0% 0% / 0.15);
 
-    /* Smooth animations */
+    /* Smooth transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --radius: 0.75rem;
 
-    /* Modern sidebar */
+    /* Sidebar with clean colors */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 13% 9%;
-    --sidebar-primary: 173 80% 40%;
+    --sidebar-primary: 160 84% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 220 13% 9%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 173 80% 40%;
+    --sidebar-ring: 160 84% 39%;
 
-    /* Specific Credipal colors */
-    --credipal-teal: 173 80% 40%;
-    --credipal-blue: 199 89% 48%;
+    /* Clean Credipal specific colors */
+    --credipal-green: 160 84% 39%; /* #10b981 */
+    --credipal-green-light: 160 84% 55%; /* #34d399 */
+    --credipal-green-dark: 160 84% 25%; /* #059669 */
     --gray-50: 220 14% 98%;
     --gray-100: 220 14% 96%;
   }
 
   .dark {
-    /* Modern dark mode */
+    /* Dark mode with green accents */
     --background: 224 71% 4%;
     --foreground: 213 31% 91%;
 
@@ -109,17 +108,17 @@ All colors MUST be HSL.
     --popover: 224 71% 4%;
     --popover-foreground: 213 31% 91%;
 
-    /* Dark mode brand colors */
-    --primary: 173 80% 45%;
+    /* Dark mode green colors */
+    --primary: 160 84% 45%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 173 80% 55%;
-    --primary-glow: 173 80% 85%;
+    --primary-light: 160 84% 55%;
+    --primary-dark: 160 84% 35%;
+    --primary-bg: 151 81% 10%;
 
-    --secondary: 199 89% 55%;
-    --secondary-foreground: 0 0% 100%;
-    --secondary-light: 199 89% 65%;
+    --secondary: 223 47% 11%;
+    --secondary-foreground: 213 31% 91%;
 
-    --success: 142 71% 50%;
+    --success: 160 84% 45%;
     --success-foreground: 0 0% 100%;
 
     --error: 0 84% 60%;
@@ -143,33 +142,30 @@ All colors MUST be HSL.
 
     --border: 216 34% 17%;
     --input: 216 34% 17%;
-    --ring: 173 80% 45%;
+    --ring: 160 84% 45%;
 
-    /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(173 80% 45%), hsl(199 89% 55%));
-    --gradient-secondary: linear-gradient(135deg, hsl(199 89% 55%), hsl(199 89% 65%));
-    --gradient-subtle: linear-gradient(180deg, hsl(224 71% 4%), hsl(223 47% 11%));
-    --gradient-glass: linear-gradient(135deg, hsl(224 71% 4% / 0.8), hsl(224 71% 4% / 0.4));
+    --clean-bg: 224 71% 4%;
+    --card-bg: 223 47% 11%;
 
     /* Dark mode shadows */
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.15);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.15);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.15);
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.3), 0 1px 2px -1px hsl(0 0% 0% / 0.15);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-hover: 0 4px 12px hsl(0 0% 0% / 0.4);
 
-    /* Dark sidebar */
     --sidebar-background: 223 47% 11%;
     --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 173 80% 45%;
+    --sidebar-primary: 160 84% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 216 34% 17%;
     --sidebar-accent-foreground: 213 31% 91%;
     --sidebar-border: 216 34% 17%;
-    --sidebar-ring: 173 80% 45%;
+    --sidebar-ring: 160 84% 45%;
 
-    /* Dark mode Credipal colors */
-    --credipal-teal: 173 80% 45%;
-    --credipal-blue: 199 89% 55%;
+    --credipal-green: 160 84% 45%;
+    --credipal-green-light: 160 84% 55%;
+    --credipal-green-dark: 160 84% 35%;
     --gray-50: 223 47% 11%;
     --gray-100: 216 34% 17%;
   }
@@ -186,25 +182,71 @@ All colors MUST be HSL.
   }
 }
 
-/* Custom utility classes for the new color variables */
+/* Clean utility classes */
 @layer utilities {
   .text-tertiary {
     color: hsl(var(--tertiary));
   }
   
-  .bg-gray-50 {
-    background-color: hsl(var(--gray-50));
+  .bg-clean {
+    background-color: hsl(var(--clean-bg));
   }
   
-  .bg-gray-100 {
-    background-color: hsl(var(--gray-100));
+  .bg-card-clean {
+    background-color: hsl(var(--card-bg));
   }
   
-  .bg-credipal-teal {
-    background-color: hsl(var(--credipal-teal));
+  .bg-credipal-green {
+    background-color: hsl(var(--credipal-green));
   }
   
-  .bg-credipal-blue {
-    background-color: hsl(var(--credipal-blue));
+  .bg-credipal-green-light {
+    background-color: hsl(var(--credipal-green-light));
+  }
+  
+  .bg-credipal-green-bg {
+    background-color: hsl(var(--primary-bg));
+  }
+  
+  .text-credipal-green {
+    color: hsl(var(--credipal-green));
+  }
+  
+  .text-credipal-green-dark {
+    color: hsl(var(--credipal-green-dark));
+  }
+  
+  .shadow-clean {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-hover {
+    box-shadow: var(--shadow-hover);
+  }
+
+  /* Clean hover states */
+  .hover-clean {
+    transition: var(--transition-smooth);
+  }
+  
+  .hover-clean:hover {
+    background-color: hsl(var(--card-bg));
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-1px);
+    border-color: hsl(var(--border));
+  }
+
+  /* Navigation items clean hover */
+  .nav-item {
+    @apply transition-all duration-200 bg-transparent border border-transparent;
+  }
+  
+  .nav-item:hover {
+    @apply bg-white border-border shadow-hover;
+    transform: translateY(-1px);
+  }
+  
+  .nav-item.active {
+    @apply bg-credipal-green-bg border-primary text-credipal-green-dark;
   }
 }

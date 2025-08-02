@@ -29,7 +29,7 @@ export const TimeFilter: React.FC<TimeFilterProps> = ({
           className={`
             px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium
             ${activeFilter === filter.id 
-              ? 'bg-white shadow-md text-primary border-0' 
+              ? 'bg-white shadow-md text-credipal-green border-0' 
               : 'text-slate-600 hover:text-slate-900 bg-transparent'
             }
           `}

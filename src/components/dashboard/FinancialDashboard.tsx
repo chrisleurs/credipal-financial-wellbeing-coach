@@ -9,7 +9,6 @@ import {
   PiggyBank, 
   AlertCircle,
   Plus,
-  Calendar,
   CreditCard
 } from 'lucide-react';
 import { useFinancialStore } from '@/store/financialStore';
@@ -24,9 +23,7 @@ export const FinancialDashboard = () => {
   const { 
     financialData, 
     aiPlan,
-    actionTasks,
     isLoading, 
-    setCurrentStep,
     generateAIPlan,
     loadFromSupabase
   } = useFinancialStore();
@@ -48,9 +45,9 @@ export const FinancialDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-clean flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-16 h-16 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="animate-spin w-16 h-16 border-4 border-credipal-green border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-slate-600 font-medium">Cargando tu información financiera...</p>
         </div>
       </div>
@@ -81,21 +78,21 @@ export const FinancialDashboard = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-secondary text-white p-8 shadow-lg">
+    <div className="min-h-screen bg-clean">
+      {/* Clean Header - No blue background */}
+      <div className="bg-white border-b border-gray-100 p-8 shadow-sm">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="text-3xl font-bold mb-2 text-slate-900">
             ¡Hola! Bienvenido a tu Dashboard Financiero
           </h1>
-          <p className="text-blue-100">
+          <p className="text-slate-600">
             Gestiona tu bienestar financiero de manera inteligente
           </p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6 -mt-4">
-        {/* Metrics Cards */}
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Metrics Cards - Green themed */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard
             title="Balance Mensual"
@@ -150,14 +147,14 @@ export const FinancialDashboard = () => {
         {/* Goals and Transactions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           {/* Goals Progress */}
-          <Card className="shadow-xl border border-gray-100 bg-white">
+          <Card className="shadow-clean border border-gray-100 bg-white">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-primary" />
+                  <Target className="h-5 w-5 text-credipal-green" />
                   Tus Metas Financieras
                 </CardTitle>
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
+                <Button size="sm" className="bg-credipal-green hover:bg-green-600">
                   <Plus className="h-4 w-4 mr-2" />
                   Nueva Meta
                 </Button>
@@ -167,10 +164,10 @@ export const FinancialDashboard = () => {
               {activeGoals.length > 0 ? (
                 <div className="space-y-3">
                   {activeGoals.map((goal, index) => (
-                    <div key={index} className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 p-4 rounded-xl">
+                    <div key={index} className="bg-credipal-green-bg border border-green-100 p-4 rounded-xl hover-clean">
                       <div className="flex items-center gap-3">
-                        <Target className="h-5 w-5 text-primary" />
-                        <span className="font-medium text-primary">{goal}</span>
+                        <Target className="h-5 w-5 text-credipal-green" />
+                        <span className="font-medium text-credipal-green-dark">{goal}</span>
                       </div>
                     </div>
                   ))}
@@ -187,23 +184,23 @@ export const FinancialDashboard = () => {
           </Card>
 
           {/* Recent Transactions */}
-          <Card className="shadow-xl border border-gray-100 bg-white">
+          <Card className="shadow-clean border border-gray-100 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary" />
+                <CreditCard className="h-5 w-5 text-credipal-green" />
                 Transacciones Recientes
               </CardTitle>
             </CardHeader>
             <CardContent>
               {expensesLoading ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-credipal-green mx-auto"></div>
                   <p className="text-slate-500 mt-2">Cargando transacciones...</p>
                 </div>
               ) : recentTransactions.length > 0 ? (
                 <div className="space-y-3">
                   {recentTransactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover-clean">
                       <div>
                         <p className="font-medium text-slate-900">{transaction.description || 'Sin descripción'}</p>
                         <p className="text-sm text-slate-500">{transaction.category}</p>
