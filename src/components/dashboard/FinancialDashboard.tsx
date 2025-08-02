@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -18,6 +16,9 @@ import { useFinancialStore } from '@/store/financialStore';
 import { useExpenses } from '@/hooks/useExpenses';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/utils/helpers';
+import { MetricCard } from './MetricCard';
+import { ChartSection } from './ChartSection';
+import { AIPanel } from './AIPanel';
 
 export const FinancialDashboard = () => {
   const { 
@@ -30,7 +31,6 @@ export const FinancialDashboard = () => {
     loadFromSupabase
   } = useFinancialStore();
   
-  // Use the expenses hook with React Query
   const { expenses, isLoading: expensesLoading } = useExpenses();
   const [user, setUser] = useState<any>(null);
 
@@ -48,10 +48,10 @@ export const FinancialDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-financial-pulse w-16 h-16 bg-primary rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando tu información financiera...</p>
+          <div className="animate-spin w-16 h-16 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-slate-600 font-medium">Cargando tu información financiera...</p>
         </div>
       </div>
     );
@@ -67,11 +67,10 @@ export const FinancialDashboard = () => {
     .reduce((total, expense) => total + Number(expense.amount), 0);
 
   const totalSavings = financialData?.currentSavings || 0;
-  const emergencyFund = (financialData?.monthlySavingsCapacity || 0) * 6; // 6 months
+  const emergencyFund = (financialData?.monthlySavingsCapacity || 0) * 6;
   const monthlyBalance = (financialData?.monthlyIncome || 0) - totalExpensesThisMonth;
   const activeGoals = financialData?.financialGoals || [];
 
-  // Get recent transactions from expenses
   const recentTransactions = expenses.slice(0, 5).map(expense => ({
     id: expense.id,
     description: expense.description,
@@ -82,124 +81,113 @@ export const FinancialDashboard = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-gradient-primary text-white p-6 shadow-financial">
-        <div className="container mx-auto">
+      <div className="bg-gradient-to-r from-primary to-secondary text-white p-8 shadow-lg">
+        <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">
             ¡Hola! Bienvenido a tu Dashboard Financiero
           </h1>
-          <p className="text-primary-glow">
+          <p className="text-blue-100">
             Gestiona tu bienestar financiero de manera inteligente
           </p>
         </div>
       </div>
 
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Financial Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="shadow-card hover:shadow-financial transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance Mensual</CardTitle>
-              <DollarSign className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {formatCurrency(monthlyBalance)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {monthlyBalance > 0 ? '+' : ''}
-                {((monthlyBalance / (financialData?.monthlyIncome || 1)) * 100).toFixed(1)}% de tus ingresos
-              </p>
-            </CardContent>
-          </Card>
+      <div className="max-w-7xl mx-auto p-6 -mt-4">
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <MetricCard
+            title="Balance Mensual"
+            value={formatCurrency(monthlyBalance)}
+            icon={DollarSign}
+            variant={monthlyBalance > 0 ? 'positive' : 'warning'}
+            trend={{ 
+              direction: monthlyBalance > 0 ? 'up' : 'down', 
+              percentage: `${((monthlyBalance / (financialData?.monthlyIncome || 1)) * 100).toFixed(1)}%`
+            }}
+          />
 
-          <Card className="shadow-card hover:shadow-wellness transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gastos Este Mes</CardTitle>
-              <CreditCard className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">
-                {formatCurrency(totalExpensesThisMonth)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {expensesLoading ? 'Cargando...' : `${expenses.length} transacciones`}
-              </p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            title="Gastos Este Mes"
+            value={formatCurrency(totalExpensesThisMonth)}
+            icon={CreditCard}
+            variant="warning"
+          />
 
-          <Card className="shadow-card hover:shadow-financial transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Meta de Ahorro</CardTitle>
-              <PiggyBank className="h-4 w-4 text-secondary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-secondary">
-                {formatCurrency(totalSavings)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Objetivo mensual
-              </p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            title="Meta de Ahorro"
+            value={formatCurrency(totalSavings)}
+            icon={PiggyBank}
+            variant="positive"
+          />
 
-          <Card className="shadow-card hover:shadow-financial transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fondo de Emergencia</CardTitle>
-              <AlertCircle className="h-4 w-4 text-warning" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-warning">
-                {formatCurrency(emergencyFund)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {(emergencyFund / (totalExpensesThisMonth || 1)).toFixed(1)} meses cubiertos
-              </p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            title="Fondo de Emergencia"
+            value={formatCurrency(emergencyFund)}
+            icon={AlertCircle}
+            variant="neutral"
+          />
         </div>
 
-        {/* Goals Progress Section */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                Tus Metas Financieras
-              </CardTitle>
-              <Button size="sm" className="bg-secondary hover:bg-secondary-light">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Meta
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {activeGoals.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-3">
-                {activeGoals.map((goal, index) => (
-                  <div key={index} className="bg-emerald-50 border border-emerald-200 p-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-emerald-600" />
-                      <span className="font-medium text-emerald-800">{goal}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  Aún no tienes metas financieras. ¡Crea tu primera meta!
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Chart Section */}
+          <div className="lg:col-span-2">
+            <ChartSection />
+          </div>
 
-        {/* Recent Transactions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-card">
+          {/* AI Panel */}
+          <div className="lg:col-span-1">
+            <AIPanel 
+              hasAIPlan={!!aiPlan}
+              onGeneratePlan={generateAIPlan}
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
+
+        {/* Goals and Transactions */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+          {/* Goals Progress */}
+          <Card className="shadow-xl border border-gray-100 bg-white">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  Tus Metas Financieras
+                </CardTitle>
+                <Button size="sm" className="bg-primary hover:bg-primary/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Meta
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {activeGoals.length > 0 ? (
+                <div className="space-y-3">
+                  {activeGoals.map((goal, index) => (
+                    <div key={index} className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 p-4 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <Target className="h-5 w-5 text-primary" />
+                        <span className="font-medium text-primary">{goal}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-500">
+                    Aún no tienes metas financieras. ¡Crea tu primera meta!
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Transactions */}
+          <Card className="shadow-xl border border-gray-100 bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-primary" />
@@ -210,63 +198,33 @@ export const FinancialDashboard = () => {
               {expensesLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-muted-foreground mt-2">Cargando transacciones...</p>
+                  <p className="text-slate-500 mt-2">Cargando transacciones...</p>
                 </div>
               ) : recentTransactions.length > 0 ? (
                 <div className="space-y-3">
                   {recentTransactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                       <div>
-                        <p className="font-medium">{transaction.description || 'Sin descripción'}</p>
-                        <p className="text-sm text-muted-foreground">{transaction.category}</p>
+                        <p className="font-medium text-slate-900">{transaction.description || 'Sin descripción'}</p>
+                        <p className="text-sm text-slate-500">{transaction.category}</p>
                       </div>
                       <div className="text-right">
-                        <p className={`font-medium ${transaction.transaction_type === 'income' ? 'text-secondary' : 'text-destructive'}`}>
-                          {transaction.transaction_type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                        <p className="font-medium text-amber-500">
+                          -{formatCurrency(transaction.amount)}
                         </p>
-                        <p className="text-sm text-muted-foreground">{transaction.transaction_date}</p>
+                        <p className="text-sm text-slate-500">{transaction.transaction_date}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
+                  <CreditCard className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-500">
                     No hay transacciones registradas
                   </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                Acciones Rápidas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <Button className="h-20 flex flex-col gap-2 bg-primary hover:bg-primary-light">
-                  <Plus className="h-6 w-6" />
-                  <span className="text-sm">Nueva Meta</span>
-                </Button>
-                <Button className="h-20 flex flex-col gap-2 bg-secondary hover:bg-secondary-light">
-                  <DollarSign className="h-6 w-6" />
-                  <span className="text-sm">Registrar Ingreso</span>
-                </Button>
-                <Button className="h-20 flex flex-col gap-2 bg-muted hover:bg-accent text-foreground">
-                  <CreditCard className="h-6 w-6" />
-                  <span className="text-sm">Agregar Gasto</span>
-                </Button>
-                <Button className="h-20 flex flex-col gap-2 bg-warning hover:bg-warning/90 text-warning-foreground">
-                  <Calendar className="h-6 w-6" />
-                  <span className="text-sm">Planificar</span>
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </div>
