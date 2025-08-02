@@ -1,12 +1,16 @@
+
 import React from 'react'
 import { Bell, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useAuth } from '@/hooks/useAuth'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { LanguageToggle } from '@/components/shared/LanguageToggle'
 
 export function AppHeader() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   
   const getUserInitials = () => {
     if (user?.email) {
@@ -25,13 +29,15 @@ export function AppHeader() {
             Credipal
           </h1>
           <p className="text-sm text-muted-foreground font-medium">
-            Bienestar Financiero
+            {t('bienestar_financiero')}
           </p>
         </div>
       </div>
 
       {/* Right side - User actions */}
       <div className="flex items-center gap-3">
+        <LanguageToggle variant="dashboard" />
+        
         <Button 
           variant="ghost" 
           size="icon" 

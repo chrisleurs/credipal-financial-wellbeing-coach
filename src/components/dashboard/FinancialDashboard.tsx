@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { MetricCard } from './MetricCard'
 import { TimeFilter } from './TimeFilter'
@@ -8,6 +9,7 @@ import { useFinancial } from '@/hooks/useFinancial'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useDebts } from '@/hooks/useDebts'
 import { useLoans } from '@/hooks/useLoans'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { TrendingUp, TrendingDown, PiggyBank, CreditCard, Target, AlertTriangle } from 'lucide-react'
 
@@ -19,11 +21,12 @@ export const FinancialDashboard = () => {
   const { expenses, isLoading: isLoadingExpenses } = useExpenses()
   const { debts, isLoadingDebts } = useDebts()
   const { kueskiLoan, activeLoans, isLoading: isLoadingLoans } = useLoans()
+  const { t } = useLanguage()
 
   if (isLoadingFinancial || isLoadingExpenses || isLoadingDebts || isLoadingLoans) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Cargando tu información financiera..." />
+        <LoadingSpinner size="lg" text={t('loading_financial_info')} />
       </div>
     )
   }
@@ -48,28 +51,28 @@ export const FinancialDashboard = () => {
 
   const metrics = [
     {
-      title: 'Ingresos Mensuales',
+      title: t('monthly_income'),
       value: `$${totalIncome.toLocaleString()}`,
       trend: { direction: 'up' as const, percentage: '+5%' },
       icon: TrendingUp,
       variant: 'positive' as const
     },
     {
-      title: 'Gastos del Mes',
+      title: t('monthly_expenses_short'),
       value: `$${totalExpenses.toLocaleString()}`,
       trend: { direction: 'down' as const, percentage: '-3%' },
       icon: TrendingDown,
       variant: 'warning' as const
     },
     {
-      title: 'Deudas Activas',
+      title: t('active_debts'),
       value: `$${totalDebts.toLocaleString()}`,
       trend: { direction: 'down' as const, percentage: '-2%' },
       icon: CreditCard,
       variant: 'warning' as const
     },
     {
-      title: 'Balance Disponible',
+      title: t('available_balance'),
       value: `$${(totalIncome - totalExpenses - (totalDebts * 0.1)).toLocaleString()}`,
       trend: { direction: totalIncome > totalExpenses ? 'up' as const : 'down' as const, percentage: '8%' },
       icon: PiggyBank,
@@ -85,10 +88,10 @@ export const FinancialDashboard = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-text-primary">
-                Panel Financiero
+                {t('dashboard')}
               </h1>
               <p className="text-text-secondary">
-                Gestiona tus finanzas de manera inteligente
+                {t('financial_management')}
               </p>
             </div>
             <TimeFilter 
@@ -110,23 +113,23 @@ export const FinancialDashboard = () => {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-xl font-semibold text-primary mb-2">
-                    ¡Tu préstamo Kueski está activo!
+                    {t('kueski_loan_active')}
                   </h2>
                   <p className="text-text-secondary mb-4">
-                    Ahora Credipal administra tu préstamo de ${kueskiLoan.amount} USD. 
-                    Tu próximo pago es el {new Date(kueskiLoan.next_payment_date).toLocaleDateString('es-ES')}.
+                    {t('kueski_loan_managed')} ${kueskiLoan.amount} USD. 
+                    {t('next_payment')} {new Date(kueskiLoan.next_payment_date).toLocaleDateString('es-ES')}.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-white/70 rounded-lg p-3">
-                      <p className="text-sm text-text-secondary">Monto Total</p>
+                      <p className="text-sm text-text-secondary">{t('total_amount')}</p>
                       <p className="font-bold text-primary">${kueskiLoan.amount}</p>
                     </div>
                     <div className="bg-white/70 rounded-lg p-3">
-                      <p className="text-sm text-text-secondary">Pago Quincenal</p>
+                      <p className="text-sm text-text-secondary">{t('biweekly_payment')}</p>
                       <p className="font-bold text-primary">${kueskiLoan.payment_amount}</p>
                     </div>
                     <div className="bg-white/70 rounded-lg p-3">
-                      <p className="text-sm text-text-secondary">Pagos Restantes</p>
+                      <p className="text-sm text-text-secondary">{t('remaining_payments')}</p>
                       <p className="font-bold text-primary">{kueskiLoan.remaining_payments}</p>
                     </div>
                   </div>
@@ -149,7 +152,7 @@ export const FinancialDashboard = () => {
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold text-text-primary">
-                Préstamos Activos
+                {t('active_loans')}
               </h2>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

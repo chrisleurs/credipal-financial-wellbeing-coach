@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -7,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
 import { useLoans } from '@/hooks/useLoans'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { DollarSign, TrendingUp, CreditCard, CheckCircle } from 'lucide-react'
 
 interface Step1IncomeProps {
@@ -17,6 +19,7 @@ interface Step1IncomeProps {
 export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
   const { financialData, updateIncome, saveOnboardingProgress } = useFinancialStore()
   const { kueskiLoan, isLoading: isLoadingLoan } = useLoans()
+  const { t } = useLanguage()
   
   const [montoPrincipal, setMontoPrincipal] = useState(financialData.monthlyIncome.toString())
   const [montoExtras, setMontoExtras] = useState(financialData.extraIncome.toString())
@@ -43,12 +46,12 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
     <OnboardingStep
       currentStep={0}
       totalSteps={6}
-      title="¡Bienvenido a Credipal!"
-      subtitle="Tu préstamo Kueski ya está registrado. Ahora vamos a configurar tus ingresos."
+      title={t('income_title')}
+      subtitle={t('loan_registered')}
       onNext={handleNext}
       onBack={onBack}
       canProceed={canProceed}
-      nextButtonText="Continuar"
+      nextButtonText={t('continue')}
     >
       <div className="space-y-6">
         {/* Kueski Loan Confirmation */}
@@ -61,20 +64,20 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-primary mb-2">
-                    ✅ Préstamo Kueski Registrado
+                    {t('kueski_loan_registered')}
                   </h3>
                   <p className="text-sm text-text-secondary mb-3">
-                    Tu préstamo de <strong>${kueskiLoan.amount} USD</strong> ya está siendo administrado por Credipal.
+                    Tu préstamo de <strong>${kueskiLoan.amount} USD</strong> {t('kueski_loan_description')}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-white/70 rounded-lg p-3">
-                      <p className="text-xs text-text-secondary">Próximo pago</p>
+                      <p className="text-xs text-text-secondary">{t('next_payment')}</p>
                       <p className="font-semibold text-primary">
                         {new Date(kueskiLoan.next_payment_date).toLocaleDateString('es-ES')}
                       </p>
                     </div>
                     <div className="bg-white/70 rounded-lg p-3">
-                      <p className="text-xs text-text-secondary">Pago quincenal</p>
+                      <p className="text-xs text-text-secondary">{t('biweekly_payment')}</p>
                       <p className="font-semibold text-primary">${kueskiLoan.payment_amount}</p>
                     </div>
                   </div>
@@ -103,14 +106,14 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <DollarSign className="h-5 w-5 text-primary" />
-                Ingreso Principal
+                {t('monthly_income')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="ingreso-principal">
-                    ¿Cuál es tu ingreso mensual principal? (USD)
+                    {t('monthly_income_question')}
                   </Label>
                   <Input
                     id="ingreso-principal"
@@ -121,7 +124,7 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
                     className="text-lg"
                   />
                   <p className="text-sm text-text-secondary mt-2">
-                    Incluye salario, freelance, negocio, etc.
+                    {t('monthly_income_help')}
                   </p>
                 </div>
               </div>
@@ -132,15 +135,15 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <TrendingUp className="h-5 w-5 text-secondary" />
-                Ingresos Adicionales
-                <Badge variant="secondary" className="ml-2">Opcional</Badge>
+                {t('additional_income')}
+                <Badge variant="secondary" className="ml-2">{t('optional')}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="ingresos-extras">
-                    Ingresos extras o variables (USD)
+                    {t('additional_income_question')}
                   </Label>
                   <Input
                     id="ingresos-extras"
@@ -151,7 +154,7 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
                     className="text-lg"
                   />
                   <p className="text-sm text-text-secondary mt-2">
-                    Trabajos de medio tiempo, comisiones, rentas, etc.
+                    {t('additional_income_help')}
                   </p>
                 </div>
               </div>
@@ -162,7 +165,7 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-sm text-text-secondary mb-1">Total de ingresos mensuales</p>
+                  <p className="text-sm text-text-secondary mb-1">{t('total_monthly_income')}</p>
                   <p className="text-2xl font-bold text-primary">
                     ${totalIngresos.toLocaleString()} USD
                   </p>
@@ -178,14 +181,14 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
             onClick={onBack}
             className="px-8"
           >
-            Atrás
+            {t('back')}
           </Button>
           <Button
             onClick={handleNext}
             disabled={!montoPrincipal || parseFloat(montoPrincipal) <= 0}
             className="px-8 bg-gradient-to-r from-primary to-primary/90"
           >
-            Continuar
+            {t('continue')}
           </Button>
         </div>
       </div>

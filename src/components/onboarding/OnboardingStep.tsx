@@ -2,6 +2,8 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { LanguageToggle } from '@/components/shared/LanguageToggle'
 
 interface OnboardingStepProps {
   currentStep: number
@@ -25,11 +27,16 @@ const OnboardingStep: React.FC<OnboardingStepProps> = ({
   onNext,
   onBack,
   canProceed,
-  nextButtonText = "Continuar",
+  nextButtonText,
   isLoading = false
 }) => {
+  const { t } = useLanguage()
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex flex-col relative">
+      {/* Language Toggle */}
+      <LanguageToggle variant="onboarding" />
+      
       {/* Header */}
       <div className="flex items-center justify-between p-6">
         <button 
@@ -40,7 +47,7 @@ const OnboardingStep: React.FC<OnboardingStepProps> = ({
           <ArrowLeft className="h-6 w-6 text-gray-600" />
         </button>
         <div className="text-sm font-medium text-gray-600">
-          Paso {currentStep + 1} de {totalSteps}
+          {t('step')} {currentStep + 1} {t('of')} {totalSteps}
         </div>
       </div>
 
@@ -84,7 +91,7 @@ const OnboardingStep: React.FC<OnboardingStepProps> = ({
               </div>
             ) : (
               <div className="flex items-center justify-center">
-                {currentStep === totalSteps - 1 ? 'Ir al Dashboard' : nextButtonText}
+                {currentStep === totalSteps - 1 ? 'Ir al Dashboard' : (nextButtonText || t('continue'))}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </div>
             )}
