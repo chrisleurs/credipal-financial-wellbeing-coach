@@ -1,8 +1,7 @@
-
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '@/integrations/supabase/client'
-import type { FinancialData, AIPlan, ActionTask, Debt, AIGeneratedPlan } from '@/types'
+import type { FinancialData, ActionTask, Debt, AIGeneratedPlan } from '@/types'
 
 interface FinancialPlan {
   id?: string;
@@ -15,10 +14,9 @@ interface FinancialStore {
   // Data
   currentStep: number
   financialData: FinancialData
-  aiPlan: AIPlan | null
   actionTasks: ActionTask[]
   
-  // New: Financial Plan state
+  // Unified Financial Plan state using AIGeneratedPlan
   currentFinancialPlan: FinancialPlan | null
   planGenerationStatus: 'idle' | 'generating' | 'success' | 'error'
   
@@ -43,10 +41,9 @@ interface FinancialStore {
   loadOnboardingProgress: () => Promise<void>
   
   // Dashboard Actions
-  generateAIPlan: () => Promise<void>
   generateActionPlan: () => Promise<void>
   
-  // New: Financial Plan Actions
+  // Financial Plan Actions using unified types
   setCurrentFinancialPlan: (plan: FinancialPlan | null) => void
   setPlanGenerationStatus: (status: 'idle' | 'generating' | 'success' | 'error') => void
   updateGoalProgress: (goalId: string, progress: number) => void
@@ -78,7 +75,6 @@ export const useFinancialStore = create<FinancialStore>()(
       // Initial state
       currentStep: 0,
       financialData: initialFinancialData,
-      aiPlan: null,
       actionTasks: [],
       currentFinancialPlan: null,
       planGenerationStatus: 'idle',
@@ -229,45 +225,6 @@ export const useFinancialStore = create<FinancialStore>()(
         }
       },
 
-      // Dashboard actions
-      generateAIPlan: async () => {
-        set({ isLoading: true, error: null })
-        try {
-          await new Promise(resolve => setTimeout(resolve, 3000))
-          
-          const { financialData } = get()
-          const balance = financialData.monthlyIncome + financialData.extraIncome - financialData.monthlyExpenses
-          
-          const mockPlan: AIPlan = {
-            id: Date.now().toString(),
-            recommendations: [
-              'Crea un presupuesto 50/30/20: 50% gastos esenciales, 30% gastos personales, 20% ahorros',
-              'Establece un fondo de emergencia equivalente a 3-6 meses de gastos',
-              'Paga primero las deudas con mayor tasa de interés',
-              'Automatiza tus ahorros para que se transfieran automáticamente',
-              'Revisa tus gastos mensuales para identificar áreas de mejora'
-            ],
-            monthlyBalance: balance,
-            savingsSuggestion: Math.max(balance * 0.2, 0),
-            budgetBreakdown: {
-              fixedExpenses: financialData.monthlyExpenses * 0.6,
-              variableExpenses: financialData.monthlyExpenses * 0.4,
-              savings: Math.max(balance * 0.2, 0),
-              emergency: Math.max(balance * 0.1, 0)
-            },
-            timeEstimate: '6-12 meses para ver resultados significativos',
-            motivationalMessage: '¡Estás en el camino correcto! Con disciplina y estos ajustes, mejorarás tu situación financiera.',
-            createdAt: new Date().toISOString()
-          }
-          
-          set({ aiPlan: mockPlan })
-        } catch (error) {
-          set({ error: 'Error generando tu plan financiero. Intenta nuevamente.' })
-        } finally {
-          set({ isLoading: false })
-        }
-      },
-
       generateActionPlan: async () => {
         set({ isLoading: true, error: null })
         try {
@@ -301,7 +258,6 @@ export const useFinancialStore = create<FinancialStore>()(
         }
       },
 
-      // New: Financial Plan Actions
       setCurrentFinancialPlan: (plan) => set({ currentFinancialPlan: plan }),
       
       setPlanGenerationStatus: (status) => set({ planGenerationStatus: status }),
@@ -310,11 +266,19 @@ export const useFinancialStore = create<FinancialStore>()(
         set((state) => {
           if (!state.currentFinancialPlan) return state;
           
+          // Update goal progress in all goal arrays
+          const updateGoals = (goals: any[]) => 
+            goals.map(goal => 
+              goal.id === goalId ? { ...goal, progress, currentAmount: goal.targetAmount * (progress / 100) } : goal
+            );
+          
           const updatedPlan = {
             ...state.currentFinancialPlan,
             data: {
               ...state.currentFinancialPlan.data,
-              // Update specific goal progress logic would go here
+              shortTermGoals: updateGoals(state.currentFinancialPlan.data.shortTermGoals),
+              mediumTermGoals: updateGoals(state.currentFinancialPlan.data.mediumTermGoals),
+              longTermGoals: updateGoals(state.currentFinancialPlan.data.longTermGoals)
             }
           };
           
@@ -344,7 +308,6 @@ export const useFinancialStore = create<FinancialStore>()(
       reset: () => set({
         currentStep: 0,
         financialData: initialFinancialData,
-        aiPlan: null,
         actionTasks: [],
         currentFinancialPlan: null,
         planGenerationStatus: 'idle',

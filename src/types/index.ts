@@ -29,7 +29,7 @@ export interface Debt {
   estimatedPayoffDate?: string
 }
 
-// FIXED: Goal interface with all required properties
+// FIXED: Complete Goal interface with all required properties
 export interface Goal {
   id: string
   title: string
@@ -42,9 +42,10 @@ export interface Goal {
   actionSteps?: string[]
   reason?: string
   celebrationMessage?: string
+  progress?: number
 }
 
-// FIXED: Complete AIGeneratedPlan interface with goal arrays
+// FIXED: Complete and unified AIGeneratedPlan interface - SINGLE SOURCE OF TRUTH
 export interface AIGeneratedPlan {
   shortTermGoals: Goal[]
   mediumTermGoals: Goal[]
@@ -67,21 +68,7 @@ export interface AIGeneratedPlan {
   }
 }
 
-export interface AIPlan {
-  id: string
-  recommendations: string[]
-  monthlyBalance: number
-  savingsSuggestion: number
-  budgetBreakdown: {
-    fixedExpenses: number
-    variableExpenses: number
-    savings: number
-    emergency: number
-  }
-  timeEstimate: string
-  motivationalMessage: string
-  createdAt: string
-}
+// REMOVED: AIPlan interface - eliminated to avoid confusion, use AIGeneratedPlan instead
 
 export interface ActionTask {
   id: string

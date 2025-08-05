@@ -29,100 +29,6 @@ const checkRateLimit = (): boolean => {
   return true;
 };
 
-// FIXED: Enhanced createFallbackPlan to return proper AIGeneratedPlan structure
-const createFallbackPlan = (data: FinancialData): AIGeneratedPlan => {
-  const totalIncome = (data.monthlyIncome || 0) + (data.extraIncome || 0);
-  const monthlyBalance = totalIncome - (data.monthlyExpenses || 0);
-  const savingsSuggestion = Math.max(monthlyBalance * 0.2, 0);
-
-  const shortTermGoals: Goal[] = [
-    {
-      id: 'short-1',
-      title: 'Crear Fondo de Emergencia Básico',
-      description: 'Ahorrar $500 para imprevistos menores',
-      targetAmount: 500,
-      currentAmount: 0,
-      deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      priority: 'high',
-      status: 'pending',
-      actionSteps: [
-        'Abrir cuenta de ahorros separada',
-        'Programar transferencia automática de $50 semanal'
-      ]
-    },
-    {
-      id: 'short-2',
-      title: 'Optimizar Gastos Variables',
-      description: 'Reducir gastos no esenciales en $200/mes',
-      targetAmount: 200,
-      currentAmount: 0,
-      deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-      priority: 'medium',
-      status: 'pending',
-      actionSteps: [
-        'Revisar suscripciones y cancelar las no usadas',
-        'Buscar alternativas más económicas para servicios'
-      ]
-    }
-  ];
-
-  const mediumTermGoals: Goal[] = [
-    {
-      id: 'medium-1',
-      title: 'Fondo de Emergencia Completo',
-      description: 'Ahorrar 3 meses de gastos para emergencias',
-      targetAmount: data.monthlyExpenses * 3,
-      currentAmount: 0,
-      deadline: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
-      priority: 'high',
-      status: 'pending',
-      actionSteps: [
-        'Aumentar ahorro mensual gradualmente',
-        'Destinar bonos extra al fondo de emergencia'
-      ]
-    }
-  ];
-
-  const longTermGoals: Goal[] = [
-    {
-      id: 'long-1',
-      title: 'Independencia Financiera Inicial',
-      description: 'Ahorrar equivalente a 6 meses de gastos',
-      targetAmount: data.monthlyExpenses * 6,
-      currentAmount: 0,
-      deadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      priority: 'medium',
-      status: 'pending',
-      actionSteps: [
-        'Mantener disciplina de ahorro consistente',
-        'Considerar inversiones de bajo riesgo'
-      ]
-    }
-  ];
-
-  return {
-    shortTermGoals,
-    mediumTermGoals,
-    longTermGoals,
-    recommendations: [
-      'Crear un presupuesto 50/30/20 para organizar tus finanzas',
-      'Establecer transferencias automáticas para ahorros',
-      'Revisar y optimizar gastos mensuales',
-      'Construir hábitos financieros saludables paso a paso'
-    ],
-    monthlyBalance,
-    savingsSuggestion,
-    budgetBreakdown: {
-      fixedExpenses: data.monthlyExpenses * 0.6,
-      variableExpenses: data.monthlyExpenses * 0.4,
-      savings: savingsSuggestion,
-      emergency: Math.max(monthlyBalance * 0.1, 0)
-    },
-    timeEstimate: '3-6 meses para ver resultados significativos con Credi',
-    motivationalMessage: '¡Estás dando el primer paso hacia tu libertad financiera! Con pequeños cambios consistentes, verás grandes transformaciones en tu vida. Credi está aquí para guiarte en cada paso del camino.'
-  };
-};
-
 // Enhanced OpenAI service implementation using Supabase edge functions with Credi personality
 export async function generateFinancialPlan(data: FinancialData): Promise<AIGeneratedPlan> {
   console.log('🤖 Credi generando plan financiero personalizado:', data)
@@ -369,9 +275,13 @@ export async function generateQuickInsight(dashboardData: any): Promise<Financia
 export async function saveFinancialPlan(plan: AIGeneratedPlan, userId: string): Promise<void> {
   // Convert AIGeneratedPlan to JSON-compatible format for Supabase
   const planData = {
+    shortTermGoals: plan.shortTermGoals,
+    mediumTermGoals: plan.mediumTermGoals,
+    longTermGoals: plan.longTermGoals,
     budgetBreakdown: plan.budgetBreakdown,
     timeEstimate: plan.timeEstimate,
     motivationalMessage: plan.motivationalMessage,
+    analysis: plan.analysis,
     crediGenerated: true,
     version: '2.0'
   }
@@ -380,7 +290,7 @@ export async function saveFinancialPlan(plan: AIGeneratedPlan, userId: string): 
     .from('financial_plans')
     .upsert({
       user_id: userId,
-      plan_data: planData, // JSON-compatible object
+      plan_data: planData, // JSON-compatible object with all goals
       recommendations: plan.recommendations, // Array of strings is JSON-compatible
       monthly_balance: plan.monthlyBalance,
       savings_suggestion: plan.savingsSuggestion,
