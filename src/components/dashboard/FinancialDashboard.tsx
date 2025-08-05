@@ -17,7 +17,7 @@ type TimeFrame = 'week' | 'month' | 'quarter' | 'year'
 
 export const FinancialDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimeFrame>('month')
-  const { data: financialData, isLoading: isLoadingFinancial } = useFinancial()
+  const { data: financialData, isLoading: isLoadingFinancial, hasRealData } = useFinancial()
   const { expenses, isLoading: isLoadingExpenses } = useExpenses()
   const { debts, isLoadingDebts } = useDebts()
   const { kueskiLoan, activeLoans, isLoading: isLoadingLoans } = useLoans()
@@ -42,18 +42,21 @@ export const FinancialDashboard = () => {
     setSelectedPeriod(filterMap[filter] || 'month')
   }
 
-  // Calculate metrics
+  // Calculate metrics using real data
   const totalIncome = financialData?.monthly_income || 0
   const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
   const totalDebts = debts.reduce((sum, debt) => sum + Number(debt.current_balance), 0)
   const loanAmount = activeLoans.reduce((sum, loan) => sum + Number(loan.amount), 0)
   const totalObligations = totalDebts + loanAmount
 
+  // Calculate available balance
+  const availableBalance = totalIncome - totalExpenses - (totalDebts * 0.1) // Assuming 10% of debt balance as monthly payment
+
   const metrics = [
     {
       title: t('monthly_income'),
       value: `$${totalIncome.toLocaleString()}`,
-      trend: { direction: 'up' as const, percentage: '+5%' },
+      trend: { direction: 'up' as const, percentage: hasRealData ? '+5%' : 'Mock' },
       icon: TrendingUp,
       variant: 'positive' as const
     },
@@ -73,10 +76,10 @@ export const FinancialDashboard = () => {
     },
     {
       title: t('available_balance'),
-      value: `$${(totalIncome - totalExpenses - (totalDebts * 0.1)).toLocaleString()}`,
-      trend: { direction: totalIncome > totalExpenses ? 'up' as const : 'down' as const, percentage: '8%' },
+      value: `$${availableBalance.toLocaleString()}`,
+      trend: { direction: availableBalance > 0 ? 'up' as const : 'down' as const, percentage: '8%' },
       icon: PiggyBank,
-      variant: totalIncome > totalExpenses ? 'positive' as const : 'warning' as const
+      variant: availableBalance > 0 ? 'positive' as const : 'warning' as const
     }
   ]
 
@@ -92,6 +95,11 @@ export const FinancialDashboard = () => {
               </h1>
               <p className="text-text-secondary">
                 {t('financial_management')}
+                {!hasRealData && (
+                  <span className="ml-2 text-amber-600 text-sm">
+                    (Usando datos de ejemplo - Completa tu perfil financiero)
+                  </span>
+                )}
               </p>
             </div>
             <TimeFilter 
@@ -103,6 +111,21 @@ export const FinancialDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Data Status Alert */}
+        {!hasRealData && (
+          <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <div>
+                <h3 className="font-medium text-amber-800">Datos de demostración activos</h3>
+                <p className="text-sm text-amber-700">
+                  Completa tu información financiera para ver datos reales en tu dashboard.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Kueski Loan Welcome Section */}
         {kueskiLoan && (
           <div className="mb-8">
