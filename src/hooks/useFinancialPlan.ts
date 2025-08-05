@@ -5,21 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 import { generateFinancialPlan, saveFinancialPlan } from '@/services/openai';
-import type { FinancialData, AIGeneratedPlan } from '@/types';
-
-interface FinancialPlan {
-  id: string;
-  user_id: string;
-  plan_data: AIGeneratedPlan;
-  plan_type: string;
-  status: string;
-  goals: any[];
-  recommendations: string[];
-  monthly_balance: number;
-  savings_suggestion: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { FinancialData, AIGeneratedPlan, FinancialPlanRow } from '@/types';
 
 export const useFinancialPlan = () => {
   const { user } = useAuth();
@@ -29,7 +15,7 @@ export const useFinancialPlan = () => {
 
   // Fetch existing financial plan
   const {
-    data: currentPlan,
+    data: currentPlanRow,
     isLoading,
     error
   } = useQuery({
@@ -47,10 +33,25 @@ export const useFinancialPlan = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return data as FinancialPlan | null;
+      return data as FinancialPlanRow | null;
     },
     enabled: !!user,
   });
+
+  // Convert database row to AIGeneratedPlan
+  const currentPlan: AIGeneratedPlan | null = currentPlanRow ? {
+    recommendations: currentPlanRow.recommendations || [],
+    monthlyBalance: currentPlanRow.monthly_balance || 0,
+    savingsSuggestion: currentPlanRow.savings_suggestion || 0,
+    budgetBreakdown: currentPlanRow.plan_data?.budgetBreakdown || {
+      fixedExpenses: 0,
+      variableExpenses: 0,
+      savings: 0,
+      emergency: 0
+    },
+    timeEstimate: currentPlanRow.plan_data?.timeEstimate || '',
+    motivationalMessage: currentPlanRow.plan_data?.motivationalMessage || ''
+  } : null;
 
   // Generate new financial plan
   const generatePlan = async (financialData: FinancialData): Promise<AIGeneratedPlan> => {
@@ -92,16 +93,16 @@ export const useFinancialPlan = () => {
   // Update goal progress
   const updateGoalProgress = useMutation({
     mutationFn: async ({ goalId, progress }: { goalId: string; progress: number }) => {
-      if (!user || !currentPlan) return;
+      if (!user || !currentPlanRow) return;
 
-      const updatedGoals = currentPlan.goals.map(goal => 
+      const updatedGoals = currentPlanRow.goals.map(goal => 
         goal.id === goalId ? { ...goal, progress } : goal
       );
 
       const { error } = await supabase
         .from('financial_plans')
         .update({ goals: updatedGoals })
-        .eq('id', currentPlan.id);
+        .eq('id', currentPlanRow.id);
 
       if (error) throw error;
     },
@@ -115,8 +116,8 @@ export const useFinancialPlan = () => {
   });
 
   return {
-    currentPlan: currentPlan?.plan_data || null,
-    planMetadata: currentPlan,
+    currentPlan,
+    planMetadata: currentPlanRow,
     isLoading,
     isGenerating,
     error,
