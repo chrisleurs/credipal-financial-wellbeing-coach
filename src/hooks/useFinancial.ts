@@ -16,26 +16,36 @@ export const useFinancial = () => {
   const { financialDataRecord, isLoading: isLoadingFinancial } = useFinancialData();
   const { userFinancialData, isLoading: isLoadingUserFinancial } = useUserFinancialData();
 
-  // Combine and prioritize data sources
+  // Combine and prioritize data sources - FIXED to use real data
   const data = React.useMemo(() => {
-    // Priority: financial_data table first, then user_financial_data, then defaults
-    const monthlyIncome = financialDataRecord?.monthly_income || 
-                         userFinancialData?.ingresos || 
+    // Priority: user_financial_data first (from onboarding), then financial_data table, then defaults
+    const monthlyIncome = userFinancialData?.ingresos || 
+                         financialDataRecord?.monthly_income || 
                          0;
     
-    const monthlyExpenses = financialDataRecord?.monthly_expenses ||
-                           (userFinancialData?.gastos_categorizados?.reduce((sum: number, gasto: any) => 
-                             sum + (gasto.amount || 0), 0)) ||
+    const monthlyExpenses = userFinancialData?.gastos_categorizados?.reduce((sum: number, gasto: any) => 
+                             sum + (gasto.amount || 0), 0) ||
+                           financialDataRecord?.monthly_expenses ||
                            0;
 
     const currentSavings = userFinancialData?.ahorros?.actual || 0;
+    const savingsGoal = financialDataRecord?.savings_goal || userFinancialData?.ahorros?.mensual || 0;
+    const emergencyFundGoal = financialDataRecord?.emergency_fund_goal || 0;
+    
+    console.log('Real financial data loaded:', {
+      monthlyIncome,
+      monthlyExpenses,
+      currentSavings,
+      hasUserData: !!userFinancialData,
+      hasFinancialData: !!financialDataRecord
+    });
     
     return {
       monthly_income: monthlyIncome,
       monthly_expenses: monthlyExpenses,
       current_savings: currentSavings,
-      savings_goal: financialDataRecord?.savings_goal || 0,
-      emergency_fund_goal: financialDataRecord?.emergency_fund_goal || 0,
+      savings_goal: savingsGoal,
+      emergency_fund_goal: emergencyFundGoal,
     };
   }, [financialDataRecord, userFinancialData]);
 
@@ -61,8 +71,8 @@ export const useFinancial = () => {
           monthly_income: data.monthlyIncome || 0,
           monthly_expenses: data.monthlyExpenses || 0,
           monthly_balance: (data.monthlyIncome || 0) - (data.monthlyExpenses || 0),
-          savings_goal: data.currentSavings || 0, // Fixed: use currentSavings instead of savingsGoal
-          emergency_fund_goal: data.monthlySavingsCapacity || 0, // Fixed: use monthlySavingsCapacity instead of emergencyFundGoal
+          savings_goal: data.currentSavings || 0,
+          emergency_fund_goal: data.monthlySavingsCapacity || 0,
         });
 
       if (error) throw error;
@@ -89,6 +99,21 @@ export const useFinancial = () => {
     data,
     isLoading: isLoading || isLoadingFinancial || isLoadingUserFinancial,
     saveFinancialData,
-    hasRealData: !!(financialDataRecord || userFinancialData)
+    hasRealData: !!(financialDataRecord || userFinancialData),
+    // Helper to get combined financial data for AI plan generation
+    getFinancialDataForPlan: (): FinancialData => ({
+      monthlyIncome: data.monthly_income,
+      extraIncome: 0, // Could be enhanced later
+      monthlyExpenses: data.monthly_expenses,
+      expenseCategories: userFinancialData?.gastos_categorizados?.reduce((acc: Record<string, number>, gasto: any) => {
+        acc[gasto.category || 'other'] = (acc[gasto.category || 'other'] || 0) + (gasto.amount || 0);
+        return acc;
+      }, {}) || {},
+      debts: userFinancialData?.deudas || [],
+      currentSavings: data.current_savings,
+      monthlySavingsCapacity: data.savings_goal,
+      financialGoals: userFinancialData?.metas || [],
+      whatsappOptin: false // Could be enhanced later
+    })
   };
 };

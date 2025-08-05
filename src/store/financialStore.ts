@@ -2,7 +2,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '@/integrations/supabase/client'
-import type { FinancialData, AIPlan, ActionTask, Debt } from '@/types'
+import type { FinancialData, AIPlan, ActionTask, Debt, AIGeneratedPlan } from '@/types'
+
+interface FinancialPlan {
+  id?: string;
+  data: AIGeneratedPlan;
+  status: 'active' | 'completed' | 'archived';
+  createdAt: string;
+}
 
 interface FinancialStore {
   // Data
@@ -10,6 +17,10 @@ interface FinancialStore {
   financialData: FinancialData
   aiPlan: AIPlan | null
   actionTasks: ActionTask[]
+  
+  // New: Financial Plan state
+  currentFinancialPlan: FinancialPlan | null
+  planGenerationStatus: 'idle' | 'generating' | 'success' | 'error'
   
   // States
   isLoading: boolean
@@ -27,13 +38,19 @@ interface FinancialStore {
   setWhatsAppOptIn: (optin: boolean) => void
   completeOnboarding: () => void
   
-  // New persistence actions
+  // Persistence actions
   saveOnboardingProgress: () => Promise<void>
   loadOnboardingProgress: () => Promise<void>
   
   // Dashboard Actions
   generateAIPlan: () => Promise<void>
   generateActionPlan: () => Promise<void>
+  
+  // New: Financial Plan Actions
+  setCurrentFinancialPlan: (plan: FinancialPlan | null) => void
+  setPlanGenerationStatus: (status: 'idle' | 'generating' | 'success' | 'error') => void
+  updateGoalProgress: (goalId: string, progress: number) => void
+  
   addExpense: (name: string, amount: number) => void
   loadFromSupabase: () => Promise<void>
   
@@ -58,11 +75,13 @@ const initialFinancialData: FinancialData = {
 export const useFinancialStore = create<FinancialStore>()(
   persist(
     (set, get) => ({
-      // Initial state - completely fresh after database cleanup
+      // Initial state
       currentStep: 0,
       financialData: initialFinancialData,
       aiPlan: null,
       actionTasks: [],
+      currentFinancialPlan: null,
+      planGenerationStatus: 'idle',
       isLoading: false,
       isOnboardingComplete: false,
       error: null,
@@ -70,7 +89,6 @@ export const useFinancialStore = create<FinancialStore>()(
       // Onboarding actions
       setCurrentStep: (step) => {
         set({ currentStep: step })
-        // Auto-save progress when step changes
         const store = get()
         store.saveOnboardingProgress()
       },
@@ -79,7 +97,6 @@ export const useFinancialStore = create<FinancialStore>()(
         set((state) => ({
           financialData: { ...state.financialData, ...data }
         }))
-        // Auto-save progress when data changes
         const store = get()
         store.saveOnboardingProgress()
       },
@@ -142,9 +159,8 @@ export const useFinancialStore = create<FinancialStore>()(
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) return
 
-          console.log('Saving onboarding progress to clean database:', { currentStep, financialData })
+          console.log('Saving onboarding progress:', { currentStep, financialData })
 
-          // Convert FinancialData to a plain object that matches Json type
           const financialDataJson = JSON.parse(JSON.stringify(financialData))
 
           await supabase
@@ -158,7 +174,7 @@ export const useFinancialStore = create<FinancialStore>()(
               last_name: user.user_metadata?.last_name || null
             })
 
-          console.log('Progress saved successfully to clean database')
+          console.log('Progress saved successfully')
         } catch (error) {
           console.error('Error saving onboarding progress:', error)
         }
@@ -169,7 +185,7 @@ export const useFinancialStore = create<FinancialStore>()(
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) return
 
-          console.log('Loading onboarding progress from clean database for user:', user.id)
+          console.log('Loading onboarding progress for user:', user.id)
 
           const { data, error } = await supabase
             .from('profiles')
@@ -183,12 +199,10 @@ export const useFinancialStore = create<FinancialStore>()(
           }
 
           if (data) {
-            console.log('Loaded progress from clean database:', data)
+            console.log('Loaded progress:', data)
             
-            // Since database was cleaned, all users start fresh
             if (data.onboarding_completed) {
-              console.log('User had completed onboarding before cleanup, resetting to start fresh')
-              // Reset to start fresh after cleanup
+              console.log('User completed onboarding, resetting to start fresh')
               set({ 
                 currentStep: 0,
                 financialData: initialFinancialData,
@@ -197,20 +211,18 @@ export const useFinancialStore = create<FinancialStore>()(
               return
             }
 
-            // Load any existing progress
             if (data.onboarding_step && data.onboarding_step > 0) {
               set({ currentStep: data.onboarding_step })
             }
 
-            // Safely handle onboarding_data 
             if (data.onboarding_data && typeof data.onboarding_data === 'object' && Object.keys(data.onboarding_data).length > 0) {
               const savedData = data.onboarding_data as unknown as Partial<FinancialData>
               set({ financialData: { ...initialFinancialData, ...savedData } })
             }
 
-            console.log('Progress restored successfully from clean database')
+            console.log('Progress restored successfully')
           } else {
-            console.log('No existing profile found in clean database - user will start fresh')
+            console.log('No existing profile found - user will start fresh')
           }
         } catch (error) {
           console.error('Error loading onboarding progress:', error)
@@ -289,8 +301,29 @@ export const useFinancialStore = create<FinancialStore>()(
         }
       },
 
+      // New: Financial Plan Actions
+      setCurrentFinancialPlan: (plan) => set({ currentFinancialPlan: plan }),
+      
+      setPlanGenerationStatus: (status) => set({ planGenerationStatus: status }),
+      
+      updateGoalProgress: (goalId, progress) => {
+        set((state) => {
+          if (!state.currentFinancialPlan) return state;
+          
+          const updatedPlan = {
+            ...state.currentFinancialPlan,
+            data: {
+              ...state.currentFinancialPlan.data,
+              // Update specific goal progress logic would go here
+            }
+          };
+          
+          return { currentFinancialPlan: updatedPlan };
+        });
+      },
+
       loadFromSupabase: async () => {
-        console.log('Loading from clean Supabase database...')
+        console.log('Loading from Supabase database...')
       },
 
       addExpense: (name, amount) => {
@@ -313,6 +346,8 @@ export const useFinancialStore = create<FinancialStore>()(
         financialData: initialFinancialData,
         aiPlan: null,
         actionTasks: [],
+        currentFinancialPlan: null,
+        planGenerationStatus: 'idle',
         isLoading: false,
         isOnboardingComplete: false,
         error: null
