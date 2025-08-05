@@ -92,14 +92,21 @@ export interface FinancialInsight {
   actionable: boolean;
 }
 
-// Function to save generated plan to Supabase
+// Function to save generated plan to Supabase - FIXED TYPE COMPATIBILITY
 export async function saveFinancialPlan(plan: AIGeneratedPlan, userId: string): Promise<void> {
+  // Convert AIGeneratedPlan to JSON-compatible format for Supabase
+  const planData = {
+    budgetBreakdown: plan.budgetBreakdown,
+    timeEstimate: plan.timeEstimate,
+    motivationalMessage: plan.motivationalMessage
+  }
+
   const { error } = await supabase
     .from('financial_plans')
     .upsert({
       user_id: userId,
-      plan_data: plan,
-      recommendations: plan.recommendations,
+      plan_data: planData, // JSON-compatible object
+      recommendations: plan.recommendations, // Array of strings is JSON-compatible
       monthly_balance: plan.monthlyBalance,
       savings_suggestion: plan.savingsSuggestion,
       status: 'active'

@@ -38,19 +38,19 @@ export const useFinancialPlan = () => {
     enabled: !!user,
   });
 
-  // Convert database row to AIGeneratedPlan
+  // Convert database row to AIGeneratedPlan - FIXED TYPE MAPPING
   const currentPlan: AIGeneratedPlan | null = currentPlanRow ? {
-    recommendations: currentPlanRow.recommendations || [],
+    recommendations: Array.isArray(currentPlanRow.recommendations) ? currentPlanRow.recommendations : [],
     monthlyBalance: currentPlanRow.monthly_balance || 0,
     savingsSuggestion: currentPlanRow.savings_suggestion || 0,
-    budgetBreakdown: currentPlanRow.plan_data?.budgetBreakdown || {
+    budgetBreakdown: (currentPlanRow.plan_data as any)?.budgetBreakdown || {
       fixedExpenses: 0,
       variableExpenses: 0,
       savings: 0,
       emergency: 0
     },
-    timeEstimate: currentPlanRow.plan_data?.timeEstimate || '',
-    motivationalMessage: currentPlanRow.plan_data?.motivationalMessage || ''
+    timeEstimate: (currentPlanRow.plan_data as any)?.timeEstimate || '',
+    motivationalMessage: (currentPlanRow.plan_data as any)?.motivationalMessage || ''
   } : null;
 
   // Generate new financial plan
@@ -95,7 +95,9 @@ export const useFinancialPlan = () => {
     mutationFn: async ({ goalId, progress }: { goalId: string; progress: number }) => {
       if (!user || !currentPlanRow) return;
 
-      const updatedGoals = currentPlanRow.goals.map(goal => 
+      // Safely handle goals as any[] from JSONB
+      const currentGoals = Array.isArray(currentPlanRow.goals) ? currentPlanRow.goals : [];
+      const updatedGoals = currentGoals.map((goal: any) => 
         goal.id === goalId ? { ...goal, progress } : goal
       );
 

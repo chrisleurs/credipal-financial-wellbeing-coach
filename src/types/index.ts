@@ -29,6 +29,7 @@ export interface Debt {
   estimatedPayoffDate?: string
 }
 
+// FIXED: JSON-compatible AIGeneratedPlan interface
 export interface AIGeneratedPlan {
   recommendations: string[]
   monthlyBalance: number
@@ -74,15 +75,15 @@ export interface ActionPlan {
   whatsappReminders: boolean
 }
 
-// Database row interface matching Supabase schema
+// FIXED: Database row interface with proper typing for JSONB fields
 export interface FinancialPlanRow {
   id: string
   user_id: string
-  plan_data: any // JSONB from database
+  plan_data: Record<string, any> | null // JSONB from database - properly typed
   plan_type: string
   status: string
-  goals: any[] // JSONB from database
-  recommendations: string[]
+  goals: any[] | null // JSONB from database - properly typed
+  recommendations: string[] | null // JSONB as string array
   monthly_balance: number
   savings_suggestion: number
   created_at: string
