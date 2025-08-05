@@ -38,8 +38,17 @@ export const useFinancialPlan = () => {
     enabled: !!user,
   });
 
-  // Convert database row to AIGeneratedPlan - FIXED TYPE MAPPING
+  // Convert database row to AIGeneratedPlan
   const currentPlan: AIGeneratedPlan | null = currentPlanRow ? {
+    shortTermGoals: Array.isArray((currentPlanRow.plan_data as any)?.shortTermGoals) 
+      ? (currentPlanRow.plan_data as any).shortTermGoals 
+      : [],
+    mediumTermGoals: Array.isArray((currentPlanRow.plan_data as any)?.mediumTermGoals) 
+      ? (currentPlanRow.plan_data as any).mediumTermGoals 
+      : [],
+    longTermGoals: Array.isArray((currentPlanRow.plan_data as any)?.longTermGoals) 
+      ? (currentPlanRow.plan_data as any).longTermGoals 
+      : [],
     recommendations: Array.isArray(currentPlanRow.recommendations) ? currentPlanRow.recommendations : [],
     monthlyBalance: currentPlanRow.monthly_balance || 0,
     savingsSuggestion: currentPlanRow.savings_suggestion || 0,
@@ -50,7 +59,8 @@ export const useFinancialPlan = () => {
       emergency: 0
     },
     timeEstimate: (currentPlanRow.plan_data as any)?.timeEstimate || '',
-    motivationalMessage: (currentPlanRow.plan_data as any)?.motivationalMessage || ''
+    motivationalMessage: (currentPlanRow.plan_data as any)?.motivationalMessage || '',
+    analysis: (currentPlanRow.plan_data as any)?.analysis
   } : null;
 
   // Generate new financial plan
