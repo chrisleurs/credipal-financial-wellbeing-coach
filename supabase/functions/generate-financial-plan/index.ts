@@ -16,9 +16,9 @@ serve(async (req) => {
   }
 
   try {
-    const { financialData } = await req.json();
+    const { financialData, crediPrompt, useCrediPersonality } = await req.json();
     
-    console.log('Generating financial plan for:', financialData);
+    console.log('Generating financial plan with Credi personality:', !!useCrediPersonality);
 
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
@@ -38,7 +38,8 @@ serve(async (req) => {
       }).format(amount);
     };
 
-    const prompt = `
+    // Use Credi's structured prompt if provided, otherwise use the original prompt
+    const prompt = crediPrompt || `
 Eres un asesor financiero experto. Analiza la siguiente información financiera y genera un plan personalizado en español:
 
 INFORMACIÓN FINANCIERA:
@@ -77,6 +78,10 @@ Responde en formato JSON con esta estructura:
   "motivationalMessage": "texto"
 }`;
 
+    const systemPrompt = useCrediPersonality ? 
+      'Eres Credi, el asesor financiero empático y motivador de Credipal. Tu misión es crear planes financieros que conecten emocionalmente con los usuarios usando la metodología 3-2-1.' :
+      'Eres un asesor financiero experto especializado en finanzas personales para el mercado americano usando USD. Proporciona consejos prácticos y realistas.';
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -86,14 +91,11 @@ Responde en formato JSON con esta estructura:
       body: JSON.stringify({
         model: 'gpt-4.1-2025-04-14',
         messages: [
-          { 
-            role: 'system', 
-            content: 'Eres un asesor financiero experto especializado en finanzas personales para el mercado americano usando USD. Proporciona consejos prácticos y realistas.' 
-          },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
-        max_tokens: 1500,
+        temperature: useCrediPersonality ? 0.8 : 0.7,
+        max_tokens: 2000,
       }),
     });
 
@@ -104,7 +106,7 @@ Responde en formato JSON con esta estructura:
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
     
-    console.log('OpenAI response:', aiResponse);
+    console.log('OpenAI response received, processing...');
 
     // Parse the JSON response from OpenAI
     let financialPlan;
@@ -114,9 +116,16 @@ Responde en formato JSON con esta estructura:
       financialPlan = JSON.parse(cleanedResponse);
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
-      // Fallback plan if parsing fails
+      
+      // Enhanced fallback plan with Credi personality
+      const isCredi = useCrediPersonality;
       financialPlan = {
-        recommendations: [
+        recommendations: isCredi ? [
+          'Crear tu "Fondo de Tranquilidad" - pequeños ahorros que te den paz mental',
+          'Automatizar $50-100 mensuales hacia tus sueños más importantes',
+          'Revisar y optimizar 2-3 gastos variables para liberar dinero',
+          'Establecer check-ins semanales de 15 minutos para celebrar tu progreso'
+        ] : [
           'Crear un presupuesto detallado de ingresos y gastos',
           'Establecer un fondo de emergencia',
           'Revisar y optimizar gastos variables',
@@ -129,13 +138,21 @@ Responde en formato JSON con esta estructura:
           savings: Math.max(0, monthlyBalance * 0.2),
           emergency: totalExpenses * 3
         },
-        timeEstimate: '6-12 meses para ver resultados',
-        motivationalMessage: '¡Cada paso cuenta hacia tu libertad financiera!'
+        timeEstimate: isCredi ? '3-6 meses para ver cambios que transformarán tu relación con el dinero' : '6-12 meses para ver resultados',
+        motivationalMessage: isCredi ? 
+          '¡Tu decisión de tomar control de tus finanzas es el primer paso hacia la libertad que mereces! Cada pequeña acción que tomes ahora construye el futuro próspero que imaginas. Confío completamente en tu capacidad de lograr tus sueños financieros.' :
+          '¡Cada paso cuenta hacia tu libertad financiera!'
       };
     }
 
     // Add calculated monthly balance
     financialPlan.monthlyBalance = monthlyBalance;
+    
+    // Add Credi metadata if using Credi personality
+    if (useCrediPersonality) {
+      financialPlan.crediGenerated = true;
+      financialPlan.personalityVersion = '2.0';
+    }
 
     return new Response(JSON.stringify(financialPlan), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
