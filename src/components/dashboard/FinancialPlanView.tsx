@@ -28,6 +28,11 @@ export const FinancialPlanView: React.FC<FinancialPlanViewProps> = ({
   const currentSavings = financialData?.current_savings || 0;
   const balance = totalIncome - totalExpenses;
 
+  // FIXED: Proper progress update handler
+  const handleGoalProgressUpdate = (goalId: string, progress: number) => {
+    updateGoalProgress({ goalId, progress });
+  };
+
   return (
     <div className={`space-y-8 ${className}`}>
       {/* Header with motivational message */}
@@ -91,11 +96,11 @@ export const FinancialPlanView: React.FC<FinancialPlanViewProps> = ({
             <Badge variant="secondary">1-3 meses</Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plan.shortTermGoals.map((goal, index) => (
+            {plan.shortTermGoals.map((goal) => (
               <GoalCard
-                key={`short-${index}`}
+                key={goal.id}
                 goal={goal}
-                onUpdateProgress={updateGoalProgress}
+                onUpdateProgress={handleGoalProgressUpdate}
                 variant="short"
               />
             ))}
@@ -112,11 +117,11 @@ export const FinancialPlanView: React.FC<FinancialPlanViewProps> = ({
             <Badge variant="secondary">3-12 meses</Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {plan.mediumTermGoals.map((goal, index) => (
+            {plan.mediumTermGoals.map((goal) => (
               <GoalCard
-                key={`medium-${index}`}
+                key={goal.id}
                 goal={goal}
-                onUpdateProgress={updateGoalProgress}
+                onUpdateProgress={handleGoalProgressUpdate}
                 variant="medium"
               />
             ))}
@@ -133,11 +138,11 @@ export const FinancialPlanView: React.FC<FinancialPlanViewProps> = ({
             <Badge variant="secondary">12+ meses</Badge>
           </div>
           <div className="max-w-2xl">
-            {plan.longTermGoals.map((goal, index) => (
+            {plan.longTermGoals.map((goal) => (
               <GoalCard
-                key={`long-${index}`}
+                key={goal.id}
                 goal={goal}
-                onUpdateProgress={updateGoalProgress}
+                onUpdateProgress={handleGoalProgressUpdate}
                 variant="long"
                 prominent
               />

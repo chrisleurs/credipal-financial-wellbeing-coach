@@ -50,10 +50,10 @@ export const CrediWidget: React.FC<CrediWidgetProps> = ({
     }
   };
 
+  // FIXED: Calculate plan progress using proper goal arrays
   const getPlanProgress = () => {
     if (!currentPlan) return 0;
     
-    // Calculate overall progress based on goals (simplified)
     const allGoals = [
       ...(currentPlan.shortTermGoals || []),
       ...(currentPlan.mediumTermGoals || []),
@@ -70,6 +70,14 @@ export const CrediWidget: React.FC<CrediWidgetProps> = ({
     }, 0);
     
     return Math.round(totalProgress / allGoals.length);
+  };
+
+  // FIXED: Count total goals properly
+  const getTotalGoals = () => {
+    if (!currentPlan) return 0;
+    return (currentPlan.shortTermGoals?.length || 0) + 
+           (currentPlan.mediumTermGoals?.length || 0) + 
+           (currentPlan.longTermGoals?.length || 0);
   };
 
   if (isLoading) {
@@ -163,11 +171,7 @@ export const CrediWidget: React.FC<CrediWidgetProps> = ({
                 />
                 <div className="flex justify-between text-xs text-green-600">
                   <span>{getPlanProgress()}% completado</span>
-                  <span>
-                    {currentPlan.shortTermGoals?.length || 0 + 
-                     currentPlan.mediumTermGoals?.length || 0 + 
-                     currentPlan.longTermGoals?.length || 0} metas
-                  </span>
+                  <span>{getTotalGoals()} metas</span>
                 </div>
               </div>
 

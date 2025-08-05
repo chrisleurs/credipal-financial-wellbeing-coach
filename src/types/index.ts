@@ -15,7 +15,7 @@ export interface FinancialData {
   debts: Debt[]
   currentSavings: number
   monthlySavingsCapacity: number
-  financialGoals: string[] // Array simple de strings
+  financialGoals: string[]
   whatsappOptin: boolean
 }
 
@@ -29,8 +29,26 @@ export interface Debt {
   estimatedPayoffDate?: string
 }
 
-// FIXED: JSON-compatible AIGeneratedPlan interface
+// FIXED: Goal interface with all required properties
+export interface Goal {
+  id: string
+  title: string
+  description: string
+  targetAmount: number
+  currentAmount?: number
+  deadline: string
+  priority: 'high' | 'medium' | 'low'
+  status: 'pending' | 'in_progress' | 'completed'
+  actionSteps?: string[]
+  reason?: string
+  celebrationMessage?: string
+}
+
+// FIXED: Complete AIGeneratedPlan interface with goal arrays
 export interface AIGeneratedPlan {
+  shortTermGoals: Goal[]
+  mediumTermGoals: Goal[]
+  longTermGoals: Goal[]
   recommendations: string[]
   monthlyBalance: number
   savingsSuggestion: number
@@ -42,6 +60,11 @@ export interface AIGeneratedPlan {
   }
   timeEstimate: string
   motivationalMessage: string
+  analysis?: {
+    positives: string[]
+    concerns: string[]
+    quickWins: string[]
+  }
 }
 
 export interface AIPlan {
@@ -75,15 +98,15 @@ export interface ActionPlan {
   whatsappReminders: boolean
 }
 
-// FIXED: Database row interface with proper typing for JSONB fields
+// Database row interface with proper typing for JSONB fields
 export interface FinancialPlanRow {
   id: string
   user_id: string
-  plan_data: Record<string, any> | null // JSONB from database - properly typed
+  plan_data: Record<string, any> | null
   plan_type: string
   status: string
-  goals: any[] | null // JSONB from database - properly typed
-  recommendations: string[] | null // JSONB as string array
+  goals: any[] | null
+  recommendations: string[] | null
   monthly_balance: number
   savings_suggestion: number
   created_at: string
