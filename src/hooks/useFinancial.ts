@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { useFinancialData } from './useFinancialData';
 import { useUserFinancialData } from './useUserFinancialData';
 import { FinancialData } from '@/types';
@@ -60,8 +61,8 @@ export const useFinancial = () => {
           monthly_income: data.monthlyIncome || 0,
           monthly_expenses: data.monthlyExpenses || 0,
           monthly_balance: (data.monthlyIncome || 0) - (data.monthlyExpenses || 0),
-          savings_goal: data.savingsGoal || 0,
-          emergency_fund_goal: data.emergencyFundGoal || 0,
+          savings_goal: data.currentSavings || 0, // Fixed: use currentSavings instead of savingsGoal
+          emergency_fund_goal: data.monthlySavingsCapacity || 0, // Fixed: use monthlySavingsCapacity instead of emergencyFundGoal
         });
 
       if (error) throw error;
