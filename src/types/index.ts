@@ -15,7 +15,7 @@ export interface FinancialData {
   debts: Debt[]
   currentSavings: number
   monthlySavingsCapacity: number
-  financialGoals: string[]
+  financialGoals: string[] // Array simple de strings
   whatsappOptin: boolean
 }
 
@@ -29,27 +29,8 @@ export interface Debt {
   estimatedPayoffDate?: string
 }
 
-// FIXED: Complete Goal interface with all required properties
-export interface Goal {
-  id: string
-  title: string
-  description: string
-  targetAmount: number
-  currentAmount?: number
-  deadline: string
-  priority: 'high' | 'medium' | 'low'
-  status: 'pending' | 'in_progress' | 'completed'
-  actionSteps?: string[]
-  reason?: string
-  celebrationMessage?: string
-  progress?: number
-}
-
-// FIXED: Complete and unified AIGeneratedPlan interface - SINGLE SOURCE OF TRUTH
+// FIXED: JSON-compatible AIGeneratedPlan interface
 export interface AIGeneratedPlan {
-  shortTermGoals: Goal[]
-  mediumTermGoals: Goal[]
-  longTermGoals: Goal[]
   recommendations: string[]
   monthlyBalance: number
   savingsSuggestion: number
@@ -61,14 +42,23 @@ export interface AIGeneratedPlan {
   }
   timeEstimate: string
   motivationalMessage: string
-  analysis?: {
-    positives: string[]
-    concerns: string[]
-    quickWins: string[]
-  }
 }
 
-// REMOVED: AIPlan interface - eliminated to avoid confusion, use AIGeneratedPlan instead
+export interface AIPlan {
+  id: string
+  recommendations: string[]
+  monthlyBalance: number
+  savingsSuggestion: number
+  budgetBreakdown: {
+    fixedExpenses: number
+    variableExpenses: number
+    savings: number
+    emergency: number
+  }
+  timeEstimate: string
+  motivationalMessage: string
+  createdAt: string
+}
 
 export interface ActionTask {
   id: string
@@ -85,15 +75,15 @@ export interface ActionPlan {
   whatsappReminders: boolean
 }
 
-// Database row interface with proper typing for JSONB fields
+// FIXED: Database row interface with proper typing for JSONB fields
 export interface FinancialPlanRow {
   id: string
   user_id: string
-  plan_data: Record<string, any> | null
+  plan_data: Record<string, any> | null // JSONB from database - properly typed
   plan_type: string
   status: string
-  goals: any[] | null
-  recommendations: string[] | null
+  goals: any[] | null // JSONB from database - properly typed
+  recommendations: string[] | null // JSONB as string array
   monthly_balance: number
   savings_suggestion: number
   created_at: string

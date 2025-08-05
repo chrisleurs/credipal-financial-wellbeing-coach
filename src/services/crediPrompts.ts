@@ -207,12 +207,10 @@ export const validatePlanResponse = (response: any): boolean => {
   }
 };
 
-// FIXED: Return proper AIGeneratedPlan structure with all required properties
 export const createFallbackPlan = (userData: any): any => {
   const totalIncome = (userData.monthlyIncome || 0) + (userData.extraIncome || 0);
   const monthlyBalance = totalIncome - (userData.monthlyExpenses || 0);
   const emergencyTarget = Math.max(userData.monthlyExpenses * 3, 1000);
-  const savingsSuggestion = Math.max(monthlyBalance * 0.2, 0);
   
   return {
     shortTermGoals: [
@@ -222,14 +220,12 @@ export const createFallbackPlan = (userData: any): any => {
         description: "Tener un colchón de seguridad te dará paz mental y confianza financiera",
         targetAmount: Math.min(500, monthlyBalance * 2),
         deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        currentAmount: 0,
-        priority: 'high',
-        status: 'pending',
+        currentProgress: 0,
         actionSteps: [
           "Abrir una cuenta de ahorros separada esta semana",
           `Transferir automáticamente $${Math.max(50, monthlyBalance * 0.1)} cada quincena`
         ],
-        reason: "Dormir tranquilo sabiendo que puedes manejar imprevistos"
+        emotionalWhy: "Dormir tranquilo sabiendo que puedes manejar imprevistos"
       },
       {
         id: "short_2", 
@@ -237,14 +233,12 @@ export const createFallbackPlan = (userData: any): any => {
         description: "Pequeños ajustes en gastos diarios pueden liberar dinero para tus sueños",
         targetAmount: userData.monthlyExpenses * 0.1,
         deadline: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        currentAmount: 0,
-        priority: 'medium',
-        status: 'pending',
+        currentProgress: 0,
         actionSteps: [
           "Revisar y cancelar 2 suscripciones que no uses",
           "Cocinar en casa 3 días más por semana"
         ],
-        reason: "Cada peso ahorrado es un paso hacia tus metas importantes"
+        emotionalWhy: "Cada peso ahorrado es un paso hacia tus metas importantes"
       },
       {
         id: "short_3",
@@ -252,14 +246,12 @@ export const createFallbackPlan = (userData: any): any => {
         description: "Conocer tus números te da poder y control sobre tu futuro financiero", 
         targetAmount: 0,
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        currentAmount: 0,
-        priority: 'high',
-        status: 'pending',
+        currentProgress: 0,
         actionSteps: [
           "Registrar gastos diarios durante 2 semanas",
           "Revisar progreso cada domingo por 15 minutos"
         ],
-        reason: "Ver tu progreso te mantendrá motivado y enfocado"
+        emotionalWhy: "Ver tu progreso te mantendrá motivado y enfocado"
       }
     ],
     mediumTermGoals: [
@@ -269,14 +261,12 @@ export const createFallbackPlan = (userData: any): any => {
         description: "Tener 3-6 meses de gastos te dará libertad total de decisiones",
         targetAmount: emergencyTarget,
         deadline: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        currentAmount: 0,
-        priority: 'high',
-        status: 'pending',
+        currentProgress: 0,
         actionSteps: [
           `Ahorrar $${Math.max(100, emergencyTarget / 6)} mensualmente`,
           "Destinar bonos y dinero extra directamente al fondo"
         ],
-        reason: "Libertad de tomar decisiones sin presión financiera"
+        emotionalWhy: "Libertad de tomar decisiones sin presión financiera"
       },
       {
         id: "medium_2",
@@ -284,14 +274,12 @@ export const createFallbackPlan = (userData: any): any => {
         description: "Reducir deudas te libera dinero para invertir en tus sueños",
         targetAmount: userData.debts?.reduce((sum: number, debt: any) => sum + debt.amount, 0) || 0,
         deadline: new Date(Date.now() + 270 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
-        currentAmount: 0,
-        priority: 'medium',
-        status: 'pending',
+        currentProgress: 0,
         actionSteps: [
           "Consolidar deudas con tasa más alta",
           "Pagar extra $50-100 mensual a deuda principal"
         ],
-        reason: "Cada deuda pagada es más dinero en tu bolsillo cada mes"
+        emotionalWhy: "Cada deuda pagada es más dinero en tu bolsillo cada mes"
       }
     ],
     longTermGoals: [
@@ -301,47 +289,14 @@ export const createFallbackPlan = (userData: any): any => {
         description: "Crear un futuro donde tu dinero trabaje para ti, no al revés",
         targetAmount: totalIncome * 12,
         deadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        currentAmount: 0,
-        priority: 'high',
-        status: 'pending',
+        currentProgress: 0,
         actionSteps: [
           "Aumentar ingresos a través de habilidades o side hustle",
           "Invertir 10-15% de ingresos consistentemente"
         ],
-        reason: "Despertar cada día eligiendo qué hacer, no por necesidad económica"
+        emotionalWhy: "Despertar cada día eligiendo qué hacer, no por necesidad económica"
       }
     ],
-    recommendations: [
-      'Crear un presupuesto 50/30/20 para organizar tus finanzas',
-      'Establecer un fondo de emergencia equivalente a 3-6 meses de gastos',
-      'Pagar primero las deudas con mayor tasa de interés',
-      'Automatizar ahorros para que se transfieran automáticamente',
-      'Revisar gastos mensuales para identificar áreas de mejora'
-    ],
-    monthlyBalance,
-    savingsSuggestion,
-    budgetBreakdown: {
-      fixedExpenses: userData.monthlyExpenses * 0.6,
-      variableExpenses: userData.monthlyExpenses * 0.4,
-      savings: savingsSuggestion,
-      emergency: Math.max(monthlyBalance * 0.1, 0)
-    },
-    timeEstimate: '3-6 meses para ver resultados significativos con Credi',
-    motivationalMessage: "¡Tienes todo lo necesario para transformar tu vida financiera! Cada pequeño paso que tomes hoy te acerca a la libertad y tranquilidad que mereces. Tu futuro yo te agradecerá por empezar ahora.",
-    analysis: {
-      positives: [
-        "Estás dando el primer paso hacia el control financiero",
-        "Tienes potencial para crear un balance mensual positivo"
-      ],
-      concerns: [
-        "Es importante establecer hábitos de ahorro consistentes",
-        "Revisar gastos variables puede liberar dinero extra"
-      ],
-      quickWins: [
-        "Configurar transferencias automáticas de ahorro",
-        "Cancelar suscripciones no utilizadas",
-        "Crear un sistema simple de seguimiento de gastos"
-      ]
-    }
+    motivationalMessage: "¡Tienes todo lo necesario para transformar tu vida financiera! Cada pequeño paso que tomes hoy te acerca a la libertad y tranquilidad que mereces. Tu futuro yo te agradecerá por empezar ahora."
   };
 };

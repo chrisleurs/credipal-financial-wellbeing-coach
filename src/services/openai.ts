@@ -1,4 +1,5 @@
-import type { FinancialData, AIGeneratedPlan, ActionPlan, Goal } from '@/types'
+
+import type { FinancialData, AIGeneratedPlan, ActionPlan } from '@/types'
 import { supabase } from '@/integrations/supabase/client'
 import { 
   PLAN_GENERATION_PROMPT, 
@@ -36,7 +37,8 @@ export async function generateFinancialPlan(data: FinancialData): Promise<AIGene
   // Check rate limiting
   if (!checkRateLimit()) {
     console.log('Rate limit hit, using fallback plan');
-    return createFallbackPlan(data);
+    const fallbackPlan = createFallbackPlan(data);
+    return mapPlanResponseToAIGeneratedPlan(fallbackPlan, data);
   }
   
   try {
@@ -53,72 +55,45 @@ export async function generateFinancialPlan(data: FinancialData): Promise<AIGene
     if (error) {
       console.error('Error calling Credi OpenAI function:', error)
       console.log('Falling back to Credi default plan');
-      return createFallbackPlan(data);
+      const fallbackPlan = createFallbackPlan(data);
+      return mapPlanResponseToAIGeneratedPlan(fallbackPlan, data);
     }
 
-    // Validate and map OpenAI response to AIGeneratedPlan
+    // Validate OpenAI response
     if (result && validatePlanResponse(result)) {
       console.log('✅ Valid Credi plan generated');
       return mapPlanResponseToAIGeneratedPlan(result, data);
     } else {
       console.warn('Invalid OpenAI response, using Credi fallback');
-      return createFallbackPlan(data);
+      const fallbackPlan = createFallbackPlan(data);
+      return mapPlanResponseToAIGeneratedPlan(fallbackPlan, data);
     }
 
   } catch (error) {
     console.error('Error generating Credi financial plan:', error)
     console.log('Using Credi fallback plan due to error');
-    return createFallbackPlan(data);
+    const fallbackPlan = createFallbackPlan(data);
+    return mapPlanResponseToAIGeneratedPlan(fallbackPlan, data);
   }
 }
 
-// FIXED: Map the structured plan response to proper AIGeneratedPlan format
+// Map the structured plan response to AIGeneratedPlan format
 const mapPlanResponseToAIGeneratedPlan = (planResponse: any, userData: FinancialData): AIGeneratedPlan => {
   const totalIncome = (userData.monthlyIncome || 0) + (userData.extraIncome || 0);
   const monthlyBalance = totalIncome - (userData.monthlyExpenses || 0);
   
-  // Map goals from OpenAI response or use fallback
-  const shortTermGoals: Goal[] = (planResponse.shortTermGoals || []).map((goal: any, index: number) => ({
-    id: goal.id || `short-${index}`,
-    title: goal.title || `Meta a corto plazo ${index + 1}`,
-    description: goal.description || '',
-    targetAmount: goal.targetAmount || 500,
-    currentAmount: goal.currentAmount || 0,
-    deadline: goal.deadline || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-    priority: goal.priority || 'medium',
-    status: goal.status || 'pending',
-    actionSteps: goal.actionSteps || []
-  }));
-
-  const mediumTermGoals: Goal[] = (planResponse.mediumTermGoals || []).map((goal: any, index: number) => ({
-    id: goal.id || `medium-${index}`,
-    title: goal.title || `Meta a mediano plazo ${index + 1}`,
-    description: goal.description || '',
-    targetAmount: goal.targetAmount || userData.monthlyExpenses * 3,
-    currentAmount: goal.currentAmount || 0,
-    deadline: goal.deadline || new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
-    priority: goal.priority || 'medium',
-    status: goal.status || 'pending',
-    actionSteps: goal.actionSteps || []
-  }));
-
-  const longTermGoals: Goal[] = (planResponse.longTermGoals || []).map((goal: any, index: number) => ({
-    id: goal.id || `long-${index}`,
-    title: goal.title || `Meta a largo plazo ${index + 1}`,
-    description: goal.description || '',
-    targetAmount: goal.targetAmount || userData.monthlyExpenses * 6,
-    currentAmount: goal.currentAmount || 0,
-    deadline: goal.deadline || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-    priority: goal.priority || 'medium',
-    status: goal.status || 'pending',
-    actionSteps: goal.actionSteps || []
-  }));
+  // Extract traditional recommendations from goal action steps
+  const recommendations = [
+    ...(planResponse.shortTermGoals?.slice(0, 2).map((goal: any) => 
+      `${goal.title}: ${goal.actionSteps?.[0] || goal.description}`
+    ) || []),
+    ...(planResponse.mediumTermGoals?.slice(0, 2).map((goal: any) => 
+      `${goal.title}: ${goal.actionSteps?.[0] || goal.description}`
+    ) || [])
+  ].filter(Boolean);
 
   return {
-    shortTermGoals,
-    mediumTermGoals,
-    longTermGoals,
-    recommendations: planResponse.recommendations || [
+    recommendations: recommendations.length > 0 ? recommendations : [
       'Crear un presupuesto 50/30/20 para organizar tus finanzas',
       'Establecer un fondo de emergencia equivalente a 3 meses de gastos',
       'Optimizar gastos variables para liberar dinero extra',
@@ -126,13 +101,13 @@ const mapPlanResponseToAIGeneratedPlan = (planResponse: any, userData: Financial
     ],
     monthlyBalance,
     savingsSuggestion: Math.max(monthlyBalance * 0.2, 0),
-    budgetBreakdown: planResponse.budgetBreakdown || {
+    budgetBreakdown: {
       fixedExpenses: userData.monthlyExpenses * 0.6,
       variableExpenses: userData.monthlyExpenses * 0.4,
       savings: Math.max(monthlyBalance * 0.2, 0),
       emergency: Math.max(monthlyBalance * 0.1, 0)
     },
-    timeEstimate: planResponse.timeEstimate || '3-6 meses para ver resultados significativos con Credi',
+    timeEstimate: '3-6 meses para ver resultados significativos con Credi',
     motivationalMessage: planResponse.motivationalMessage || 
       '¡Estás dando el primer paso hacia tu libertad financiera! Con pequeños cambios consistentes, verás grandes transformaciones en tu vida.'
   };
@@ -275,13 +250,9 @@ export async function generateQuickInsight(dashboardData: any): Promise<Financia
 export async function saveFinancialPlan(plan: AIGeneratedPlan, userId: string): Promise<void> {
   // Convert AIGeneratedPlan to JSON-compatible format for Supabase
   const planData = {
-    shortTermGoals: plan.shortTermGoals,
-    mediumTermGoals: plan.mediumTermGoals,
-    longTermGoals: plan.longTermGoals,
     budgetBreakdown: plan.budgetBreakdown,
     timeEstimate: plan.timeEstimate,
     motivationalMessage: plan.motivationalMessage,
-    analysis: plan.analysis,
     crediGenerated: true,
     version: '2.0'
   }
@@ -290,7 +261,7 @@ export async function saveFinancialPlan(plan: AIGeneratedPlan, userId: string): 
     .from('financial_plans')
     .upsert({
       user_id: userId,
-      plan_data: planData, // JSON-compatible object with all goals
+      plan_data: planData, // JSON-compatible object
       recommendations: plan.recommendations, // Array of strings is JSON-compatible
       monthly_balance: plan.monthlyBalance,
       savings_suggestion: plan.savingsSuggestion,
