@@ -66,6 +66,13 @@ export const useFinancialPlanGenerator = () => {
         .select('*')
         .eq('user_id', user.id)
 
+      // Cast ahorros data safely
+      let savingsAmount = 0
+      if (userFinancialData?.ahorros && typeof userFinancialData.ahorros === 'object') {
+        const ahorrosObj = userFinancialData.ahorros as any
+        savingsAmount = ahorrosObj?.actual || 0
+      }
+
       return {
         name: profile?.first_name || 'Usuario',
         monthlyIncome: financialData?.monthly_income || userFinancialData?.ingresos || 0,
@@ -73,7 +80,7 @@ export const useFinancialPlanGenerator = () => {
         monthlyBalance: financialData?.monthly_balance || 0,
         existingGoals: goals || [],
         debts: debts || [],
-        savings: userFinancialData?.ahorros?.actual || 0
+        savings: savingsAmount
       }
     } catch (error) {
       console.error('Error getting user profile:', error)
@@ -293,38 +300,43 @@ export const useFinancialPlanGenerator = () => {
     if (!user || !generatedPlan) return false
 
     try {
-      // Save to user_financial_plans
+      // Prepare plan data with proper JSON serialization
+      const planData = {
+        goals: generatedPlan.goals,
+        analysis: generatedPlan.analysis,
+        motivationalMessage: generatedPlan.motivationalMessage,
+        monthlyCapacity: generatedPlan.monthlyCapacity,
+        planType: '3-2-1',
+        version: '1.0',
+        generatedAt: new Date().toISOString()
+      }
+
+      // Save to user_financial_plans with proper casting
       const { error: planError } = await supabase
         .from('user_financial_plans')
         .upsert({
           user_id: user.id,
-          plan_data: {
-            goals: generatedPlan.goals,
-            analysis: generatedPlan.analysis,
-            motivationalMessage: generatedPlan.motivationalMessage,
-            monthlyCapacity: generatedPlan.monthlyCapacity,
-            planType: '3-2-1',
-            version: '1.0',
-            generatedAt: new Date().toISOString()
-          }
+          plan_data: planData as any // Cast to any to handle JSON type
         })
 
       if (planError) throw planError
 
-      // Update action plans
+      // Update action plans with proper casting
+      const actionsData = generatedPlan.goals.map(goal => ({
+        id: goal.id,
+        title: `Trabajar en: ${goal.title}`,
+        description: `Aportar regularmente para alcanzar $${goal.targetAmount.toLocaleString()}`,
+        priority: goal.type === 'short' ? 'high' : goal.type === 'medium' ? 'medium' : 'low',
+        dueDate: goal.deadline,
+        completed: false
+      }))
+
       const { error: actionError } = await supabase
         .from('user_action_plans')
         .upsert({
           user_id: user.id,
           status: 'plan_generated',
-          actions: generatedPlan.goals.map(goal => ({
-            id: goal.id,
-            title: `Trabajar en: ${goal.title}`,
-            description: `Aportar regularmente para alcanzar $${goal.targetAmount.toLocaleString()}`,
-            priority: goal.type === 'short' ? 'high' : goal.type === 'medium' ? 'medium' : 'low',
-            dueDate: goal.deadline,
-            completed: false
-          })),
+          actions: actionsData as any, // Cast to any to handle JSON type
           next_review_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         })
 

@@ -29,10 +29,17 @@ export const useFinancialPlan = () => {
         .eq('user_id', user.id)
         .single()
 
-      if (planData?.plan_data?.goals) {
-        // User has an active plan
-        setHasActivePlan(true)
-        setDashboardData(convertPlanToDashboard(planData.plan_data))
+      if (planData?.plan_data && typeof planData.plan_data === 'object' && planData.plan_data !== null) {
+        const planDataObj = planData.plan_data as any
+        if (planDataObj.goals) {
+          // User has an active plan
+          setHasActivePlan(true)
+          setDashboardData(convertPlanToDashboard(planDataObj))
+        } else {
+          // No active plan
+          setHasActivePlan(false)
+          setDashboardData(null)
+        }
       } else {
         // No active plan
         setHasActivePlan(false)
@@ -47,25 +54,7 @@ export const useFinancialPlan = () => {
     }
   }
 
-  const convertPlanToDatabase = (planData: any): DashboardData => {
-    const goals: FinancialGoal[] = planData.goals || []
-    
-    return {
-      greeting: getPersonalizedGreeting(),
-      motivationalMessage: planData.motivationalMessage || "¡Sigue adelante con tu plan!",
-      goals,
-      journey: generateJourney(goals),
-      crediMessage: {
-        id: Date.now().toString(),
-        text: getCrediMessage(goals),
-        timestamp: new Date().toISOString(),
-        type: 'motivational'
-      },
-      lastUpdate: new Date().toISOString()
-    }
-  }
-
-  const convertPlanToDatabase = (planData: any): DashboardData => {
+  const convertPlanToDashboard = (planData: any): DashboardData => {
     const goals: FinancialGoal[] = planData.goals || []
     
     return {
