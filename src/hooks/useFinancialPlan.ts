@@ -1,88 +1,138 @@
 
 import { useState, useEffect } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from './useAuth'
 import type { DashboardData, FinancialGoal, CrediMessage, FinancialJourney } from '@/types/financialPlan'
 
 export const useFinancialPlan = () => {
+  const { user } = useAuth()
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasActivePlan, setHasActivePlan] = useState(false)
 
   useEffect(() => {
-    // Simular carga de datos del plan financiero
-    const loadPlanData = async () => {
-      setIsLoading(true)
-      
-      // Simular API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const mockData: DashboardData = {
-        greeting: getPersonalizedGreeting(),
-        motivationalMessage: "Hoy es un gran día para acercarte a tus metas 🎯",
-        goals: [
-          {
-            id: '1',
-            type: 'short',
-            title: 'Fondo de Emergencia',
-            emoji: '🆘',
-            targetAmount: 400,
-            currentAmount: 240,
-            deadline: '2024-10-15',
-            status: 'in_progress',
-            progress: 60,
-            actionText: 'Aportar'
-          },
-          {
-            id: '2', 
-            type: 'medium',
-            title: 'Eliminar Deuda Banorte',
-            emoji: '💳',
-            targetAmount: 3200,
-            currentAmount: 800,
-            deadline: '2025-02-15',
-            status: 'in_progress',
-            progress: 25,
-            actionText: 'Pagar'
-          },
-          {
-            id: '3',
-            type: 'long',
-            title: 'Fondo para Mudanza',
-            emoji: '🏡',
-            targetAmount: 20000,
-            currentAmount: 1000,
-            deadline: '2025-08-15',
-            status: 'in_progress', 
-            progress: 5,
-            actionText: 'Ahorrar'
-          }
-        ],
-        journey: {
-          steps: [
-            { id: '1', title: 'Fondo', emoji: '🟢', status: 'in_progress' },
-            { id: '2', title: 'Deuda', emoji: '💳', status: 'in_progress' },
-            { id: '3', title: 'Mudanza', emoji: '🏡', status: 'pending' },
-            { id: '4', title: 'Libertad', emoji: '🎉', status: 'pending' }
-          ],
-          currentStep: 1
-        },
-        crediMessage: {
-          id: Date.now().toString(),
-          text: "¡Increíble! Ya llevas $240 de los $400 para tu fondo de emergencia. ¿Quieres acelerar el ritmo?",
-          timestamp: new Date().toISOString(),
-          type: 'motivational'
-        },
-        lastUpdate: new Date().toISOString()
+    if (user) {
+      loadPlanData()
+    }
+  }, [user])
+
+  const loadPlanData = async () => {
+    if (!user) return
+    
+    setIsLoading(true)
+    
+    try {
+      // Check if user has an active plan
+      const { data: planData } = await supabase
+        .from('user_financial_plans')
+        .select('plan_data')
+        .eq('user_id', user.id)
+        .single()
+
+      if (planData?.plan_data?.goals) {
+        // User has an active plan
+        setHasActivePlan(true)
+        setDashboardData(convertPlanToDashboard(planData.plan_data))
+      } else {
+        // No active plan
+        setHasActivePlan(false)
+        setDashboardData(null)
       }
-      
-      setDashboardData(mockData)
+    } catch (error) {
+      console.error('Error loading plan data:', error)
+      setHasActivePlan(false)
+      setDashboardData(null)
+    } finally {
       setIsLoading(false)
     }
+  }
 
-    loadPlanData()
-  }, [])
+  const convertPlanToDatabase = (planData: any): DashboardData => {
+    const goals: FinancialGoal[] = planData.goals || []
+    
+    return {
+      greeting: getPersonalizedGreeting(),
+      motivationalMessage: planData.motivationalMessage || "¡Sigue adelante con tu plan!",
+      goals,
+      journey: generateJourney(goals),
+      crediMessage: {
+        id: Date.now().toString(),
+        text: getCrediMessage(goals),
+        timestamp: new Date().toISOString(),
+        type: 'motivational'
+      },
+      lastUpdate: new Date().toISOString()
+    }
+  }
+
+  const convertPlanToDatabase = (planData: any): DashboardData => {
+    const goals: FinancialGoal[] = planData.goals || []
+    
+    return {
+      greeting: getPersonalizedGreeting(),
+      motivationalMessage: planData.motivationalMessage || "¡Sigue adelante con tu plan!",
+      goals,
+      journey: generateJourney(goals),
+      crediMessage: {
+        id: Date.now().toString(),
+        text: getCrediMessage(goals),
+        timestamp: new Date().toISOString(),
+        type: 'motivational'
+      },
+      lastUpdate: new Date().toISOString()
+    }
+  }
+
+  const generateJourney = (goals: FinancialGoal[]): FinancialJourney => {
+    const steps = [
+      { 
+        id: '1', 
+        title: goals[0]?.title.split(' ')[0] || 'Fondo', 
+        emoji: goals[0]?.emoji || '🟢', 
+        status: goals[0]?.progress > 0 ? 'in_progress' as const : 'pending' as const 
+      },
+      { 
+        id: '2', 
+        title: goals[1]?.title.split(' ')[0] || 'Deuda', 
+        emoji: goals[1]?.emoji || '💳', 
+        status: goals[1]?.progress > 0 ? 'in_progress' as const : 'pending' as const 
+      },
+      { 
+        id: '3', 
+        title: goals[2]?.title.split(' ')[0] || 'Meta', 
+        emoji: goals[2]?.emoji || '🏡', 
+        status: goals[2]?.progress > 0 ? 'in_progress' as const : 'pending' as const 
+      },
+      { 
+        id: '4', 
+        title: 'Libertad', 
+        emoji: '🎉', 
+        status: 'pending' as const 
+      }
+    ]
+
+    const completedGoals = goals.filter(g => g.progress >= 100).length
+    const currentStep = Math.min(completedGoals, 3)
+
+    return { steps, currentStep }
+  }
+
+  const getCrediMessage = (goals: FinancialGoal[]): string => {
+    const activeGoals = goals.filter(g => g.progress > 0 && g.progress < 100)
+    
+    if (activeGoals.length > 0) {
+      const topGoal = activeGoals.reduce((prev, current) => 
+        (prev.progress > current.progress) ? prev : current
+      )
+      return `¡Genial! Ya llevas ${Math.round(topGoal.progress)}% en "${topGoal.title}". ¿Quieres acelerar el ritmo?`
+    }
+    
+    return "¡Es momento de comenzar! Tus metas te están esperando. 🚀"
+  }
 
   const getPersonalizedGreeting = (): string => {
     const hour = new Date().getHours()
-    const name = "María" // En producción vendría del usuario autenticado
+    const name = "Usuario" // In production this would come from authenticated user
     
     if (hour < 12) {
       return `¡Buenos días, ${name}!`
@@ -137,8 +187,9 @@ export const useFinancialPlan = () => {
   return {
     dashboardData,
     isLoading,
+    hasActivePlan,
     updateGoalProgress,
     markGoalCompleted,
-    refetch: () => window.location.reload()
+    refetch: loadPlanData
   }
 }
