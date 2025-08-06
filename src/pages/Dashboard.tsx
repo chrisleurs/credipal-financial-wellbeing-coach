@@ -8,6 +8,7 @@ import { MetricCard } from '@/components/dashboard/MetricCard'
 import { ChartSection } from '@/components/dashboard/ChartSection'
 import { AIPanel } from '@/components/dashboard/AIPanel'
 import { useLoans } from '@/hooks/useLoans'
+import { useDashboardNavigation } from '@/hooks/useDashboardNavigation'
 
 const Dashboard: React.FC = () => {
   console.log('Dashboard component rendering')
@@ -20,6 +21,7 @@ const Dashboard: React.FC = () => {
   } = useFinancialStore()
   
   const { kueskiLoan } = useLoans()
+  const { navigateTo } = useDashboardNavigation()
 
   const totalIncome = financialData.monthlyIncome + financialData.extraIncome
   const balance = totalIncome - financialData.monthlyExpenses
@@ -42,6 +44,57 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
+        {/* Quick Navigation Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('/expenses')}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <CreditCard className="h-8 w-8 text-credipal-green" />
+                <div>
+                  <p className="font-semibold">Gastos</p>
+                  <p className="text-sm text-muted-foreground">Gestionar gastos</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('/debts')}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <Target className="h-8 w-8 text-credipal-green" />
+                <div>
+                  <p className="font-semibold">Deudas</p>
+                  <p className="text-sm text-muted-foreground">Control de deudas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('/plan')}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <Brain className="h-8 w-8 text-credipal-green" />
+                <div>
+                  <p className="font-semibold">Plan AI</p>
+                  <p className="text-sm text-muted-foreground">Plan personalizado</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('/profile')}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <PiggyBank className="h-8 w-8 text-credipal-green" />
+                <div>
+                  <p className="font-semibold">Perfil</p>
+                  <p className="text-sm text-muted-foreground">Configuración</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Metrics Cards - Green themed */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard

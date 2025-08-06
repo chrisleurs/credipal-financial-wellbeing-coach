@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useFinancialData } from './useFinancialData';
 import { useUserFinancialData } from './useUserFinancialData';
+import { supabase } from '@/integrations/supabase/client';
 import { FinancialData } from '@/types';
 
 export const useFinancial = () => {
@@ -38,7 +39,7 @@ export const useFinancial = () => {
     };
   }, [financialDataRecord, userFinancialData]);
 
-  const saveFinancialData = async (data: FinancialData) => {
+  const saveFinancialData = async (financialData: FinancialData) => {
     if (!user) {
       toast({
         title: "Error",
@@ -50,18 +51,18 @@ export const useFinancial = () => {
 
     setIsLoading(true);
     try {
-      console.log('Saving financial data:', data);
+      console.log('Saving financial data:', financialData);
       
       // Save to financial_data table
       const { error } = await supabase
         .from('financial_data')
         .upsert({
           user_id: user.id,
-          monthly_income: data.monthlyIncome || 0,
-          monthly_expenses: data.monthlyExpenses || 0,
-          monthly_balance: (data.monthlyIncome || 0) - (data.monthlyExpenses || 0),
-          savings_goal: data.savingsGoal || 0,
-          emergency_fund_goal: data.emergencyFundGoal || 0,
+          monthly_income: financialData.monthlyIncome || 0,
+          monthly_expenses: financialData.monthlyExpenses || 0,
+          monthly_balance: (financialData.monthlyIncome || 0) - (financialData.monthlyExpenses || 0),
+          savings_goal: financialData.currentSavings || 0,
+          emergency_fund_goal: financialData.monthlySavingsCapacity || 0,
         });
 
       if (error) throw error;
