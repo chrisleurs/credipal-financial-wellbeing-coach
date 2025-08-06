@@ -2,7 +2,7 @@
 import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarContent, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { MessageCircle, Brain, Sparkles } from 'lucide-react'
 import type { CrediMessage } from '@/types/financialPlan'
 
@@ -32,11 +32,9 @@ export const CrediAssistant: React.FC<CrediAssistantProps> = ({ message, onChat 
           {/* Avatar de Credi */}
           <div className="relative">
             <Avatar className="h-16 w-16 border-2 border-white/20">
-              <AvatarContent className="bg-white/10">
-                <span className="text-2xl">🤖</span>
-              </AvatarContent>
-              <AvatarFallback className="bg-white/10 text-white">
-                C
+              <AvatarImage src="" alt="Credi" className="bg-white/10" />
+              <AvatarFallback className="bg-white/10 text-white text-2xl">
+                🤖
               </AvatarFallback>
             </Avatar>
             <div className="absolute -bottom-1 -right-1 bg-green-400 h-4 w-4 rounded-full border-2 border-white animate-pulse" />
