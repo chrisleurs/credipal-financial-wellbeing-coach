@@ -1,29 +1,29 @@
-
 import React, { useState } from 'react'
 import { MetricCard } from './MetricCard'
 import { TimeFilter } from './TimeFilter'
 import { AIPanel } from './AIPanel'
 import { ChartSection } from './ChartSection'
 import { LoanCard } from './LoanCard'
-import { useFinancial } from '@/hooks/useFinancial'
+import { DataSourceIndicator } from './DataSourceIndicator'
+import { useDataConsistency } from '@/hooks/useDataConsistency'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useDebts } from '@/hooks/useDebts'
 import { useLoans } from '@/hooks/useLoans'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { TrendingUp, TrendingDown, PiggyBank, CreditCard, Target, AlertTriangle } from 'lucide-react'
+import { TrendingUp, TrendingDown, PiggyBank, CreditCard } from 'lucide-react'
 
 type TimeFrame = 'week' | 'month' | 'quarter' | 'year'
 
 export const FinancialDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimeFrame>('month')
-  const { data: financialData, isLoading: isLoadingFinancial, hasRealData } = useFinancial()
+  const consistentData = useDataConsistency()
   const { expenses, isLoading: isLoadingExpenses } = useExpenses()
   const { debts, isLoadingDebts } = useDebts()
   const { kueskiLoan, activeLoans, isLoading: isLoadingLoans } = useLoans()
   const { t } = useLanguage()
 
-  if (isLoadingFinancial || isLoadingExpenses || isLoadingDebts || isLoadingLoans) {
+  if (isLoadingExpenses || isLoadingDebts || isLoadingLoans) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" text={t('loading_financial_info')} />
@@ -31,7 +31,6 @@ export const FinancialDashboard = () => {
     )
   }
 
-  // Map TimeFilter string values to TimeFrame values
   const handleFilterChange = (filter: string) => {
     const filterMap: Record<string, TimeFrame> = {
       'week': 'week',
@@ -42,21 +41,17 @@ export const FinancialDashboard = () => {
     setSelectedPeriod(filterMap[filter] || 'month')
   }
 
-  // Calculate metrics using real data
-  const totalIncome = financialData?.monthly_income || 0
-  const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
+  // Calculate metrics using consistent data
+  const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0) || consistentData.monthlyExpenses
   const totalDebts = debts.reduce((sum, debt) => sum + Number(debt.current_balance), 0)
   const loanAmount = activeLoans.reduce((sum, loan) => sum + Number(loan.amount), 0)
-  const totalObligations = totalDebts + loanAmount
-
-  // Calculate available balance
-  const availableBalance = totalIncome - totalExpenses - (totalDebts * 0.1) // Assuming 10% of debt balance as monthly payment
+  const availableBalance = consistentData.monthlyIncome - totalExpenses - (totalDebts * 0.1)
 
   const metrics = [
     {
       title: t('monthly_income'),
-      value: `$${totalIncome.toLocaleString()}`,
-      trend: { direction: 'up' as const, percentage: hasRealData ? '+5%' : 'Mock' },
+      value: `$${consistentData.monthlyIncome.toLocaleString()}`,
+      trend: { direction: 'up' as const, percentage: consistentData.hasRealData ? '+5%' : 'Ejemplo' },
       icon: TrendingUp,
       variant: 'positive' as const
     },
@@ -95,11 +90,6 @@ export const FinancialDashboard = () => {
               </h1>
               <p className="text-text-secondary">
                 {t('financial_management')}
-                {!hasRealData && (
-                  <span className="ml-2 text-amber-600 text-sm">
-                    (Usando datos de ejemplo - Completa tu perfil financiero)
-                  </span>
-                )}
               </p>
             </div>
             <TimeFilter 
@@ -111,20 +101,11 @@ export const FinancialDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Data Status Alert */}
-        {!hasRealData && (
-          <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
-              <div>
-                <h3 className="font-medium text-amber-800">Datos de demostración activos</h3>
-                <p className="text-sm text-amber-700">
-                  Completa tu información financiera para ver datos reales en tu dashboard.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Data Source Indicator */}
+        <DataSourceIndicator 
+          dataSource={consistentData.dataSource}
+          hasRealData={consistentData.hasRealData}
+        />
 
         {/* Kueski Loan Welcome Section */}
         {kueskiLoan && (
@@ -188,17 +169,14 @@ export const FinancialDashboard = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Chart Section - Takes up 2/3 of the width */}
           <div className="lg:col-span-2">
             <ChartSection />
           </div>
-
-          {/* AI Panel - Takes up 1/3 of the width */}
           <div className="lg:col-span-1">
             <AIPanel 
-              totalIncome={totalIncome}
+              totalIncome={consistentData.monthlyIncome}
               totalExpenses={totalExpenses}
-              totalDebts={totalObligations}
+              totalDebts={totalDebts + loanAmount}
               kueskiLoan={kueskiLoan}
             />
           </div>
