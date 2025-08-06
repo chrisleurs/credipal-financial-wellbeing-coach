@@ -12,10 +12,10 @@ interface FinancialStore extends OnboardingSlice, DashboardSlice {
 
 export const useFinancialStore = create<FinancialStore>()(
   persist(
-    (set, get) => ({
-      // Combine slices
-      ...createOnboardingSlice(set, get),
-      ...createDashboardSlice(set, get),
+    (set, get, api) => ({
+      // Combine slices with proper arguments
+      ...createOnboardingSlice(set, get, api),
+      ...createDashboardSlice(set, get, api),
 
       // Additional actions
       addExpense: (name, amount) => {

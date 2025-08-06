@@ -10,7 +10,7 @@ interface Step8ProcessingProps {
 }
 
 const Step8Processing: React.FC<Step8ProcessingProps> = ({ onNext, onBack }) => {
-  const { generateAIPlan, generateActionPlan, isLoading, error } = useFinancialStore()
+  const { generateAIPlan, generateActionPlan, isLoading, error, financialData } = useFinancialStore()
   const [currentStep, setCurrentStep] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
 
@@ -39,7 +39,7 @@ const Step8Processing: React.FC<Step8ProcessingProps> = ({ onNext, onBack }) => 
         await new Promise(resolve => setTimeout(resolve, 1500))
         
         setCurrentStep(1)
-        await generateAIPlan()
+        await generateAIPlan(financialData)
         await new Promise(resolve => setTimeout(resolve, 1000))
         
         setCurrentStep(2)
@@ -56,7 +56,7 @@ const Step8Processing: React.FC<Step8ProcessingProps> = ({ onNext, onBack }) => 
     }
 
     generatePlans()
-  }, [generateAIPlan, generateActionPlan, onNext])
+  }, [generateAIPlan, generateActionPlan, onNext, financialData])
 
   const canProceed = false // No se puede proceder manualmente
 
