@@ -29,21 +29,6 @@ export interface Debt {
   estimatedPayoffDate?: string
 }
 
-// FIXED: JSON-compatible AIGeneratedPlan interface
-export interface AIGeneratedPlan {
-  recommendations: string[]
-  monthlyBalance: number
-  savingsSuggestion: number
-  budgetBreakdown: {
-    fixedExpenses: number
-    variableExpenses: number
-    savings: number
-    emergency: number
-  }
-  timeEstimate: string
-  motivationalMessage: string
-}
-
 export interface AIPlan {
   id: string
   recommendations: string[]
@@ -69,23 +54,23 @@ export interface ActionTask {
   completed: boolean
 }
 
+// Add missing interfaces for services/openai.ts
+export interface AIGeneratedPlan {
+  recommendations: string[]
+  monthlyBalance: number
+  savingsSuggestion: number
+  budgetBreakdown: {
+    fixedExpenses: number
+    variableExpenses: number
+    savings: number
+    emergency: number
+  }
+  timeEstimate: string
+  motivationalMessage: string
+}
+
 export interface ActionPlan {
   tasks: ActionTask[]
   nextReviewDate: string
   whatsappReminders: boolean
-}
-
-// FIXED: Database row interface with proper typing for JSONB fields
-export interface FinancialPlanRow {
-  id: string
-  user_id: string
-  plan_data: Record<string, any> | null // JSONB from database - properly typed
-  plan_type: string
-  status: string
-  goals: any[] | null // JSONB from database - properly typed
-  recommendations: string[] | null // JSONB as string array
-  monthly_balance: number
-  savings_suggestion: number
-  created_at: string
-  updated_at: string
 }

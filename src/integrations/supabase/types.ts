@@ -282,48 +282,6 @@ export type Database = {
         }
         Relationships: []
       }
-      financial_plans: {
-        Row: {
-          created_at: string
-          goals: Json
-          id: string
-          monthly_balance: number
-          plan_data: Json
-          plan_type: string
-          recommendations: Json
-          savings_suggestion: number
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          goals?: Json
-          id?: string
-          monthly_balance?: number
-          plan_data?: Json
-          plan_type?: string
-          recommendations?: Json
-          savings_suggestion?: number
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          goals?: Json
-          id?: string
-          monthly_balance?: number
-          plan_data?: Json
-          plan_type?: string
-          recommendations?: Json
-          savings_suggestion?: number
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       goals: {
         Row: {
           created_at: string
