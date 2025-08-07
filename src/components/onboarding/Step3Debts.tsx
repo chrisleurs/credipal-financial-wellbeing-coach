@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Plus, CreditCard, Trash2, AlertTriangle, Calendar, Clock, HelpCircle } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
+import { useAuth } from '@/hooks/useAuth'
 import type { Debt } from '@/types'
 
 interface Step3DebtsProps {
@@ -24,9 +25,44 @@ const debtTypes = [
   { value: 'loan', label: 'Other Loan', icon: '📋' },
 ]
 
+// Helper functions to extract data from description
+const extractTypeFromDescription = (description: string): string => {
+  const match = description?.match(/Type: ([^,]+)/)
+  return match ? match[1] : ''
+}
+
+const extractTermFromDescription = (description: string): string => {
+  const match = description?.match(/Term: (\d+) months/)
+  return match ? match[1] : ''
+}
+
+// Helper function to convert database debt to display format
+const convertDebtForDisplay = (debt: Debt) => ({
+  id: debt.id,
+  name: debt.creditor_name,
+  amount: debt.total_amount,
+  monthlyPayment: debt.minimum_payment,
+  paymentDueDate: debt.due_day.toString(),
+  type: extractTypeFromDescription(debt.description || ''),
+  termInMonths: extractTermFromDescription(debt.description || ''),
+  estimatedPayoffDate: calculateEstimatedPayoffDate(debt.minimum_payment, debt.total_amount, parseInt(extractTermFromDescription(debt.description || '')) || 1)
+})
+
+const calculateEstimatedPayoffDate = (monthlyPayment: number, totalAmount: number, termInMonths: number) => {
+  const today = new Date()
+  const estimatedDate = new Date(today.getFullYear(), today.getMonth() + termInMonths, 1)
+  return estimatedDate.toISOString().split('T')[0]
+}
+
 const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
+  const { user } = useAuth()
   const { financialData, updateFinancialData } = useFinancialStore()
-  const [debts, setDebts] = useState<Debt[]>(financialData.debts || [])
+  
+  // Convert database debts to display format
+  const [debts, setDebts] = useState<any[]>(
+    financialData.debts ? financialData.debts.map(convertDebtForDisplay) : []
+  )
+  
   const [newDebt, setNewDebt] = useState({
     type: '',
     name: '',
@@ -35,12 +71,6 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
     paymentDueDate: '',
     termInMonths: ''
   })
-
-  const calculateEstimatedPayoffDate = (monthlyPayment: number, totalAmount: number, termInMonths: number) => {
-    const today = new Date()
-    const estimatedDate = new Date(today.getFullYear(), today.getMonth() + termInMonths, 1)
-    return estimatedDate.toISOString().split('T')[0]
-  }
 
   const addDebt = () => {
     if (newDebt.type && newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment && newDebt.paymentDueDate && newDebt.termInMonths) {
@@ -52,7 +82,8 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
       if (amount > 0 && monthlyPayment > 0 && paymentDueDate >= 1 && paymentDueDate <= 31 && termInMonths > 0) {
         const estimatedPayoffDate = calculateEstimatedPayoffDate(monthlyPayment, amount, termInMonths)
         
-        const debt: Debt = {
+        // Create debt object for display
+        const debtForDisplay = {
           id: Date.now().toString(),
           name: newDebt.name.trim(),
           amount,
@@ -62,7 +93,8 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
           estimatedPayoffDate,
           type: newDebt.type
         }
-        setDebts([...debts, debt])
+        
+        setDebts([...debts, debtForDisplay])
         setNewDebt({ type: '', name: '', amount: '', monthlyPayment: '', paymentDueDate: '', termInMonths: '' })
       }
     }
@@ -73,7 +105,22 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
   }
 
   const handleNext = () => {
-    updateFinancialData({ debts })
+    // Convert display debts to database format before saving
+    const debtsForDatabase: Debt[] = debts.map(debt => ({
+      id: debt.id,
+      user_id: user?.id || '',
+      creditor_name: debt.name,
+      total_amount: debt.amount,
+      current_balance: debt.amount, // Initialize as same as total
+      minimum_payment: debt.monthlyPayment,
+      due_day: parseInt(debt.paymentDueDate),
+      annual_interest_rate: 0, // Default value
+      description: `Type: ${debt.type}, Term: ${debt.termInMonths} months`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }))
+
+    updateFinancialData({ debts: debtsForDatabase })
     onNext()
   }
 
