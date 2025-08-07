@@ -1,76 +1,47 @@
-
-export interface User {
-  id: string
-  email: string
-  firstName?: string
-  lastName?: string
-  createdAt: string
-}
-
-export interface FinancialData {
-  monthlyIncome: number
-  extraIncome: number
-  monthlyExpenses: number
-  expenseCategories: Record<string, number>
-  debts: Debt[]
-  currentSavings: number
-  monthlySavingsCapacity: number
-  financialGoals: string[] // Array simple de strings
-  whatsappOptin: boolean
-}
-
 export interface Debt {
   id: string
-  name: string
+  user_id: string
+  creditor_name: string
+  total_amount: number
+  current_balance: number
+  annual_interest_rate: number
+  minimum_payment: number
+  due_day: number
+  description?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DebtPayment {
+  id: string
+  debt_id: string
+  user_id: string
   amount: number
+  payment_date: string
+  notes?: string
+  created_at: string
+}
+
+export interface DebtReminder {
+  id: string
+  debt_id: string
+  user_id: string
+  days_before: number
+  is_active: boolean
+  reminder_type: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DebtScenario {
+  monthsToPayOff: number
+  totalInterest: number
   monthlyPayment: number
-  paymentDueDate?: number
-  termInMonths?: number
-  estimatedPayoffDate?: string
+  totalPayment: number
 }
 
-export interface AIPlan {
-  id: string
-  recommendations: string[]
-  monthlyBalance: number
-  savingsSuggestion: number
-  budgetBreakdown: {
-    fixedExpenses: number
-    variableExpenses: number
-    savings: number
-    emergency: number
-  }
-  timeEstimate: string
-  motivationalMessage: string
-  createdAt: string
-}
-
-export interface ActionTask {
-  id: string
-  title: string
-  description: string
-  priority: 'high' | 'medium' | 'low'
-  dueDate: string
-  completed: boolean
-}
-
-// Add missing interfaces for services/openai.ts
-export interface AIGeneratedPlan {
-  recommendations: string[]
-  monthlyBalance: number
-  savingsSuggestion: number
-  budgetBreakdown: {
-    fixedExpenses: number
-    variableExpenses: number
-    savings: number
-    emergency: number
-  }
-  timeEstimate: string
-  motivationalMessage: string
-}
-
-export interface ActionPlan {
-  tasks: ActionTask[]
-  nextReviewDate: string
-  whatsappReminders: boolean
+export interface AIMotivationalMessage {
+  type: 'positive' | 'negative' | 'progress' | 'celebration'
+  message: string
+  actionSuggestion?: string
 }
