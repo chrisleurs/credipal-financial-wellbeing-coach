@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Plus, CreditCard, TrendingDown, AlertCircle, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -338,7 +337,7 @@ const Debts = () => {
         {/* Scenario Analysis */}
         {displayDebts.length > 0 && hasSpecificDebts && (
           <div className="mt-8">
-            <ScenarioAnalysis debts={displayDebts} />
+            <ScenarioAnalysis debt={displayDebts[0]} />
           </div>
         )}
       </div>

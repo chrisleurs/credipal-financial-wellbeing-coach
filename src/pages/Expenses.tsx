@@ -94,11 +94,13 @@ const Expenses = () => {
         setIsModalOpen(false)
         setEditingExpense(null)
       }
+      return result
     } else {
       const result = await addExpense(expenseData)
       if (result.success) {
         setIsModalOpen(false)
       }
+      return result
     }
   }
 
@@ -203,12 +205,16 @@ const Expenses = () => {
         {/* Filters - Only show for specific expenses */}
         {hasSpecificExpenses && (
           <ExpenseFilters
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            dateFrom={dateFrom}
-            onDateFromChange={setDateFrom}
-            dateTo={dateTo}
-            onDateToChange={setDateTo}
+            filters={{
+              category: selectedCategory,
+              dateFrom: dateFrom,
+              dateTo: dateTo
+            }}
+            onFiltersChange={(filters) => {
+              setSelectedCategory(filters.category)
+              setDateFrom(filters.dateFrom)
+              setDateTo(filters.dateTo)
+            }}
           />
         )}
 
