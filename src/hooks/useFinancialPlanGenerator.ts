@@ -3,17 +3,8 @@ import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
 import { useToast } from './use-toast'
+import { useConsolidatedFinancialData } from './useConsolidatedFinancialData'
 import type { FinancialGoal, DashboardData } from '@/types/financialPlan'
-
-interface UserFinancialProfile {
-  name: string
-  monthlyIncome: number
-  monthlyExpenses: number
-  monthlyBalance: number
-  existingGoals: any[]
-  debts: any[]
-  savings: number
-}
 
 interface GeneratedPlan {
   goals: FinancialGoal[]
@@ -25,72 +16,36 @@ interface GeneratedPlan {
 export const useFinancialPlanGenerator = () => {
   const { user } = useAuth()
   const { toast } = useToast()
+  const { consolidatedProfile, hasCompleteData } = useConsolidatedFinancialData()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null)
 
-  const getUserFinancialProfile = async (): Promise<UserFinancialProfile | null> => {
-    if (!user) return null
-
-    try {
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('user_id', user.id)
-        .single()
-
-      // Get financial data
-      const { data: financialData } = await supabase
-        .from('financial_data')
-        .select('monthly_income, monthly_expenses, monthly_balance')
-        .eq('user_id', user.id)
-        .single()
-
-      // Get detailed financial data from onboarding
-      const { data: userFinancialData } = await supabase
-        .from('user_financial_data')
-        .select('ingresos, gastos_categorizados, deudas, ahorros')
-        .eq('user_id', user.id)
-        .single()
-
-      // Get existing goals
-      const { data: goals } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-
-      // Get debts
-      const { data: debts } = await supabase
-        .from('debts')
-        .select('*')
-        .eq('user_id', user.id)
-
-      // Cast ahorros data safely
-      let savingsAmount = 0
-      if (userFinancialData?.ahorros && typeof userFinancialData.ahorros === 'object') {
-        const ahorrosObj = userFinancialData.ahorros as any
-        savingsAmount = ahorrosObj?.actual || 0
-      }
-
-      return {
-        name: profile?.first_name || 'Usuario',
-        monthlyIncome: financialData?.monthly_income || userFinancialData?.ingresos || 0,
-        monthlyExpenses: financialData?.monthly_expenses || 0,
-        monthlyBalance: financialData?.monthly_balance || 0,
-        existingGoals: goals || [],
-        debts: debts || [],
-        savings: savingsAmount
-      }
-    } catch (error) {
-      console.error('Error getting user profile:', error)
-      return null
+  const generate321Plan = (): GeneratedPlan => {
+    if (!consolidatedProfile) {
+      throw new Error('No se pudieron obtener los datos del usuario')
     }
-  }
 
-  const generate321Plan = (profile: UserFinancialProfile): GeneratedPlan => {
-    const { name, monthlyBalance, debts, existingGoals, savings } = profile
-    const availableCapacity = Math.max(monthlyBalance, 100) // Minimum $100
+    console.log('🎯 Generating 3-2-1 plan with consolidated data:', {
+      userId: consolidatedProfile.userId,
+      monthlyBalance: consolidatedProfile.monthlyBalance,
+      debtsCount: consolidatedProfile.debts.length,
+      goalsCount: consolidatedProfile.goals.length,
+      dataCompleteness: consolidatedProfile.dataCompleteness
+    })
+
+    const { 
+      name, 
+      monthlyBalance, 
+      debts, 
+      goals: existingGoals, 
+      currentSavings,
+      monthlyExpenses,
+      totalDebtBalance,
+      totalMonthlyDebtPayments
+    } = consolidatedProfile
+    
+    // Calculate available capacity (income - expenses - debt payments)
+    const availableCapacity = Math.max(monthlyBalance - totalMonthlyDebtPayments, 100)
 
     // Distribute capacity using 3-2-1 methodology
     const shortTermAmount = Math.floor(availableCapacity * 0.3)
@@ -100,8 +55,8 @@ export const useFinancialPlanGenerator = () => {
     const goals: FinancialGoal[] = []
 
     // SHORT TERM GOAL (30% - 1-3 months)
-    const hasEmergencyFund = savings >= 400
-    const hasHighInterestDebt = debts.some((debt: any) => debt.annual_interest_rate > 20)
+    const hasEmergencyFund = currentSavings >= 400
+    const hasHighInterestDebt = debts.some(debt => debt.annual_interest_rate > 20)
 
     if (!hasEmergencyFund) {
       goals.push({
@@ -110,10 +65,10 @@ export const useFinancialPlanGenerator = () => {
         title: 'Fondo de Emergencia',
         emoji: '🆘',
         targetAmount: 400,
-        currentAmount: savings,
+        currentAmount: currentSavings,
         deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: 'in_progress',
-        progress: Math.min((savings / 400) * 100, 100),
+        progress: Math.min((currentSavings / 400) * 100, 100),
         actionText: 'Aportar'
       })
     } else {
@@ -133,7 +88,7 @@ export const useFinancialPlanGenerator = () => {
 
     // MEDIUM TERM GOAL (40% - 4-8 months)
     if (hasHighInterestDebt) {
-      const highestDebt = debts.reduce((prev: any, current: any) => 
+      const highestDebt = debts.reduce((prev, current) => 
         (current.annual_interest_rate > prev.annual_interest_rate) ? current : prev
       )
       goals.push({
@@ -209,9 +164,9 @@ export const useFinancialPlanGenerator = () => {
       })
     }
 
-    // Generate personalized messages
-    const analysis = generateAnalysisMessage(profile)
-    const motivationalMessage = generateMotivationalMessage(profile, goals)
+    // Generate personalized messages using REAL data
+    const analysis = generateAnalysisMessage(consolidatedProfile)
+    const motivationalMessage = generateMotivationalMessage(consolidatedProfile, goals)
 
     return {
       goals,
@@ -221,65 +176,77 @@ export const useFinancialPlanGenerator = () => {
     }
   }
 
-  const generateAnalysisMessage = (profile: UserFinancialProfile): string => {
-    const { name, monthlyBalance, debts, existingGoals } = profile
+  const generateAnalysisMessage = (profile: typeof consolidatedProfile): string => {
+    if (!profile) return ''
     
-    let message = `¡Hola ${name}! He analizado tu situación financiera. `
+    const { name, monthlyBalance, debts, goals, totalDebtBalance, dataCompleteness } = profile
+    
+    let message = `¡Hola ${name}! He analizado tu situación financiera completa (${Math.round(dataCompleteness)}% de datos disponibles). `
     
     if (monthlyBalance > 0) {
-      message += `Tienes $${monthlyBalance.toLocaleString()} disponibles cada mes para tus metas. `
+      message += `Tienes $${monthlyBalance.toLocaleString()} disponibles cada mes después de gastos. `
     }
     
-    if (debts.length > 0) {
-      const highInterestDebts = debts.filter((debt: any) => debt.annual_interest_rate > 20)
+    if (totalDebtBalance > 0) {
+      const highInterestDebts = debts.filter(debt => debt.annual_interest_rate > 20)
       if (highInterestDebts.length > 0) {
-        message += `Veo que tienes deudas con intereses altos. Las priorizaremos. `
+        message += `Veo que tienes $${totalDebtBalance.toLocaleString()} en deudas, con ${highInterestDebts.length} de alto interés. Las priorizaremos. `
+      } else {
+        message += `Tienes $${totalDebtBalance.toLocaleString()} en deudas con intereses manejables. `
       }
     } else {
       message += `Me encanta que no tengas deudas altas. Podemos enfocarnos en hacer crecer tu patrimonio. `
     }
     
-    if (existingGoals.length > 0) {
-      message += `He integrado tus ${existingGoals.length} meta(s) existente(s) en tu nuevo plan. `
+    if (goals.length > 0) {
+      message += `He integrado tus ${goals.length} meta(s) existente(s) en tu nuevo plan personalizado. `
     }
     
     return message
   }
 
-  const generateMotivationalMessage = (profile: UserFinancialProfile, goals: FinancialGoal[]): string => {
-    const { name } = profile
+  const generateMotivationalMessage = (profile: typeof consolidatedProfile, goals: FinancialGoal[]): string => {
+    if (!profile) return ''
+    
+    const { name, dataCompleteness } = profile
     const totalProgress = goals.reduce((sum, goal) => sum + goal.progress, 0) / goals.length
     
     if (totalProgress > 50) {
-      return `¡${name}, ya tienes un gran avance! Con este plan estructurado alcanzarás todas tus metas más rápido.`
+      return `¡${name}, ya tienes un gran avance! Con este plan estructurado y tus datos completos (${Math.round(dataCompleteness)}%) alcanzarás todas tus metas más rápido.`
     } else if (totalProgress > 0) {
-      return `¡Perfecto ${name}! Ya tienes progreso en tus metas. Este plan te dará la estructura para acelerarlas.`
+      return `¡Perfecto ${name}! Ya tienes progreso en tus metas. Este plan personalizado te dará la estructura para acelerarlas.`
     } else {
-      return `¡Es tu momento ${name}! Con este plan de 3 pasos alcanzarás tus sueños financieros paso a paso.`
+      return `¡Es tu momento ${name}! Con este plan personalizado basado en tus datos reales alcanzarás tus sueños financieros paso a paso.`
     }
   }
 
   const generatePlan = async (): Promise<boolean> => {
-    if (!user) return false
+    if (!user || !consolidatedProfile) {
+      toast({
+        title: "Error",
+        description: "No se pudieron obtener tus datos financieros",
+        variant: "destructive"
+      })
+      return false
+    }
+
+    if (!hasCompleteData) {
+      toast({
+        title: "Datos incompletos",
+        description: `Completa tu perfil financiero para obtener un plan más preciso (${Math.round(consolidatedProfile.dataCompleteness)}% completado)`,
+        variant: "destructive"
+      })
+    }
 
     setIsGenerating(true)
     try {
-      const profile = await getUserFinancialProfile()
-      if (!profile) {
-        toast({
-          title: "Error",
-          description: "No se pudieron obtener tus datos financieros",
-          variant: "destructive"
-        })
-        return false
-      }
-
-      const plan = generate321Plan(profile)
+      console.log('🚀 Generating personalized financial plan with real user data')
+      const plan = generate321Plan()
       setGeneratedPlan(plan)
       
       toast({
         title: "¡Plan generado!",
-        description: "Tu plan financiero personalizado está listo"
+        description: "Tu plan financiero personalizado con datos reales está listo"
       })
       
       return true
@@ -297,31 +264,38 @@ export const useFinancialPlanGenerator = () => {
   }
 
   const savePlan = async (): Promise<boolean> => {
-    if (!user || !generatedPlan) return false
+    if (!user || !generatedPlan || !consolidatedProfile) return false
 
     try {
-      // Prepare plan data with proper JSON serialization
+      // Prepare plan data with comprehensive user context
       const planData = {
         goals: generatedPlan.goals,
         analysis: generatedPlan.analysis,
         motivationalMessage: generatedPlan.motivationalMessage,
         monthlyCapacity: generatedPlan.monthlyCapacity,
         planType: '3-2-1',
-        version: '1.0',
-        generatedAt: new Date().toISOString()
+        version: '2.0', // Updated version to indicate real data usage
+        generatedAt: new Date().toISOString(),
+        userContext: {
+          dataCompleteness: consolidatedProfile.dataCompleteness,
+          monthlyIncome: consolidatedProfile.monthlyIncome,
+          monthlyExpenses: consolidatedProfile.monthlyExpenses,
+          totalDebts: consolidatedProfile.totalDebtBalance,
+          goalsCount: consolidatedProfile.goals.length
+        }
       }
 
-      // Save to user_financial_plans with proper casting
+      // Save to user_financial_plans
       const { error: planError } = await supabase
         .from('user_financial_plans')
         .upsert({
           user_id: user.id,
-          plan_data: planData as any // Cast to any to handle JSON type
+          plan_data: planData as any
         })
 
       if (planError) throw planError
 
-      // Update action plans with proper casting
+      // Update action plans
       const actionsData = generatedPlan.goals.map(goal => ({
         id: goal.id,
         title: `Trabajar en: ${goal.title}`,
@@ -336,7 +310,7 @@ export const useFinancialPlanGenerator = () => {
         .upsert({
           user_id: user.id,
           status: 'plan_generated',
-          actions: actionsData as any, // Cast to any to handle JSON type
+          actions: actionsData as any,
           next_review_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         })
 
@@ -344,7 +318,7 @@ export const useFinancialPlanGenerator = () => {
 
       toast({
         title: "¡Plan guardado!",
-        description: "Tu plan financiero ya está activo"
+        description: "Tu plan financiero personalizado ya está activo"
       })
       
       return true
@@ -362,6 +336,8 @@ export const useFinancialPlanGenerator = () => {
   return {
     isGenerating,
     generatedPlan,
+    consolidatedProfile, // Expose consolidated data for debugging
+    hasCompleteData,
     generatePlan,
     savePlan,
     clearPlan: () => setGeneratedPlan(null)
