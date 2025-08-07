@@ -1,15 +1,20 @@
+
 import React from 'react'
-import { User, Mail, Phone, Calendar, Settings } from 'lucide-react'
+import { User, Mail, Phone, Calendar, Settings, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
 import { useFinancialStore } from '@/store/financialStore'
+import { useNavigate } from 'react-router-dom'
 
 export default function Profile() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const { onboardingCompleted } = useOnboardingStatus()
   const { financialData, isOnboardingComplete } = useFinancialStore()
+  const navigate = useNavigate()
 
   const getUserInitials = () => {
     if (user?.email) {
@@ -25,6 +30,14 @@ export default function Profile() {
       })
     : 'Desconocido'
 
+  const handleCompleteOnboarding = () => {
+    navigate('/onboarding')
+  }
+
+  const handleSignOut = async () => {
+    await logout()
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -32,6 +45,34 @@ export default function Profile() {
         <h1 className="text-3xl font-bold text-foreground">Mi Perfil</h1>
         <p className="text-muted-foreground">Información personal y configuración de cuenta</p>
       </div>
+
+      {/* Onboarding Incomplete Alert */}
+      {onboardingCompleted === false && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="bg-amber-100 p-2 rounded-full">
+                  <Settings className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-amber-800">Completa tu perfil financiero</h3>
+                  <p className="text-sm text-amber-700">
+                    Termina de configurar tu perfil para obtener recomendaciones personalizadas
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={handleCompleteOnboarding}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                Completar ahora
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile Card */}
       <Card>
@@ -54,8 +95,8 @@ export default function Profile() {
                 <h2 className="text-2xl font-bold text-foreground">
                   {user?.email?.split('@')[0] || 'Usuario'}
                 </h2>
-                <Badge variant={isOnboardingComplete ? "default" : "secondary"}>
-                  {isOnboardingComplete ? "Perfil Completo" : "Perfil Incompleto"}
+                <Badge variant={onboardingCompleted ? "default" : "secondary"}>
+                  {onboardingCompleted ? "Perfil Completo" : "Perfil Incompleto"}
                 </Badge>
               </div>
               
@@ -90,38 +131,40 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Financial Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumen Financiero</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="text-center p-4 rounded-lg bg-muted">
-              <p className="text-2xl font-bold text-secondary">${(financialData.monthlyIncome + financialData.extraIncome).toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">Ingresos Mensuales</p>
+      {/* Financial Summary - Solo mostrar si el onboarding está completo */}
+      {onboardingCompleted && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumen Financiero</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center p-4 rounded-lg bg-muted">
+                <p className="text-2xl font-bold text-secondary">${(financialData.monthlyIncome + financialData.extraIncome).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Ingresos Mensuales</p>
+              </div>
+              
+              <div className="text-center p-4 rounded-lg bg-muted">
+                <p className="text-2xl font-bold text-destructive">${financialData.monthlyExpenses.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Gastos Mensuales</p>
+              </div>
+              
+              <div className="text-center p-4 rounded-lg bg-muted">
+                <p className="text-2xl font-bold text-primary">${financialData.currentSavings.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Ahorros Actuales</p>
+              </div>
+              
+              <div className="text-center p-4 rounded-lg bg-muted">
+                <p className="text-2xl font-bold text-warning">{financialData.debts.length}</p>
+                <p className="text-sm text-muted-foreground">Deudas Activas</p>
+              </div>
             </div>
-            
-            <div className="text-center p-4 rounded-lg bg-muted">
-              <p className="text-2xl font-bold text-destructive">${financialData.monthlyExpenses.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">Gastos Mensuales</p>
-            </div>
-            
-            <div className="text-center p-4 rounded-lg bg-muted">
-              <p className="text-2xl font-bold text-primary">${financialData.currentSavings.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">Ahorros Actuales</p>
-            </div>
-            
-            <div className="text-center p-4 rounded-lg bg-muted">
-              <p className="text-2xl font-bold text-warning">{financialData.debts.length}</p>
-              <p className="text-sm text-muted-foreground">Deudas Activas</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Goals */}
-      {financialData.financialGoals.length > 0 && (
+      {/* Goals - Solo mostrar si hay metas */}
+      {onboardingCompleted && financialData.financialGoals.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Mis Metas Financieras</CardTitle>
@@ -144,28 +187,32 @@ export default function Profile() {
           <CardTitle>Configuración de Cuenta</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-foreground">Notificaciones por WhatsApp</h4>
-              <p className="text-sm text-muted-foreground">Recibe consejos y recordatorios</p>
-            </div>
-            <Badge variant={financialData.whatsappOptin ? "default" : "secondary"}>
-              {financialData.whatsappOptin ? "Activo" : "Inactivo"}
-            </Badge>
-          </div>
+          {onboardingCompleted && (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-foreground">Notificaciones por WhatsApp</h4>
+                  <p className="text-sm text-muted-foreground">Recibe consejos y recordatorios</p>
+                </div>
+                <Badge variant={financialData.whatsappOptin ? "default" : "secondary"}>
+                  {financialData.whatsappOptin ? "Activo" : "Inactivo"}
+                </Badge>
+              </div>
+            </>
+          )}
           
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium text-foreground">Perfil completo</h4>
               <p className="text-sm text-muted-foreground">Información de onboarding completada</p>
             </div>
-            <Badge variant={isOnboardingComplete ? "default" : "destructive"}>
-              {isOnboardingComplete ? "Completo" : "Incompleto"}
+            <Badge variant={onboardingCompleted ? "default" : "destructive"}>
+              {onboardingCompleted ? "Completo" : "Incompleto"}
             </Badge>
           </div>
 
           <div className="pt-4 border-t border-border">
-            <Button variant="destructive" size="sm">
+            <Button variant="destructive" size="sm" onClick={handleSignOut}>
               Cerrar Sesión
             </Button>
           </div>

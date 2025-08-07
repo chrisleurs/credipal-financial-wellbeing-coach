@@ -30,8 +30,15 @@ export const AuthRedirect = () => {
     const dashboardRoutes = ['/dashboard', '/expenses', '/debts', '/plan', '/profile', '/calendar'];
     const isDashboardRoute = dashboardRoutes.some(route => currentPath.startsWith(route));
     
+    // Si el usuario está en una ruta del dashboard, permitir acceso
     if (isDashboardRoute && user) {
       console.log('AuthRedirect - User accessing dashboard area, allowing access');
+      return;
+    }
+    
+    // Si el usuario está en la página de onboarding, permitir acceso
+    if (currentPath === '/onboarding' && user) {
+      console.log('AuthRedirect - User accessing onboarding, allowing access');
       return;
     }
     

@@ -29,7 +29,7 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
     try {
       setIsLoading(true);
-      console.log('Checking onboarding status in clean database for user:', user.id);
+      console.log('Checking onboarding status for user:', user.id);
       
       const { data, error } = await supabase
         .from('profiles')
@@ -39,21 +39,20 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
       if (error) {
         console.error('Error checking onboarding status:', error);
-        
-        console.log('Profile does not exist in clean database, creating it...');
+        // Si hay error, crear perfil nuevo
         await createUserProfile(false);
         return;
       }
 
       if (!data) {
-        console.log('No profile found in clean database, creating fresh one...');
+        console.log('No profile found, creating new one for onboarding...');
         await createUserProfile(false);
         return;
       }
 
-      // Since database was cleaned, reset any previous completion status
-      const completed = false; // All users start fresh after cleanup
-      console.log('Setting fresh onboarding status after database cleanup:', completed);
+      // Para usuarios existentes, verificar el estado del onboarding
+      const completed = data.onboarding_completed || false;
+      console.log('Onboarding status:', completed);
       setOnboardingCompleted(completed);
     } catch (error) {
       console.error('Exception checking onboarding status:', error);
@@ -67,7 +66,7 @@ export const useOnboardingStatus = (): OnboardingStatus => {
     if (!user) return;
 
     try {
-      console.log('Creating fresh user profile in clean database with onboarding_completed:', completed);
+      console.log('Creating user profile with onboarding_completed:', completed);
       
       const { error } = await supabase
         .from('profiles')
@@ -82,13 +81,13 @@ export const useOnboardingStatus = (): OnboardingStatus => {
         });
 
       if (error) {
-        console.error('Error creating profile in clean database:', error);
+        console.error('Error creating profile:', error);
         setOnboardingCompleted(false);
         return;
       }
 
       setOnboardingCompleted(completed);
-      console.log('Fresh profile created successfully in clean database with onboarding_completed:', completed);
+      console.log('Profile created successfully with onboarding_completed:', completed);
     } catch (error) {
       console.error('Exception creating profile:', error);
       setOnboardingCompleted(false);
@@ -102,11 +101,11 @@ export const useOnboardingStatus = (): OnboardingStatus => {
     }
 
     try {
-      console.log('Updating onboarding status in clean database to:', completed, 'for user:', user.id);
+      console.log('Updating onboarding status to:', completed, 'for user:', user.id);
       
       const updateData: any = { onboarding_completed: completed };
       
-      // If marking as completed, also reset the progress fields
+      // Si se marca como completado, resetear los campos de progreso
       if (completed) {
         updateData.onboarding_step = 0;
         updateData.onboarding_data = {};
@@ -118,7 +117,7 @@ export const useOnboardingStatus = (): OnboardingStatus => {
         .eq('user_id', user.id);
 
       if (updateError) {
-        console.log('Update failed, trying to insert fresh profile in clean database:', updateError);
+        console.log('Update failed, trying to insert profile:', updateError);
         
         const { error: insertError } = await supabase
           .from('profiles')
@@ -133,13 +132,13 @@ export const useOnboardingStatus = (): OnboardingStatus => {
           });
 
         if (insertError) {
-          console.error('Error inserting profile in clean database:', insertError);
+          console.error('Error inserting profile:', insertError);
           throw insertError;
         }
       }
 
       setOnboardingCompleted(completed);
-      console.log('Onboarding status updated successfully in clean database to:', completed);
+      console.log('Onboarding status updated successfully to:', completed);
       
     } catch (error) {
       console.error('Exception updating onboarding status:', error);
