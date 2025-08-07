@@ -17,12 +17,21 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
   const { financialData, updateFinancialData } = useFinancialStore()
   const [debts, setDebts] = useState<Debt[]>(financialData.debts || [])
   const [newDebt, setNewDebt] = useState({
+    type: '',
     name: '',
     amount: '',
     monthlyPayment: '',
     paymentDueDate: '',
     termInMonths: ''
   })
+
+  const debtTypes = [
+    { value: 'credit_card', label: '💳 Credit Card' },
+    { value: 'auto_loan', label: '🚗 Auto Loan' },
+    { value: 'student_loan', label: '🎓 Student Loan' },
+    { value: 'buy_now_pay_later', label: '🛒 Buy Now, Pay Later' },
+    { value: 'personal_loan', label: '🏠 Personal Loan' }
+  ]
 
   const calculateEstimatedPayoffDate = (monthlyPayment: number, totalAmount: number, termInMonths: number) => {
     const today = new Date()
@@ -31,7 +40,7 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
   }
 
   const addDebt = () => {
-    if (newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment && newDebt.paymentDueDate && newDebt.termInMonths) {
+    if (newDebt.type && newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment && newDebt.paymentDueDate && newDebt.termInMonths) {
       const amount = parseFloat(newDebt.amount) || 0
       const monthlyPayment = parseFloat(newDebt.monthlyPayment) || 0
       const paymentDueDate = parseInt(newDebt.paymentDueDate) || 1
@@ -50,7 +59,7 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
           estimatedPayoffDate
         }
         setDebts([...debts, debt])
-        setNewDebt({ name: '', amount: '', monthlyPayment: '', paymentDueDate: '', termInMonths: '' })
+        setNewDebt({ type: '', name: '', amount: '', monthlyPayment: '', paymentDueDate: '', termInMonths: '' })
       }
     }
   }
@@ -66,7 +75,7 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
 
   const totalDebtAmount = debts.reduce((sum, debt) => sum + (debt.amount || 0), 0)
   const totalMonthlyPayments = debts.reduce((sum, debt) => sum + (debt.monthlyPayment || 0), 0)
-  const canAddDebt = newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment && newDebt.paymentDueDate && newDebt.termInMonths
+  const canAddDebt = newDebt.type && newDebt.name.trim() && newDebt.amount && newDebt.monthlyPayment && newDebt.paymentDueDate && newDebt.termInMonths
 
   const isPaymentSufficient = (monthlyPayment: number, totalAmount: number, termInMonths: number) => {
     const requiredPayment = totalAmount / termInMonths
@@ -93,34 +102,63 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
           </div>
           
           <div className="space-y-3">
+            {/* Debt Type Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type of Debt
+              </label>
+              <Select value={newDebt.type} onValueChange={(value) => setNewDebt({ ...newDebt, type: value })}>
+                <SelectTrigger className="rounded-xl border-gray-300 focus:border-emerald-500">
+                  <SelectValue placeholder="Select debt type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {debtTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Input
-              placeholder="Debt name (e.g., Visa Card, Personal Loan, Student Loan)"
+              placeholder="e.g., Visa Card, Car Loan"
               value={newDebt.name}
               onChange={(e) => setNewDebt({ ...newDebt, name: e.target.value })}
               className="rounded-xl border-gray-300 focus:border-emerald-500"
             />
             
-            <div className="grid grid-cols-2 gap-3">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                <Input
-                  type="number"
-                  placeholder="Total debt amount"
-                  value={newDebt.amount}
-                  onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value })}
-                  className="pl-8 rounded-xl border-gray-300 focus:border-emerald-500"
-                />
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Total Balance - How much do you still owe?
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <Input
+                    type="number"
+                    placeholder="e.g., 2500"
+                    value={newDebt.amount}
+                    onChange={(e) => setNewDebt({ ...newDebt, amount: e.target.value })}
+                    className="pl-8 rounded-xl border-gray-300 focus:border-emerald-500"
+                  />
+                </div>
               </div>
               
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                <Input
-                  type="number"
-                  placeholder="Monthly payment"
-                  value={newDebt.monthlyPayment}
-                  onChange={(e) => setNewDebt({ ...newDebt, monthlyPayment: e.target.value })}
-                  className="pl-8 rounded-xl border-gray-300 focus:border-emerald-500"
-                />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Monthly Payment - What's your minimum monthly payment?
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <Input
+                    type="number"
+                    placeholder="e.g., 150"
+                    value={newDebt.monthlyPayment}
+                    onChange={(e) => setNewDebt({ ...newDebt, monthlyPayment: e.target.value })}
+                    className="pl-8 rounded-xl border-gray-300 focus:border-emerald-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -145,7 +183,7 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Term (months)
+                  Term Remaining - How many months until you finish paying?
                 </label>
                 <Input
                   type="number"
@@ -243,12 +281,21 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
             <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <CreditCard className="h-8 w-8 text-green-600" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No debts added yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">🎉 You don't have any debt — and that's a big deal!</h3>
             <p className="text-gray-600 mb-4">
               If you don't have any active debts, that's awesome! You can continue to the next step.
             </p>
             <p className="text-sm text-green-700 bg-green-50 inline-block px-4 py-2 rounded-lg">
               Being debt-free gives you more financial flexibility! 🎉
+            </p>
+          </div>
+        )}
+
+        {/* Continue message for debts */}
+        {debts.length > 0 && (
+          <div className="text-center py-4">
+            <p className="text-gray-600 text-sm">
+              Done adding debts? Let's move forward with your plan.
             </p>
           </div>
         )}
