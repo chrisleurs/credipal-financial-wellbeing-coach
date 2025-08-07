@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Plus, Calendar, TrendingDown, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -21,14 +22,19 @@ const Expenses = () => {
   const [dateTo, setDateTo] = useState<string>('')
 
   const { expenses, isLoading: isLoadingExpenses, addExpense, updateExpense, deleteExpense } = useExpenses()
-  const { consolidatedProfile } = useConsolidatedFinancialData()
+  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedFinancialData()
   const { t } = useLanguage()
+
+  console.log('📱 Expenses page - consolidated profile:', consolidatedProfile)
+  console.log('📱 Expenses page - specific expenses:', expenses)
 
   // Use consolidated data when no specific expenses are recorded
   const hasSpecificExpenses = expenses.length > 0
   const totalExpenses = hasSpecificExpenses 
     ? expenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
     : consolidatedProfile?.monthlyExpenses || 0
+
+  console.log('📱 Total expenses calculated:', { hasSpecificExpenses, totalExpenses, fromProfile: consolidatedProfile?.monthlyExpenses })
 
   // Get expense categories from consolidated data when no specific expenses
   const expensesByCategory = hasSpecificExpenses
@@ -39,8 +45,9 @@ const Expenses = () => {
         return acc
       }, {} as Record<string, Expense[]>)
     : Object.entries(consolidatedProfile?.expenseCategories || {}).reduce((acc, [category, amount]) => {
+        // Create mock expenses for display from consolidated data
         acc[category] = [{
-          id: category,
+          id: `consolidated-${category}`,
           user_id: consolidatedProfile?.userId || '',
           amount: amount,
           category: category,
@@ -55,7 +62,7 @@ const Expenses = () => {
   const categories = Object.keys(expensesByCategory)
   const averageExpense = hasSpecificExpenses && expenses.length > 0 
     ? totalExpenses / expenses.length 
-    : totalExpenses
+    : totalExpenses / Math.max(categories.length, 1)
 
   // Filter expenses
   const filteredExpenses = hasSpecificExpenses ? expenses.filter(expense => {
@@ -111,7 +118,7 @@ const Expenses = () => {
     }
   }
 
-  if (isLoadingExpenses) {
+  if (isLoadingExpenses || isLoadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" text={t('loading_expenses')} />
@@ -218,7 +225,7 @@ const Expenses = () => {
         )}
 
         {/* Data Source Indicator */}
-        {!hasSpecificExpenses && (
+        {!hasSpecificExpenses && totalExpenses > 0 && (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
@@ -244,10 +251,13 @@ const Expenses = () => {
             <div className="p-8 text-center">
               <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-text-primary mb-2">
-                {t('no_expenses')}
+                {totalExpenses > 0 ? 'Agrega gastos específicos' : t('no_expenses')}
               </h3>
               <p className="text-text-secondary mb-4">
-                {t('no_expenses_desc')}
+                {totalExpenses > 0 
+                  ? 'Tus datos del onboarding muestran gastos, pero agrega gastos específicos para mayor detalle'
+                  : t('no_expenses_desc')
+                }
               </p>
               <Button onClick={() => setIsModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -267,6 +277,11 @@ const Expenses = () => {
                         <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
                           {expense.category}
                         </span>
+                        {!hasSpecificExpenses && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            Onboarding
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-text-secondary">
                         {new Date(expense.expense_date).toLocaleDateString('es-ES', {

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Plus, CreditCard, TrendingDown, AlertCircle, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -33,8 +34,11 @@ const Debts = () => {
     isRegisteringPayment
   } = useDebts()
 
-  const { consolidatedProfile } = useConsolidatedFinancialData()
+  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedFinancialData()
   const { t } = useLanguage()
+
+  console.log('🏦 Debts page - consolidated profile:', consolidatedProfile)
+  console.log('🏦 Debts page - specific debts:', debts)
 
   // Use consolidated data when no specific debts are recorded
   const hasSpecificDebts = debts.length > 0
@@ -46,6 +50,8 @@ const Debts = () => {
     ? debts.reduce((sum, debt) => sum + debt.minimum_payment, 0)
     : consolidatedProfile?.totalMonthlyDebtPayments || 0
 
+  console.log('🏦 Debt totals:', { hasSpecificDebts, totalDebtBalance, totalMonthlyPayments })
+
   // Create display debts - use real debts if available, otherwise consolidated data
   const displayDebts = hasSpecificDebts 
     ? debts 
@@ -56,6 +62,8 @@ const Debts = () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } as Debt)) || []
+
+  console.log('🏦 Display debts:', displayDebts)
 
   const handleCreateDebt = async (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     createDebt(debtData)
@@ -104,7 +112,7 @@ const Debts = () => {
     return (paidAmount / debt.total_amount) * 100
   }
 
-  if (isLoadingDebts) {
+  if (isLoadingDebts || isLoadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" text={t('loading_debts')} />
@@ -242,10 +250,13 @@ const Debts = () => {
             <div className="p-8 text-center">
               <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-text-primary mb-2">
-                {t('no_debts_registered')}
+                {totalDebtBalance > 0 ? 'Agrega deudas específicas' : t('no_debts_registered')}
               </h3>
               <p className="text-text-secondary mb-4">
-                {t('no_debts_desc')}
+                {totalDebtBalance > 0 
+                  ? 'Tus datos del onboarding muestran deudas, pero agrega deudas específicas para mayor control'
+                  : t('no_debts_desc')
+                }
               </p>
               <Button onClick={() => setIsDebtModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -260,9 +271,16 @@ const Debts = () => {
                   <div key={debt.id} className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-text-primary mb-1">
-                          {debt.creditor_name}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold text-text-primary">
+                            {debt.creditor_name}
+                          </h3>
+                          {!hasSpecificDebts && (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              Onboarding
+                            </span>
+                          )}
+                        </div>
                         {debt.description && (
                           <p className="text-text-secondary text-sm mb-2">
                             {debt.description}
