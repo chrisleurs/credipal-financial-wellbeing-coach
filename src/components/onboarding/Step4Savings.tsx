@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { PiggyBank, TrendingUp, Target } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { PiggyBank, TrendingUp, Target, Star, Info } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
 
@@ -48,7 +49,7 @@ const Step4Savings: React.FC<Step4SavingsProps> = ({ onNext, onBack }) => {
       onNext={handleNext}
       onBack={onBack}
       canProceed={canProceed}
-      nextButtonText="Looking good, next!"
+      nextButtonText="🎉 Awesome job — your smart financial plan is ready!"
     >
       <div className="space-y-6">
         {/* Current savings */}
@@ -93,23 +94,30 @@ const Step4Savings: React.FC<Step4SavingsProps> = ({ onNext, onBack }) => {
           </p>
         </div>
 
-        {/* Smart suggestion based on available balance */}
+        {/* Enhanced Credipal suggestion */}
         {availableBalance > 0 && (
-          <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+          <div className="bg-blue-50 border-2 border-blue-300 p-5 rounded-xl shadow-sm">
             <div className="flex items-start gap-3">
-              <Target className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-800 mb-1">
-                  💡 Credipal's suggestion
-                </p>
-                <p className="text-sm text-blue-700">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <Star className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="font-semibold text-blue-800">⭐ Credipal's personalized suggestion</h3>
+                </div>
+                <p className="text-sm text-blue-700 mb-3">
                   Based on your income and expenses, you could potentially save up to{' '}
                   <strong>${availableBalance.toLocaleString()}</strong> per month. 
                   Consider starting with 10-20% of this amount.
                 </p>
+                <div className="bg-blue-100 border border-blue-200 p-3 rounded-lg mb-3">
+                  <p className="text-xs font-medium text-blue-800">
+                    💡 This is personalized for you — based on your actual income and expenses.
+                  </p>
+                </div>
                 {availableBalance * 0.1 > 0 && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Recommendation: ${Math.round(availableBalance * 0.1).toLocaleString()} - ${Math.round(availableBalance * 0.2).toLocaleString()} monthly
+                  <p className="text-sm font-medium text-blue-700">
+                    💰 Recommendation: ${Math.round(availableBalance * 0.1).toLocaleString()} - ${Math.round(availableBalance * 0.2).toLocaleString()} monthly
                   </p>
                 )}
               </div>
@@ -117,15 +125,21 @@ const Step4Savings: React.FC<Step4SavingsProps> = ({ onNext, onBack }) => {
           </div>
         )}
 
-        {/* Savings insights */}
+        {/* Savings insights with expert context */}
         {monthlyCapacityNum > 0 && (
           <div className="space-y-3">
-            {/* Savings percentage */}
+            {/* Savings percentage with expert recommendation */}
             <div className="bg-green-50 border border-green-200 p-4 rounded-xl">
               <div className="text-center">
                 <p className="text-sm text-green-700 mb-1">Percentage of your income</p>
                 <p className="text-2xl font-bold text-green-800">{savingsPercentage.toFixed(1)}%</p>
-                <p className="text-xs text-green-600 mt-1">
+                <div className="flex items-center justify-center gap-2 mt-2 mb-2">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <p className="text-xs text-blue-700">
+                    ℹ️ Most experts recommend saving 10-20% of your monthly income.
+                  </p>
+                </div>
+                <p className="text-xs text-green-600">
                   {savingsPercentage >= 20 ? 'Excellent! Way above average! 🌟' :
                    savingsPercentage >= 10 ? 'Great! You\'re on the right track! 💪' :
                    savingsPercentage >= 5 ? 'Good start, you can improve gradually 📈' :
@@ -134,16 +148,29 @@ const Step4Savings: React.FC<Step4SavingsProps> = ({ onNext, onBack }) => {
               </div>
             </div>
 
-            {/* Annual projection */}
+            {/* Annual projection with progress visualization */}
             <div className="bg-purple-50 border border-purple-200 p-4 rounded-xl">
               <div className="text-center">
-                <p className="text-sm text-purple-700 mb-1">In one year, you'll have saved</p>
+                <p className="text-sm text-purple-700 mb-1">At this pace, you'll save</p>
                 <p className="text-xl font-bold text-purple-800">
-                  ${(currentSavingsNum + (monthlyCapacityNum * 12)).toLocaleString()}
+                  ${(monthlyCapacityNum * 12).toLocaleString()} in 12 months!
                 </p>
-                <p className="text-xs text-purple-600 mt-1">
+                <p className="text-xs text-purple-600 mt-1 mb-3">
                   ${currentSavingsNum.toLocaleString()} current + ${(monthlyCapacityNum * 12).toLocaleString()} this year
                 </p>
+                
+                {/* Simple progress bar */}
+                <div className="mt-3">
+                  <div className="w-full h-2 bg-purple-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-700"
+                      style={{ width: '25%' }}
+                    />
+                  </div>
+                  <p className="text-xs text-purple-600 mt-1">
+                    🚀 Building toward your financial goals
+                  </p>
+                </div>
               </div>
             </div>
           </div>
