@@ -15,6 +15,7 @@ import type { Debt } from '@/types/debt'
 const Debts = () => {
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false)
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null)
   const [selectedDebtForPayment, setSelectedDebtForPayment] = useState<Debt | null>(null)
 
@@ -334,10 +335,16 @@ const Debts = () => {
           )}
         </div>
 
-        {/* Scenario Analysis */}
+        {/* Scenario Analysis Button - Only show for specific debts */}
         {displayDebts.length > 0 && hasSpecificDebts && (
           <div className="mt-8">
-            <ScenarioAnalysis debt={displayDebts[0]} />
+            <Button
+              onClick={() => setIsScenarioModalOpen(true)}
+              className="w-full"
+              variant="outline"
+            >
+              Ver Análisis de Escenarios
+            </Button>
           </div>
         )}
       </div>
@@ -361,6 +368,15 @@ const Debts = () => {
           }}
           onSubmit={handleRegisterPayment}
           debt={selectedDebtForPayment}
+        />
+      )}
+
+      {displayDebts.length > 0 && hasSpecificDebts && (
+        <ScenarioAnalysis
+          isOpen={isScenarioModalOpen}
+          onClose={() => setIsScenarioModalOpen(false)}
+          debt={displayDebts[0]}
+          payments={payments}
         />
       )}
     </div>

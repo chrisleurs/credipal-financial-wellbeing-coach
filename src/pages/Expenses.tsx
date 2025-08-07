@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Plus, Calendar, TrendingDown, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -318,6 +317,7 @@ const Expenses = () => {
         }}
         onSubmit={handleModalSubmit}
         expense={editingExpense}
+        title={editingExpense ? t('edit_expense') : t('add_expense')}
       />
 
       <DeleteExpenseDialog
