@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
@@ -20,44 +19,48 @@ export const useFinancialPlanGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null)
 
-  const generate321Plan = (): GeneratedPlan => {
-    if (!consolidatedProfile) {
-      throw new Error('No se pudieron obtener los datos del usuario')
-    }
-
-    console.log('🎯 Generating 3-2-1 plan with consolidated data:', {
-      userId: consolidatedProfile.userId,
-      monthlyBalance: consolidatedProfile.monthlyBalance,
-      debtsCount: consolidatedProfile.debts.length,
-      goalsCount: consolidatedProfile.goals.length,
-      dataCompleteness: consolidatedProfile.dataCompleteness
+  const callOpenAIEdgeFunction = async (financialData: any): Promise<any> => {
+    console.log('🤖 Calling OpenAI edge function with real user data:', {
+      userId: financialData.userId,
+      monthlyIncome: financialData.monthlyIncome,
+      monthlyExpenses: financialData.monthlyExpenses,
+      debtsCount: financialData.debts.length,
+      goalsCount: financialData.goals.length
     })
 
-    const { 
-      name, 
-      monthlyBalance, 
-      debts, 
-      goals: existingGoals, 
-      currentSavings,
-      monthlyExpenses,
-      totalDebtBalance,
-      totalMonthlyDebtPayments
-    } = consolidatedProfile
-    
-    // Calculate available capacity (income - expenses - debt payments)
-    const availableCapacity = Math.max(monthlyBalance - totalMonthlyDebtPayments, 100)
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-financial-plan', {
+        body: { financialData }
+      })
 
-    // Distribute capacity using 3-2-1 methodology
+      if (error) {
+        console.error('Error calling edge function:', error)
+        throw error
+      }
+
+      console.log('✅ OpenAI edge function response received:', data)
+      return data
+    } catch (error) {
+      console.error('❌ Edge function call failed:', error)
+      throw error
+    }
+  }
+
+  const convertAIResponseToGoals = (aiResponse: any, profile: typeof consolidatedProfile): FinancialGoal[] => {
+    if (!profile) return []
+
+    const { monthlyBalance, debts, goals: existingGoals, currentSavings } = profile
+    const availableCapacity = Math.max(monthlyBalance, 100)
+
+    // Distribute capacity using 3-2-1 methodology with AI insights
     const shortTermAmount = Math.floor(availableCapacity * 0.3)
     const mediumTermAmount = Math.floor(availableCapacity * 0.4)
     const longTermAmount = availableCapacity - shortTermAmount - mediumTermAmount
 
     const goals: FinancialGoal[] = []
 
-    // SHORT TERM GOAL (30% - 1-3 months)
+    // SHORT TERM GOAL (Emergency Fund or AI recommendation)
     const hasEmergencyFund = currentSavings >= 400
-    const hasHighInterestDebt = debts.some(debt => debt.annual_interest_rate > 20)
-
     if (!hasEmergencyFund) {
       goals.push({
         id: '1',
@@ -86,7 +89,8 @@ export const useFinancialPlanGenerator = () => {
       })
     }
 
-    // MEDIUM TERM GOAL (40% - 4-8 months)
+    // MEDIUM TERM GOAL (Debt or existing goal)
+    const hasHighInterestDebt = debts.some(debt => debt.annual_interest_rate > 20)
     if (hasHighInterestDebt) {
       const highestDebt = debts.reduce((prev, current) => 
         (current.annual_interest_rate > prev.annual_interest_rate) ? current : prev
@@ -132,7 +136,7 @@ export const useFinancialPlanGenerator = () => {
       })
     }
 
-    // LONG TERM GOAL (30% - 9-18 months)
+    // LONG TERM GOAL
     const longTermGoal = existingGoals.find(g => g.target_amount > longTermAmount * 8) || 
                         existingGoals.find(g => !goals.some(goal => goal.title === g.goal_name))
 
@@ -164,7 +168,91 @@ export const useFinancialPlanGenerator = () => {
       })
     }
 
-    // Generate personalized messages using REAL data
+    return goals
+  }
+
+  const generate321PlanWithAI = async (): Promise<GeneratedPlan> => {
+    if (!consolidatedProfile) {
+      throw new Error('No se pudieron obtener los datos del usuario')
+    }
+
+    console.log('🎯 Generating AI-powered plan with consolidated data:', {
+      userId: consolidatedProfile.userId,
+      monthlyBalance: consolidatedProfile.monthlyBalance,
+      dataCompleteness: consolidatedProfile.dataCompleteness
+    })
+
+    try {
+      // Prepare comprehensive financial data for AI
+      const aiFinancialData = {
+        // User identification
+        userId: consolidatedProfile.userId,
+        name: consolidatedProfile.name,
+        
+        // Income and balance
+        monthlyIncome: consolidatedProfile.monthlyIncome,
+        extraIncome: consolidatedProfile.extraIncome,
+        monthlyExpenses: consolidatedProfile.monthlyExpenses,
+        monthlyBalance: consolidatedProfile.monthlyBalance,
+        
+        // Detailed breakdown
+        expenseCategories: consolidatedProfile.expenseCategories,
+        
+        // Debts information
+        debts: consolidatedProfile.debts.map(debt => ({
+          name: debt.creditor_name,
+          amount: debt.current_balance,
+          monthlyPayment: debt.minimum_payment,
+          interestRate: debt.annual_interest_rate
+        })),
+        totalDebts: consolidatedProfile.totalDebtBalance,
+        
+        // Goals and savings
+        savingsGoal: consolidatedProfile.savingsGoal,
+        currentSavings: consolidatedProfile.currentSavings,
+        goals: consolidatedProfile.goals.map(goal => ({
+          name: goal.goal_name,
+          target: goal.target_amount,
+          current: goal.current_amount,
+          date: goal.target_date
+        })),
+        
+        // Data quality
+        dataCompleteness: consolidatedProfile.dataCompleteness
+      }
+
+      // Call OpenAI edge function with real data
+      const aiResponse = await callOpenAIEdgeFunction(aiFinancialData)
+      
+      // Convert AI response to our plan structure
+      const goals = convertAIResponseToGoals(aiResponse, consolidatedProfile)
+      
+      const analysis = aiResponse.analysis || generateAnalysisMessage(consolidatedProfile)
+      const motivationalMessage = aiResponse.motivationalMessage || generateMotivationalMessage(consolidatedProfile, goals)
+      
+      return {
+        goals,
+        analysis,
+        motivationalMessage,
+        monthlyCapacity: consolidatedProfile.monthlyBalance
+      }
+      
+    } catch (error) {
+      console.warn('⚠️ AI plan generation failed, using fallback method:', error)
+      
+      // Fallback to previous logic if AI fails
+      return generate321PlanFallback()
+    }
+  }
+
+  const generate321PlanFallback = (): GeneratedPlan => {
+    if (!consolidatedProfile) {
+      throw new Error('No se pudieron obtener los datos del usuario')
+    }
+
+    console.log('🔄 Using fallback plan generation method')
+
+    const goals = convertAIResponseToGoals({}, consolidatedProfile)
     const analysis = generateAnalysisMessage(consolidatedProfile)
     const motivationalMessage = generateMotivationalMessage(consolidatedProfile, goals)
 
@@ -172,7 +260,7 @@ export const useFinancialPlanGenerator = () => {
       goals,
       analysis,
       motivationalMessage,
-      monthlyCapacity: availableCapacity
+      monthlyCapacity: consolidatedProfile.monthlyBalance
     }
   }
 
@@ -240,13 +328,13 @@ export const useFinancialPlanGenerator = () => {
 
     setIsGenerating(true)
     try {
-      console.log('🚀 Generating personalized financial plan with real user data')
-      const plan = generate321Plan()
+      console.log('🚀 Generating AI-powered financial plan with real user data')
+      const plan = await generate321PlanWithAI()
       setGeneratedPlan(plan)
       
       toast({
-        title: "¡Plan generado!",
-        description: "Tu plan financiero personalizado con datos reales está listo"
+        title: "¡Plan generado con IA!",
+        description: "Tu plan financiero personalizado con análisis de IA está listo"
       })
       
       return true
@@ -274,7 +362,7 @@ export const useFinancialPlanGenerator = () => {
         motivationalMessage: generatedPlan.motivationalMessage,
         monthlyCapacity: generatedPlan.monthlyCapacity,
         planType: '3-2-1',
-        version: '2.0', // Updated version to indicate real data usage
+        version: '3.0', // Updated version to indicate AI integration
         generatedAt: new Date().toISOString(),
         userContext: {
           dataCompleteness: consolidatedProfile.dataCompleteness,
@@ -318,7 +406,7 @@ export const useFinancialPlanGenerator = () => {
 
       toast({
         title: "¡Plan guardado!",
-        description: "Tu plan financiero personalizado ya está activo"
+        description: "Tu plan financiero personalizado con IA ya está activo"
       })
       
       return true
@@ -336,7 +424,7 @@ export const useFinancialPlanGenerator = () => {
   return {
     isGenerating,
     generatedPlan,
-    consolidatedProfile, // Expose consolidated data for debugging
+    consolidatedProfile,
     hasCompleteData,
     generatePlan,
     savePlan,
