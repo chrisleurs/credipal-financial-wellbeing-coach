@@ -4,9 +4,9 @@ import { Plus, CreditCard, TrendingDown, AlertCircle, Target } from 'lucide-reac
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { DebtModal } from '@/components/debts/DebtModal'
-import { PaymentModal } from '@/components/debts/PaymentModal'
-import { ScenarioAnalysis } from '@/components/debts/ScenarioAnalysis'
+import DebtModal from '@/components/debts/DebtModal'
+import PaymentModal from '@/components/debts/PaymentModal'
+import ScenarioAnalysis from '@/components/debts/ScenarioAnalysis'
 import { useDebts } from '@/hooks/useDebts'
 import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -46,10 +46,16 @@ const Debts = () => {
     ? debts.reduce((sum, debt) => sum + debt.minimum_payment, 0)
     : consolidatedProfile?.totalMonthlyDebtPayments || 0
 
-  // Create virtual debts from consolidated data for display
+  // Create display debts - use real debts if available, otherwise consolidated data
   const displayDebts = hasSpecificDebts 
     ? debts 
-    : consolidatedProfile?.debts || []
+    : consolidatedProfile?.debts?.map(debt => ({
+        ...debt,
+        user_id: consolidatedProfile?.userId || '',
+        description: `Deuda consolidada de ${debt.creditor_name}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Debt)) || []
 
   const handleCreateDebt = async (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     createDebt(debtData)
@@ -92,7 +98,7 @@ const Debts = () => {
     setSelectedDebtForPayment(null)
   }
 
-  const calculateProgress = (debt: any) => {
+  const calculateProgress = (debt: Debt) => {
     if (!debt.total_amount || debt.total_amount === 0) return 0
     const paidAmount = debt.total_amount - debt.current_balance
     return (paidAmount / debt.total_amount) * 100
@@ -330,7 +336,7 @@ const Debts = () => {
         </div>
 
         {/* Scenario Analysis */}
-        {displayDebts.length > 0 && (
+        {displayDebts.length > 0 && hasSpecificDebts && (
           <div className="mt-8">
             <ScenarioAnalysis debts={displayDebts} />
           </div>

@@ -16,6 +16,7 @@ const Expenses = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null)
+  const [deleteExpenseDescription, setDeleteExpenseDescription] = useState<string>('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [dateFrom, setDateFrom] = useState<string>('')
   const [dateTo, setDateTo] = useState<string>('')
@@ -75,9 +76,10 @@ const Expenses = () => {
     setIsModalOpen(true)
   }
 
-  const handleDeleteExpense = (id: string) => {
+  const handleDeleteExpense = (expense: Expense) => {
     if (!hasSpecificExpenses) return // Can't delete consolidated data
-    setDeleteExpenseId(id)
+    setDeleteExpenseId(expense.id)
+    setDeleteExpenseDescription(expense.description)
   }
 
   const handleModalSubmit = async (expenseData: {
@@ -87,18 +89,24 @@ const Expenses = () => {
     expense_date: string
   }) => {
     if (editingExpense) {
-      await updateExpense(editingExpense.id, expenseData)
+      const result = await updateExpense(editingExpense.id, expenseData)
+      if (result.success) {
+        setIsModalOpen(false)
+        setEditingExpense(null)
+      }
     } else {
-      await addExpense(expenseData)
+      const result = await addExpense(expenseData)
+      if (result.success) {
+        setIsModalOpen(false)
+      }
     }
-    setIsModalOpen(false)
-    setEditingExpense(null)
   }
 
   const handleDeleteConfirm = async () => {
     if (deleteExpenseId) {
       await deleteExpense(deleteExpenseId)
       setDeleteExpenseId(null)
+      setDeleteExpenseDescription('')
     }
   }
 
@@ -192,16 +200,17 @@ const Expenses = () => {
           </Card>
         </div>
 
-        {/* Filters */}
-        <ExpenseFilters
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          dateFrom={dateFrom}
-          onDateFromChange={setDateFrom}
-          dateTo={dateTo}
-          onDateToChange={setDateTo}
-        />
+        {/* Filters - Only show for specific expenses */}
+        {hasSpecificExpenses && (
+          <ExpenseFilters
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            dateFrom={dateFrom}
+            onDateFromChange={setDateFrom}
+            dateTo={dateTo}
+            onDateToChange={setDateTo}
+          />
+        )}
 
         {/* Data Source Indicator */}
         {!hasSpecificExpenses && (
@@ -279,7 +288,7 @@ const Expenses = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteExpense(expense.id)}
+                            onClick={() => handleDeleteExpense(expense)}
                             className="text-red-600 hover:text-red-700"
                           >
                             {t('delete')}
@@ -307,8 +316,12 @@ const Expenses = () => {
 
       <DeleteExpenseDialog
         isOpen={!!deleteExpenseId}
-        onClose={() => setDeleteExpenseId(null)}
+        onClose={() => {
+          setDeleteExpenseId(null)
+          setDeleteExpenseDescription('')
+        }}
         onConfirm={handleDeleteConfirm}
+        expenseDescription={deleteExpenseDescription}
       />
     </div>
   )
