@@ -17,15 +17,21 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
   const [goals, setGoals] = useState<string[]>(financialData.financialGoals || [])
   const [newGoal, setNewGoal] = useState('')
 
-  const predefinedGoals = [
-    'Emergency fund',
-    'Vacation',
-    'Buy a house',
-    'Buy a car',
-    'Education',
-    'Retirement',
-    'Investments'
-  ]
+  const goalsByTimeframe = {
+    'Short-Term (0-12 months)': [
+      { value: 'Emergency fund', icon: '💰' },
+      { value: 'Vacation', icon: '🏖️' }
+    ],
+    'Mid-Term (1-3 years)': [
+      { value: 'Buy a car', icon: '🚗' },
+      { value: 'Education', icon: '🎓' },
+      { value: 'Buy a house', icon: '🏡' }
+    ],
+    'Long-Term (3+ years)': [
+      { value: 'Retirement', icon: '👵' },
+      { value: 'Investments', icon: '📈' }
+    ]
+  }
 
   const addGoal = (goal: string) => {
     if (goal.trim() && !goals.includes(goal)) {
@@ -65,26 +71,31 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
           </div>
         </div>
 
-        {/* Predefined goals */}
-        <div className="space-y-3">
-          <h3 className="font-medium text-gray-900">Popular goals</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {predefinedGoals.map((goal) => (
-              <Button
-                key={goal}
-                variant="outline"
-                onClick={() => addGoal(goal)}
-                disabled={goals.includes(goal)}
-                className={`text-left h-auto py-3 ${
-                  goals.includes(goal) 
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700' 
-                    : 'hover:bg-emerald-50'
-                }`}
-              >
-                {goal}
-              </Button>
-            ))}
-          </div>
+        {/* Goals organized by timeframes */}
+        <div className="space-y-6">
+          {Object.entries(goalsByTimeframe).map(([timeframe, timeframeGoals]) => (
+            <div key={timeframe} className="space-y-3">
+              <h3 className="font-medium text-gray-900 text-lg">{timeframe}</h3>
+              <div className="grid grid-cols-1 gap-2">
+                {timeframeGoals.map((goal) => (
+                  <Button
+                    key={goal.value}
+                    variant="outline"
+                    onClick={() => addGoal(goal.value)}
+                    disabled={goals.includes(goal.value)}
+                    className={`text-left h-auto py-3 flex items-center gap-3 ${
+                      goals.includes(goal.value) 
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-700' 
+                        : 'hover:bg-emerald-50'
+                    }`}
+                  >
+                    <span className="text-xl">{goal.icon}</span>
+                    <span>{goal.value}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Add custom goal */}
@@ -92,7 +103,7 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
           <h3 className="font-medium text-gray-900">Custom goal</h3>
           <div className="flex gap-2">
             <Input
-              placeholder="Write your financial goal"
+              placeholder="E.g., Save for a wedding, Start a business"
               value={newGoal}
               onChange={(e) => setNewGoal(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addGoal(newGoal)}
@@ -108,10 +119,15 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
           </div>
         </div>
 
-        {/* Selected goals */}
+        {/* Selected goals counter and list */}
         {goals.length > 0 && (
           <div className="space-y-3">
-            <h3 className="font-medium text-gray-900">Your selected goals</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900">Your selected goals</h3>
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
+                You've selected {goals.length} goal{goals.length !== 1 ? 's' : ''}.
+              </Badge>
+            </div>
             <div className="space-y-2">
               {goals.map((goal) => (
                 <div
