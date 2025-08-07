@@ -16,25 +16,25 @@ const EXPENSE_CATEGORIES = [
     id: 'food',
     name: 'Food & Dining',
     icon: Utensils,
-    description: 'Individual food expenses (e.g., groceries, restaurants, coffee shops, delivery, lunch)'
+    description: 'Add everything you spend on meals, snacks, groceries, and food delivery.'
   },
   {
     id: 'transport',
     name: 'Transportation',
     icon: Car,
-    description: 'Individual transport expenses (e.g., gas/fuel, Uber/Lyft, public transport, car repairs, parking)'
+    description: 'Enter how much you spend getting around each month.'
   },
   {
     id: 'housing',
     name: 'Housing & Utilities',
     icon: Home,
-    description: 'Individual housing expenses (e.g., rent/mortgage, electricity, water, internet, phone, insurance)'
+    description: 'Include all your housing-related bills and utilities.'
   },
   {
     id: 'bills',
     name: 'Bills & Services',
     icon: CreditCard,
-    description: 'Individual bills and service expenses (e.g., gym membership, subscriptions, banking fees, professional services)'
+    description: 'Other monthly services or memberships.'
   },
   {
     id: 'entertainment',

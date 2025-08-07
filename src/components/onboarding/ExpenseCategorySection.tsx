@@ -20,13 +20,47 @@ interface ExpenseCategorySectionProps {
   onDeleteExpense: (id: string) => void;
 }
 
-// Predefined subcategories for each category
-const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
-  'Food & Dining': ['Groceries', 'Restaurants', 'Coffee shops', 'Delivery', 'Lunch', 'Snacks'],
-  'Transportation': ['Gas/Fuel', 'Uber/Lyft', 'Public Transport', 'Car Repairs', 'Parking', 'Car Payment'],
-  'Housing & Utilities': ['Rent/Mortgage', 'Electricity', 'Water', 'Internet', 'Phone', 'Insurance'],
-  'Bills & Services': ['Gym Membership', 'Subscriptions', 'Banking Fees', 'Professional Services', 'Phone Bill'],
-  'Entertainment & Personal': ['Netflix', 'Spotify', 'Amazon Prime', 'Movies', 'Shopping', 'Personal Care']
+// Updated subcategories with placeholders
+const SUBCATEGORY_OPTIONS: Record<string, Array<{name: string, placeholder: string}>> = {
+  'Food & Dining': [
+    { name: 'Groceries', placeholder: 'e.g., supermarket, Costco' },
+    { name: 'Restaurants', placeholder: 'e.g., dine-in or takeout' },
+    { name: 'Coffee shops', placeholder: 'e.g., Starbucks, cafés' },
+    { name: 'Delivery', placeholder: 'e.g., UberEats, DoorDash' },
+    { name: 'Lunch', placeholder: 'e.g., daily work lunches' },
+    { name: 'Snacks', placeholder: 'e.g., vending machines, convenience store' }
+  ],
+  'Transportation': [
+    { name: 'Gas/Fuel', placeholder: 'e.g., gas station fill-ups' },
+    { name: 'Uber/Lyft', placeholder: 'e.g., rideshare trips' },
+    { name: 'Public Transport', placeholder: 'e.g., bus/train pass' },
+    { name: 'Car Repairs', placeholder: 'e.g., oil change, maintenance' },
+    { name: 'Parking', placeholder: 'e.g., daily parking fees' },
+    { name: 'Car Payment', placeholder: 'e.g., monthly auto loan' }
+  ],
+  'Housing & Utilities': [
+    { name: 'Rent/Mortgage', placeholder: 'Monthly rent or home payment' },
+    { name: 'Electricity', placeholder: 'Monthly power bill' },
+    { name: 'Water', placeholder: 'City/utility water charges' },
+    { name: 'Internet', placeholder: 'Home WiFi or cable' },
+    { name: 'Phone', placeholder: 'e.g., cell phone bill' },
+    { name: 'Insurance', placeholder: 'Home/renter\'s insurance' }
+  ],
+  'Bills & Services': [
+    { name: 'Gym Membership', placeholder: 'e.g., fitness club, yoga' },
+    { name: 'Subscriptions', placeholder: 'e.g., Netflix, Spotify' },
+    { name: 'Banking Fees', placeholder: 'e.g., monthly checking fees' },
+    { name: 'Professional Services', placeholder: 'e.g., therapy, coaching' },
+    { name: 'Phone Bill', placeholder: 'e.g., monthly mobile plan' }
+  ],
+  'Entertainment & Personal': [
+    { name: 'Netflix', placeholder: 'e.g., streaming services' },
+    { name: 'Spotify', placeholder: 'e.g., music subscriptions' },
+    { name: 'Amazon Prime', placeholder: 'e.g., membership services' },
+    { name: 'Movies', placeholder: 'e.g., theater tickets' },
+    { name: 'Shopping', placeholder: 'e.g., clothes, personal items' },
+    { name: 'Personal Care', placeholder: 'e.g., haircuts, beauty' }
+  ]
 };
 
 export const ExpenseCategorySection: React.FC<ExpenseCategorySectionProps> = ({
@@ -46,6 +80,15 @@ export const ExpenseCategorySection: React.FC<ExpenseCategorySectionProps> = ({
   const IconComponent = category.icon;
   const categoryTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const subcategoryOptions = SUBCATEGORY_OPTIONS[category.name] || [];
+
+  // Get placeholder for current subcategory
+  const getPlaceholder = () => {
+    if (subcategory === 'custom') {
+      return 'e.g., your specific expense';
+    }
+    const option = subcategoryOptions.find(opt => opt.name === subcategory);
+    return option ? option.placeholder : 'e.g., monthly amount';
+  };
 
   const handleSubmit = async () => {
     const finalSubcategory = subcategory === 'custom' ? customSubcategory : subcategory;
@@ -116,8 +159,8 @@ export const ExpenseCategorySection: React.FC<ExpenseCategorySectionProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {subcategoryOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
+                        <SelectItem key={option.name} value={option.name}>
+                          {option.name}
                         </SelectItem>
                       ))}
                       <SelectItem value="custom">
@@ -140,7 +183,7 @@ export const ExpenseCategorySection: React.FC<ExpenseCategorySectionProps> = ({
                   />
                 )}
 
-                {/* Amount Input */}
+                {/* Amount Input with dynamic placeholder */}
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                     $
@@ -149,7 +192,7 @@ export const ExpenseCategorySection: React.FC<ExpenseCategorySectionProps> = ({
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
+                    placeholder={getPlaceholder()}
                     className="pl-6 h-9"
                     min="0"
                     step="0.01"
