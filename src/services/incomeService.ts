@@ -10,7 +10,7 @@ export const getIncomes = async (userId: string): Promise<{ data: Income[] | nul
     .eq('is_active', true)
     .order('created_at', { ascending: false })
   
-  return { data, error }
+  return { data: data as Income[], error }
 }
 
 export const insertIncome = async (income: {
@@ -25,7 +25,7 @@ export const insertIncome = async (income: {
     .select()
     .single()
   
-  return { data, error }
+  return { data: data as Income, error }
 }
 
 export const updateIncome = async (id: string, updates: Partial<Income>): Promise<{ data: Income | null, error: any }> => {
@@ -36,7 +36,7 @@ export const updateIncome = async (id: string, updates: Partial<Income>): Promis
     .select()
     .single()
   
-  return { data, error }
+  return { data: data as Income, error }
 }
 
 export const deleteIncome = async (id: string): Promise<{ error: any }> => {

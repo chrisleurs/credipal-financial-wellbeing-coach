@@ -27,7 +27,7 @@ export function IncomeList() {
       .eq('is_active', true)
       .order('created_at', { ascending: false })
     
-    setIncomes(data || [])
+    setIncomes((data || []) as Income[])
   }
   
   useEffect(() => {
