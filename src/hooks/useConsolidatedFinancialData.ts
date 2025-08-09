@@ -55,7 +55,15 @@ export const useConsolidatedFinancialData = () => {
           result.monthlyIncome = (userFinancialData.ingresos || 0) + (userFinancialData.ingresos_extras || 0);
           result.monthlyExpenses = userFinancialData.gastos_totales || 0;
           result.currentSavings = userFinancialData.ahorros_actuales || 0;
-          result.financialGoals = userFinancialData.metas_financieras || [];
+          
+          // Manejar financialGoals correctamente
+          if (userFinancialData.metas_financieras && Array.isArray(userFinancialData.metas_financieras)) {
+            result.financialGoals = userFinancialData.metas_financieras;
+          } else if (typeof userFinancialData.metas_financieras === 'string') {
+            result.financialGoals = [userFinancialData.metas_financieras];
+          } else {
+            result.financialGoals = [];
+          }
           
           // Procesar gastos categorizados
           if (userFinancialData.gastos_categorizados && Array.isArray(userFinancialData.gastos_categorizados)) {

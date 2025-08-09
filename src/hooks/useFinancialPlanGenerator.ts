@@ -1,8 +1,9 @@
+
 import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
 import { useToast } from './use-toast'
-import { useConsolidatedFinancialData } from './useConsolidatedFinancialData'
+import { useConsolidatedProfile } from './useConsolidatedProfile'
 import type { FinancialGoal, DashboardData } from '@/types/financialPlan'
 
 interface GeneratedPlan {
@@ -15,7 +16,7 @@ interface GeneratedPlan {
 export const useFinancialPlanGenerator = () => {
   const { user } = useAuth()
   const { toast } = useToast()
-  const { consolidatedProfile, hasCompleteData } = useConsolidatedFinancialData()
+  const { consolidatedProfile, hasCompleteData } = useConsolidatedProfile()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null)
 

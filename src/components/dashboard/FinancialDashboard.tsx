@@ -79,6 +79,8 @@ export const FinancialDashboard = () => {
   };
 
   const monthlyBalance = safeData.monthlyIncome - safeData.monthlyExpenses - safeData.monthlyDebtPayments;
+  const hasRealData = safeData.monthlyIncome > 0 || safeData.monthlyExpenses > 0 || safeData.totalDebts > 0;
+  const dataSource: 'database' | 'onboarding' | 'mock' = hasRealData ? 'database' : 'mock';
   
   return (
     <div className="space-y-6 p-6">
@@ -89,7 +91,7 @@ export const FinancialDashboard = () => {
             Resumen de tu situación financiera actual
           </p>
         </div>
-        <DataSourceIndicator />
+        <DataSourceIndicator dataSource={dataSource} hasRealData={hasRealData} />
       </div>
 
       {/* Mostrar mensaje si no hay datos */}
@@ -116,41 +118,37 @@ export const FinancialDashboard = () => {
           value={`$${safeData.monthlyIncome.toLocaleString()}`}
           icon={DollarSign}
           trend={safeData.monthlyIncome > 0 ? "up" : "neutral"}
-          trendValue="0%"
+          trendValue={{ direction: "up", percentage: "0%" }}
         />
         <MetricCard
           title="Balance Mensual"
           value={`$${monthlyBalance.toLocaleString()}`}
           icon={TrendingUp}
           trend={monthlyBalance > 0 ? "up" : monthlyBalance < 0 ? "down" : "neutral"}
-          trendValue="0%"
+          trendValue={{ direction: monthlyBalance >= 0 ? "up" : "down", percentage: "0%" }}
         />
         <MetricCard
           title="Ahorros Actuales"
           value={`$${safeData.currentSavings.toLocaleString()}`}
           icon={Target}
           trend={safeData.currentSavings > 0 ? "up" : "neutral"}
-          trendValue="0%"
+          trendValue={{ direction: "up", percentage: "0%" }}
         />
         <MetricCard
           title="Deudas Totales"
           value={`$${safeData.totalDebts.toLocaleString()}`}
           icon={CreditCard}
           trend={safeData.totalDebts > 0 ? "down" : "neutral"}
-          trendValue="0%"
+          trendValue={{ direction: "down", percentage: "0%" }}
         />
       </div>
 
       {/* Sección de gráficos */}
-      <ChartSection 
-        data={safeData} 
-        timeFilter={timeFilter}
-        onTimeFilterChange={setTimeFilter}
-      />
+      <ChartSection />
 
       {/* Metas y préstamos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GoalCard goals={safeData.financialGoals} />
+        <GoalCard />
         <LoanCard />
       </div>
 
