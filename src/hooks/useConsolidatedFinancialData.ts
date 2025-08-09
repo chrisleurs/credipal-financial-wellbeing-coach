@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react'
 import { useAuth } from './useAuth'
 import { useFinancialData } from './useFinancialData'
@@ -6,6 +5,7 @@ import { useUserFinancialData } from './useUserFinancialData'
 import { useDebts } from './useDebts'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import { Income } from '@/types/income'
 
 export interface ConsolidatedUserProfile {
   // Basic info
@@ -66,6 +66,28 @@ export const useConsolidatedFinancialData = () => {
   const { userFinancialData } = useUserFinancialData()
   const { debts } = useDebts()
 
+  // Fetch incomes
+  const { data: incomes = [] } = useQuery({
+    queryKey: ['incomes', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return []
+      
+      const { data, error } = await supabase
+        .from('incomes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+      
+      if (error) {
+        console.error('Error fetching incomes:', error)
+        return []
+      }
+      
+      return (data || []) as Income[]
+    },
+    enabled: !!user?.id,
+  })
+
   // Fetch goals
   const { data: goals = [] } = useQuery({
     queryKey: ['goals', user?.id],
@@ -118,15 +140,30 @@ export const useConsolidatedFinancialData = () => {
     console.log('  - userFinancialData:', userFinancialData)
     console.log('  - financialDataRecord:', financialDataRecord)
     console.log('  - debts:', debts)
+    console.log('  - incomes:', incomes)
     
     // Basic info
     const name = profile?.first_name || 'Usuario'
     
-    // Income data - prioritize user_financial_data (onboarding) over financial_data
-    const monthlyIncome = userFinancialData?.ingresos || financialDataRecord?.monthly_income || 0
+    // Income data calculation with priority
+    const calculateMonthlyIncome = () => {
+      // Primero intentar con ingresos reales de la tabla incomes
+      if (incomes && incomes.length > 0) {
+        return incomes.reduce((sum, inc) => {
+          const multiplier = inc.frequency === 'weekly' ? 4 : 
+                            inc.frequency === 'biweekly' ? 2 : 1
+          return sum + (inc.amount * multiplier)
+        }, 0)
+      }
+      
+      // Si no hay ingresos, usar datos del onboarding
+      return userFinancialData?.ingresos || financialDataRecord?.monthly_income || 0
+    }
+
+    const monthlyIncome = calculateMonthlyIncome()
     const extraIncome = userFinancialData?.ingresos_extras || 0
     
-    console.log('💰 Income calculated:', { monthlyIncome, extraIncome })
+    console.log('💰 Income calculated:', { monthlyIncome, extraIncome, incomesCount: incomes.length })
     
     // Expenses - calculate from categorized expenses if available
     let monthlyExpenses = 0
@@ -283,7 +320,7 @@ export const useConsolidatedFinancialData = () => {
     
     return consolidatedData
     
-  }, [user, profile, userFinancialData, financialDataRecord, debts, goals])
+  }, [user, profile, userFinancialData, financialDataRecord, debts, goals, incomes])
 
   return {
     consolidatedProfile,
