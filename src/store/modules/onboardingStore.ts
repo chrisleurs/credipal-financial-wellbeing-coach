@@ -19,6 +19,7 @@ export interface OnboardingSlice {
   updateSavings: (current: number, monthly: number) => void
   updateGoals: (goals: string[]) => void
   completeOnboarding: () => void
+  resetOnboardingData: () => void
   
   // Persistence
   saveOnboardingProgress: () => Promise<void>
@@ -91,6 +92,15 @@ export const createOnboardingSlice: StateCreator<OnboardingSlice> = (set, get) =
   },
 
   completeOnboarding: () => set({ isOnboardingComplete: true }),
+
+  resetOnboardingData: () => {
+    console.log('🔄 Resetting onboarding data to initial state')
+    set({
+      currentStep: 0,
+      financialData: { ...initialFinancialData },
+      isOnboardingComplete: false
+    })
+  },
 
   // Persistence methods
   saveOnboardingProgress: async () => {
