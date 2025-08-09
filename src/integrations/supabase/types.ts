@@ -282,6 +282,48 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_plans: {
+        Row: {
+          created_at: string
+          goals: Json
+          id: string
+          monthly_balance: number
+          plan_data: Json
+          plan_type: string
+          recommendations: Json
+          savings_suggestion: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goals?: Json
+          id?: string
+          monthly_balance?: number
+          plan_data?: Json
+          plan_type?: string
+          recommendations?: Json
+          savings_suggestion?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goals?: Json
+          id?: string
+          monthly_balance?: number
+          plan_data?: Json
+          plan_type?: string
+          recommendations?: Json
+          savings_suggestion?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           created_at: string
@@ -548,39 +590,51 @@ export type Database = {
       user_financial_data: {
         Row: {
           ahorros: Json
+          ahorros_actuales: number | null
+          capacidad_ahorro: number | null
           created_at: string
           deudas: Json
           gastos_categorizados: Json
+          gastos_totales: number | null
           id: string
           ingresos: number
           ingresos_extras: number
           metas: Json
+          metas_financieras: Json | null
           updated_at: string
           user_data: Json
           user_id: string
         }
         Insert: {
           ahorros?: Json
+          ahorros_actuales?: number | null
+          capacidad_ahorro?: number | null
           created_at?: string
           deudas?: Json
           gastos_categorizados?: Json
+          gastos_totales?: number | null
           id?: string
           ingresos?: number
           ingresos_extras?: number
           metas?: Json
+          metas_financieras?: Json | null
           updated_at?: string
           user_data?: Json
           user_id: string
         }
         Update: {
           ahorros?: Json
+          ahorros_actuales?: number | null
+          capacidad_ahorro?: number | null
           created_at?: string
           deudas?: Json
           gastos_categorizados?: Json
+          gastos_totales?: number | null
           id?: string
           ingresos?: number
           ingresos_extras?: number
           metas?: Json
+          metas_financieras?: Json | null
           updated_at?: string
           user_data?: Json
           user_id?: string

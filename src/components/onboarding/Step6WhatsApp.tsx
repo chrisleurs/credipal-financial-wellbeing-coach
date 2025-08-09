@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, Smartphone, CheckCircle, X } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
+import { useOnboardingDataConsolidation } from '@/hooks/useOnboardingDataConsolidation'
 import { useNavigate } from 'react-router-dom'
 
 interface Step6WhatsAppProps {
@@ -15,6 +15,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
   const navigate = useNavigate()
   const { setWhatsAppOptIn, completeOnboarding } = useFinancialStore()
   const { updateOnboardingStatus } = useOnboardingStatus()
+  const { consolidateOnboardingData } = useOnboardingDataConsolidation()
   const [isLoading, setIsLoading] = useState(false)
 
   const handleCompleteOnboarding = async (optIn: boolean) => {
@@ -30,6 +31,11 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       // Mark onboarding as complete in local store
       completeOnboarding()
       console.log('Local onboarding completed')
+      
+      // ✨ NUEVA FUNCIONALIDAD: Consolidar todos los datos del onboarding
+      console.log('🔄 Consolidando datos del onboarding...')
+      await consolidateOnboardingData()
+      console.log('✅ Datos consolidados exitosamente')
       
       // Update onboarding status in database
       console.log('Attempting to update database onboarding status...')
@@ -146,7 +152,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Setting up...
+                Guardando datos...
               </div>
             ) : (
               <>
@@ -165,7 +171,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-                Setting up...
+                Guardando datos...
               </div>
             ) : (
               <>
@@ -182,7 +188,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
             variant="ghost"
             className="w-full text-gray-500 py-2 rounded-xl hover:bg-gray-50"
           >
-            {isLoading ? 'Loading...' : 'Skip and go to dashboard'}
+            {isLoading ? 'Guardando datos...' : 'Skip and go to dashboard'}
           </Button>
 
           {/* Emergency escape button - only shown if loading takes too long */}
