@@ -1,12 +1,10 @@
 
-import React, { useState, useEffect } from 'react'
-import { ArrowLeft, ChevronDown, Settings, DollarSign, TrendingUp } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
+import React from 'react'
+import { ArrowRight, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useOnboardingStore } from '@/store/modules/onboardingStore'
+import { Card, CardContent } from '@/components/ui/card'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { useAuth } from '@/hooks/useAuth'
 
 interface OnboardingWelcomeProps {
   onNext: () => void
@@ -14,17 +12,10 @@ interface OnboardingWelcomeProps {
 }
 
 export default function OnboardingWelcome({ onNext, onBack }: OnboardingWelcomeProps) {
-  const { financialData, updateIncome } = useOnboardingStore()
-  const [selectedLanguage, setSelectedLanguage] = useState('ES')
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [mainIncome, setMainIncome] = useState(financialData.monthlyIncome.toString())
-  const [extraIncome, setExtraIncome] = useState(financialData.extraIncome.toString())
-
-  // Update local state when store data changes
-  useEffect(() => {
-    setMainIncome(financialData.monthlyIncome.toString())
-    setExtraIncome(financialData.extraIncome.toString())
-  }, [financialData.monthlyIncome, financialData.extraIncome])
+  const { t } = useLanguage()
+  const { user } = useAuth()
+  const [selectedLanguage, setSelectedLanguage] = React.useState('ES')
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false)
 
   const languages = [
     { code: 'ES', flag: '🇪🇸', name: 'Español' },
@@ -38,54 +29,11 @@ export default function OnboardingWelcome({ onNext, onBack }: OnboardingWelcomeP
     setIsDropdownOpen(false)
   }
 
-  const handleMainIncomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setMainIncome(value)
-  }
-
-  const handleExtraIncomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setExtraIncome(value)
-  }
-
-  const handleContinue = () => {
-    const monthlyIncomeValue = parseFloat(mainIncome) || 0
-    const extraIncomeValue = parseFloat(extraIncome) || 0
-    
-    console.log('💰 Saving income data:', { monthlyIncomeValue, extraIncomeValue })
-    updateIncome(monthlyIncomeValue, extraIncomeValue)
-    onNext()
-  }
-
-  const totalIncome = (parseFloat(mainIncome) || 0) + (parseFloat(extraIncome) || 0)
-  const canProceed = parseFloat(mainIncome) > 0
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 relative">
-      {/* Progress Bar - Sticky on mobile */}
-      <div className="sticky top-0 z-50 md:relative bg-white/80 backdrop-blur-md border-b border-white/20 px-4 py-3 md:px-6 md:py-4">
-        <div className="flex justify-between items-center text-sm font-medium text-gray-700">
-          <span>Paso 1 de 6</span>
-          <span>17% completado</span>
-        </div>
-        <div className="mt-2 bg-white/50 rounded-full h-2 shadow-inner">
-          <div 
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full transition-all duration-500"
-            style={{ width: '17%' }}
-          />
-        </div>
-      </div>
-
-      {/* Header */}
+      {/* Header con selector de idioma */}
       <div className="flex items-center justify-between p-4 md:p-6">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={onBack}
-          className="p-2 hover:bg-white/50 rounded-xl transition-colors"
-        >
-          <ArrowLeft className="h-6 w-6 text-gray-600" />
-        </Button>
+        <div></div> {/* Spacer para centrar el selector */}
         
         {/* Language Selector */}
         <div className="relative">
@@ -124,114 +72,80 @@ export default function OnboardingWelcome({ onNext, onBack }: OnboardingWelcomeP
       <div className="flex-1 px-4 md:px-6 pb-6">
         <div className="max-w-2xl mx-auto">
           {/* Welcome Section */}
-          <div className="text-center mb-8 md:mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="mb-8">
+              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <span className="text-3xl">💰</span>
+              </div>
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               ¡Bienvenido a Credipal!
             </h1>
-            <p className="text-gray-600 text-lg md:text-xl leading-relaxed px-2">
-              Tu préstamo Kueski ya está registrado. Ahora vamos a configurar tus ingresos.
+            
+            <p className="text-gray-600 text-xl md:text-2xl leading-relaxed mb-8 px-2">
+              Tu asistente personal para mejorar tu salud financiera
             </p>
-          </div>
 
-          {/* Status Card */}
-          <Card className="mb-8 bg-yellow-50 border-orange-200 border-l-4 border-l-orange-400">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Settings className="h-5 w-5 text-orange-600" />
+            <div className="bg-white/70 rounded-2xl p-6 mb-8 backdrop-blur-sm">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Lo que haremos juntos:
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <span className="text-emerald-600">📊</span>
+                  </div>
+                  <span className="text-gray-700">Analizar tus ingresos y gastos</span>
                 </div>
-                <p className="text-orange-800 font-medium flex-1">
-                  Tu préstamo Kueski se está configurando automáticamente...
-                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600">💳</span>
+                  </div>
+                  <span className="text-gray-700">Organizar tus deudas</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600">🎯</span>
+                  </div>
+                  <span className="text-gray-700">Definir tus metas financieras</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-orange-600">📋</span>
+                  </div>
+                  <span className="text-gray-700">Crear tu plan personalizado</span>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Income Form */}
-          <div className="space-y-6 md:space-y-8">
-            {/* Main Income Card */}
-            <Card className="shadow-lg border-0">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-gray-800">
-                  <DollarSign className="h-6 w-6 text-emerald-600" />
-                  Ingreso Principal
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="main-income" className="text-base font-medium text-gray-700 mb-2 block">
-                    ¿Cuál es tu ingreso mensual principal? (USD)
-                  </Label>
-                  <Input
-                    id="main-income"
-                    type="number"
-                    value={mainIncome}
-                    onChange={handleMainIncomeChange}
-                    className="text-lg md:text-xl h-12 md:h-14 text-center font-semibold border-2 border-gray-200 focus:border-emerald-500 transition-colors"
-                    placeholder="0"
-                  />
-                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                    Incluye salario, freelance, negocio, etc.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Additional Income Card */}
-            <Card className="shadow-lg border-0">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-xl md:text-2xl text-gray-800">
-                  <TrendingUp className="h-6 w-6 text-teal-600" />
-                  Ingresos Adicionales
-                  <Badge variant="secondary" className="ml-2 bg-gray-100 text-gray-600">
-                    Opcional
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="extra-income" className="text-base font-medium text-gray-700 mb-2 block">
-                    Ingresos extras o variables (USD)
-                  </Label>
-                  <Input
-                    id="extra-income"
-                    type="number"
-                    value={extraIncome}
-                    onChange={handleExtraIncomeChange}
-                    className="text-lg md:text-xl h-12 md:h-14 text-center font-semibold border-2 border-gray-200 focus:border-teal-500 transition-colors"
-                    placeholder="0"
-                  />
-                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                    Trabajos de medio tiempo, comisiones, rentas, etc.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Total Summary */}
-            {totalIncome > 0 && (
-              <Card className="bg-emerald-50 border-emerald-200 shadow-lg">
-                <CardContent className="p-6 text-center">
-                  <p className="text-sm text-emerald-700 mb-2 font-medium">
-                    Total de ingresos mensuales
-                  </p>
-                  <p className="text-3xl md:text-4xl font-bold text-emerald-800">
-                    ${totalIncome.toLocaleString()} USD
+            {/* Usuario info */}
+            {user && (
+              <Card className="mb-8 bg-white/80 border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <p className="text-gray-600 text-lg">
+                    Hola <strong className="text-gray-800">{user.email}</strong>, 
+                    <br />
+                    vamos a configurar tu perfil financiero en solo 6 pasos.
                   </p>
                 </CardContent>
               </Card>
             )}
 
             {/* Continue Button */}
-            <div className="pt-6">
-              <Button 
-                onClick={handleContinue}
-                disabled={!canProceed}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-4 px-8 rounded-2xl text-lg shadow-lg transition-all duration-200 transform hover:scale-105 h-14 md:h-16 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                Continuar
-              </Button>
-            </div>
+            <Button 
+              onClick={onNext}
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-6 px-12 rounded-2xl text-xl shadow-lg transition-all duration-200 transform hover:scale-105 max-w-md mx-auto"
+            >
+              <div className="flex items-center justify-center gap-3">
+                Comenzar
+                <ArrowRight className="h-6 w-6" />
+              </div>
+            </Button>
+
+            <p className="text-sm text-gray-500 mt-4">
+              Solo tomará unos minutos configurar tu perfil
+            </p>
           </div>
         </div>
       </div>

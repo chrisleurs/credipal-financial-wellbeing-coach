@@ -197,7 +197,7 @@ export default function Onboarding() {
     return 'Completar'
   }
 
-  // For welcome step (step 0), render full-screen component
+  // Para el paso de bienvenida (step 0), renderizar componente full-screen
   if (currentStep === 0 && !isInitializing) {
     return renderStepContent()
   }
