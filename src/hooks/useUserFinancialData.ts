@@ -11,14 +11,15 @@ export interface UserFinancialData {
   ingresos_extras: number;
   gastos_categorizados: any[];
   deudas: any[];
-  ahorros: {
-    actual: number;
-    mensual: number;
-  };
-  metas: string[];
+  ahorros: any; // Changed from specific type to any to match database Json type
+  metas: any[];
   user_data: any;
   created_at: string;
   updated_at: string;
+  gastos_totales: number;
+  ahorros_actuales: number;
+  capacidad_ahorro: number;
+  metas_financieras: any[];
 }
 
 export const useUserFinancialData = () => {

@@ -41,13 +41,13 @@ export const useOnboardingDataConsolidation = () => {
         gastos_categorizados: gastosCategorizados,
         deudas: financialStore.financialData?.debts || [],
         ahorros_actuales: financialStore.financialData?.currentSavings || 0,
-        capacidad_ahorro: financialStore.financialData?.savingsCapacity || 0,
-        metas_financieras: financialStore.financialData?.goals || [],
+        capacidad_ahorro: financialStore.financialData?.monthlySavingsCapacity || 0,
+        metas_financieras: financialStore.financialData?.financialGoals || [],
         ahorros: {
           actual: financialStore.financialData?.currentSavings || 0,
-          mensual: financialStore.financialData?.savingsCapacity || 0
+          mensual: financialStore.financialData?.monthlySavingsCapacity || 0
         },
-        metas: financialStore.financialData?.goals || [],
+        metas: financialStore.financialData?.financialGoals || [],
         user_data: {
           whatsapp_opt_in: financialStore.whatsAppOptIn || false,
           onboarding_completed: true
@@ -78,13 +78,13 @@ export const useOnboardingDataConsolidation = () => {
         
         const debtsToInsert = debts.map(debt => ({
           user_id: user.id,
-          creditor_name: debt.name || debt.creditor_name || 'Deuda',
-          total_amount: debt.amount || debt.total_amount || 0,
-          current_balance: debt.amount || debt.current_balance || 0,
-          minimum_payment: debt.monthlyPayment || debt.minimum_payment || 0,
-          due_day: debt.paymentDueDate || debt.due_day || 1,
-          annual_interest_rate: debt.interestRate || debt.annual_interest_rate || 0,
-          description: debt.type || debt.description || ''
+          creditor_name: debt.name || 'Deuda',
+          total_amount: debt.amount || 0,
+          current_balance: debt.amount || 0,
+          minimum_payment: debt.monthlyPayment || 0,
+          due_day: debt.paymentDueDate || 1,
+          annual_interest_rate: 0,
+          description: ''
         }))
 
         const { error: debtsError } = await supabase
@@ -100,17 +100,17 @@ export const useOnboardingDataConsolidation = () => {
       }
 
       // 5. Guardar metas en tabla goals si existen
-      const goals = financialStore.financialData?.goals || []
+      const goals = financialStore.financialData?.financialGoals || []
       if (goals.length > 0) {
         console.log('🎯 Guardando metas:', goals)
         
         const goalsToInsert = goals.map((goal, index) => ({
           user_id: user.id,
-          goal_name: typeof goal === 'string' ? goal : goal.name || `Meta ${index + 1}`,
+          goal_name: goal || `Meta ${index + 1}`,
           goal_type: 'financial',
-          target_amount: typeof goal === 'object' ? goal.target_amount || 0 : 0,
-          current_amount: typeof goal === 'object' ? goal.current_amount || 0 : 0,
-          target_date: typeof goal === 'object' ? goal.target_date : null,
+          target_amount: 0,
+          current_amount: 0,
+          target_date: null,
           priority: 'medium',
           status: 'active'
         }))
