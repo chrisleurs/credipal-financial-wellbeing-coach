@@ -1,5 +1,6 @@
 
 import { StateCreator } from 'zustand'
+import { create } from 'zustand'
 import { supabase } from '@/integrations/supabase/client'
 import type { FinancialData, Debt } from '@/types'
 
@@ -156,3 +157,6 @@ export const createOnboardingSlice: StateCreator<OnboardingSlice> = (set, get) =
     }
   }
 })
+
+// Create and export the store hook
+export const useOnboardingStore = create<OnboardingSlice>()(createOnboardingSlice)
