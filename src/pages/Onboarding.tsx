@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import OnboardingWelcome from '@/components/onboarding/OnboardingWelcome'
 import Step1Income from '@/components/onboarding/Step1Income'
 import Step2Expenses from '@/components/onboarding/Step2Expenses'
 import Step3Debts from '@/components/onboarding/Step3Debts'
@@ -19,6 +20,7 @@ import { useAuth } from '@/hooks/useAuth'
 const TOTAL_STEPS = 6
 
 const stepTitles = [
+  'Bienvenida',
   'Ingresos',
   'Gastos',
   'Deudas',
@@ -52,10 +54,10 @@ export default function Onboarding() {
         console.log('🚀 Initializing onboarding for user:', user.id)
         await loadOnboardingProgress()
         
-        // Reset if we're starting fresh
+        // Reset if we're starting fresh and set to welcome step
         if (currentStep === 0) {
           resetOnboardingData()
-          setCurrentStep(1)
+          setCurrentStep(0) // Start with welcome screen (step 0)
         }
         
         setIsInitializing(false)
@@ -82,9 +84,9 @@ export default function Onboarding() {
       console.log('📝 Adjusting step from', currentStep, 'to', TOTAL_STEPS)
       setCurrentStep(TOTAL_STEPS)
     }
-    if (currentStep < 1 && !isInitializing && !isOnboardingComplete) {
-      console.log('📝 Setting initial step to 1')
-      setCurrentStep(1)
+    if (currentStep < 0 && !isInitializing && !isOnboardingComplete) {
+      console.log('📝 Setting initial step to 0 (welcome)')
+      setCurrentStep(0)
     }
   }, [currentStep, setCurrentStep, isInitializing, isOnboardingComplete])
 
@@ -107,7 +109,7 @@ export default function Onboarding() {
   const handleBack = async () => {
     console.log('⬅️ Moving to previous step from:', currentStep)
     
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       const prevStep = currentStep - 1
       setCurrentStep(prevStep)
       await saveOnboardingProgress()
@@ -152,6 +154,8 @@ export default function Onboarding() {
     }
 
     switch (currentStep) {
+      case 0:
+        return <OnboardingWelcome onNext={handleNext} onBack={handleBack} />
       case 1:
         return <Step1Income onNext={handleNext} onBack={handleBack} />
       case 2:
@@ -185,12 +189,17 @@ export default function Onboarding() {
   }
 
   const getCurrentStepTitle = () => {
-    if (currentStep <= TOTAL_STEPS) {
-      return stepTitles[currentStep - 1]
+    if (currentStep <= stepTitles.length - 1) {
+      return stepTitles[currentStep]
     }
     if (currentStep === 7) return 'Resumen'
     if (currentStep === 8) return 'Procesando'
     return 'Completar'
+  }
+
+  // For welcome step (step 0), render full-screen component
+  if (currentStep === 0 && !isInitializing) {
+    return renderStepContent()
   }
 
   if (isInitializing) {
@@ -210,7 +219,7 @@ export default function Onboarding() {
     <div className="container h-screen flex items-center justify-center">
       <Card className="w-[90%] md:w-[600px] shadow-xl">
         <CardHeader>
-          <CardTitle>Bienvenido a Credi</CardTitle>
+          <CardTitle>Bienvenido a Credipal</CardTitle>
           <CardDescription>
             {getCurrentStepTitle()}: Completa los datos para personalizar tu plan financiero.
           </CardDescription>

@@ -1,17 +1,30 @@
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArrowLeft, ChevronDown, Settings, DollarSign, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useOnboardingStore } from '@/store/modules/onboardingStore'
 
-export default function OnboardingWelcome() {
+interface OnboardingWelcomeProps {
+  onNext: () => void
+  onBack: () => void
+}
+
+export default function OnboardingWelcome({ onNext, onBack }: OnboardingWelcomeProps) {
+  const { financialData, updateIncome } = useOnboardingStore()
   const [selectedLanguage, setSelectedLanguage] = useState('ES')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [mainIncome, setMainIncome] = useState('0')
-  const [extraIncome, setExtraIncome] = useState('0')
+  const [mainIncome, setMainIncome] = useState(financialData.monthlyIncome.toString())
+  const [extraIncome, setExtraIncome] = useState(financialData.extraIncome.toString())
+
+  // Update local state when store data changes
+  useEffect(() => {
+    setMainIncome(financialData.monthlyIncome.toString())
+    setExtraIncome(financialData.extraIncome.toString())
+  }, [financialData.monthlyIncome, financialData.extraIncome])
 
   const languages = [
     { code: 'ES', flag: '🇪🇸', name: 'Español' },
@@ -24,6 +37,28 @@ export default function OnboardingWelcome() {
     setSelectedLanguage(lang)
     setIsDropdownOpen(false)
   }
+
+  const handleMainIncomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setMainIncome(value)
+  }
+
+  const handleExtraIncomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setExtraIncome(value)
+  }
+
+  const handleContinue = () => {
+    const monthlyIncomeValue = parseFloat(mainIncome) || 0
+    const extraIncomeValue = parseFloat(extraIncome) || 0
+    
+    console.log('💰 Saving income data:', { monthlyIncomeValue, extraIncomeValue })
+    updateIncome(monthlyIncomeValue, extraIncomeValue)
+    onNext()
+  }
+
+  const totalIncome = (parseFloat(mainIncome) || 0) + (parseFloat(extraIncome) || 0)
+  const canProceed = parseFloat(mainIncome) > 0
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 relative">
@@ -46,6 +81,7 @@ export default function OnboardingWelcome() {
         <Button 
           variant="ghost" 
           size="icon"
+          onClick={onBack}
           className="p-2 hover:bg-white/50 rounded-xl transition-colors"
         >
           <ArrowLeft className="h-6 w-6 text-gray-600" />
@@ -130,7 +166,7 @@ export default function OnboardingWelcome() {
                     id="main-income"
                     type="number"
                     value={mainIncome}
-                    onChange={(e) => setMainIncome(e.target.value)}
+                    onChange={handleMainIncomeChange}
                     className="text-lg md:text-xl h-12 md:h-14 text-center font-semibold border-2 border-gray-200 focus:border-emerald-500 transition-colors"
                     placeholder="0"
                   />
@@ -161,7 +197,7 @@ export default function OnboardingWelcome() {
                     id="extra-income"
                     type="number"
                     value={extraIncome}
-                    onChange={(e) => setExtraIncome(e.target.value)}
+                    onChange={handleExtraIncomeChange}
                     className="text-lg md:text-xl h-12 md:h-14 text-center font-semibold border-2 border-gray-200 focus:border-teal-500 transition-colors"
                     placeholder="0"
                   />
@@ -173,14 +209,14 @@ export default function OnboardingWelcome() {
             </Card>
 
             {/* Total Summary */}
-            {(parseInt(mainIncome) > 0 || parseInt(extraIncome) > 0) && (
+            {totalIncome > 0 && (
               <Card className="bg-emerald-50 border-emerald-200 shadow-lg">
                 <CardContent className="p-6 text-center">
                   <p className="text-sm text-emerald-700 mb-2 font-medium">
                     Total de ingresos mensuales
                   </p>
                   <p className="text-3xl md:text-4xl font-bold text-emerald-800">
-                    ${(parseInt(mainIncome) + parseInt(extraIncome)).toLocaleString()} USD
+                    ${totalIncome.toLocaleString()} USD
                   </p>
                 </CardContent>
               </Card>
@@ -189,8 +225,9 @@ export default function OnboardingWelcome() {
             {/* Continue Button */}
             <div className="pt-6">
               <Button 
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-4 px-8 rounded-2xl text-lg shadow-lg transition-all duration-200 transform hover:scale-105 h-14 md:h-16"
-                disabled={parseInt(mainIncome) <= 0}
+                onClick={handleContinue}
+                disabled={!canProceed}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-4 px-8 rounded-2xl text-lg shadow-lg transition-all duration-200 transform hover:scale-105 h-14 md:h-16 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 Continuar
               </Button>
