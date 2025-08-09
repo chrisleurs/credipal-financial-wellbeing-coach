@@ -366,6 +366,42 @@ export type Database = {
         }
         Relationships: []
       }
+      incomes: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string | null
+          frequency: string | null
+          id: string
+          is_active: boolean | null
+          source: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          source: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          source?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       loans: {
         Row: {
           amount: number
