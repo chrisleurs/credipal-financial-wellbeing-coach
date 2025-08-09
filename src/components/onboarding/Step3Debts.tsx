@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, CreditCard, Trash2, AlertTriangle, Calendar, Clock } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
-import { useFinancialStore } from '@/store/financialStore'
+import { useOnboardingStore } from '@/store/modules/onboardingStore'
 import type { Debt } from '@/types'
 
 interface Step3DebtsProps {
@@ -14,7 +13,7 @@ interface Step3DebtsProps {
 }
 
 const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
-  const { financialData, updateFinancialData } = useFinancialStore()
+  const { financialData, updateDebts } = useOnboardingStore()
   const [debts, setDebts] = useState<Debt[]>(financialData.debts || [])
   const [newDebt, setNewDebt] = useState({
     type: '',
@@ -69,7 +68,8 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
   }
 
   const handleNext = () => {
-    updateFinancialData({ debts })
+    console.log('💳 Saving debts data:', debts)
+    updateDebts(debts)
     onNext()
   }
 

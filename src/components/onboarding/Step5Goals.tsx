@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Target, X } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
-import { useFinancialStore } from '@/store/financialStore'
+import { useOnboardingStore } from '@/store/modules/onboardingStore'
 
 interface Step5GoalsProps {
   onNext: () => void
@@ -13,7 +12,7 @@ interface Step5GoalsProps {
 }
 
 const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
-  const { financialData, updateFinancialData } = useFinancialStore()
+  const { financialData, updateGoals } = useOnboardingStore()
   const [goals, setGoals] = useState<string[]>(financialData.financialGoals || [])
   const [newGoal, setNewGoal] = useState('')
 
@@ -45,9 +44,8 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
   }
 
   const handleNext = () => {
-    updateFinancialData({
-      financialGoals: goals
-    })
+    console.log('🎯 Saving goals data:', goals)
+    updateGoals(goals)
     onNext()
   }
 

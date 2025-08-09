@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import OnboardingStep from './OnboardingStep'
-import { useFinancialStore } from '@/store/financialStore'
+import { useOnboardingStore } from '@/store/modules/onboardingStore'
 import { useLoans } from '@/hooks/useLoans'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { DollarSign, TrendingUp, CreditCard, CheckCircle } from 'lucide-react'
@@ -17,7 +17,7 @@ interface Step1IncomeProps {
 }
 
 export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
-  const { financialData, updateIncome, saveOnboardingProgress } = useFinancialStore()
+  const { financialData, updateIncome } = useOnboardingStore()
   const { kueskiLoan, isLoading: isLoadingLoan } = useLoans()
   const { t } = useLanguage()
   
@@ -33,9 +33,9 @@ export default function Step1Income({ onNext, onBack }: Step1IncomeProps) {
     const ingresoPrincipal = parseFloat(montoPrincipal) || 0
     const ingresoExtra = parseFloat(montoExtras) || 0
 
+    console.log('💰 Saving income data:', { ingresoPrincipal, ingresoExtra })
     updateIncome(ingresoPrincipal, ingresoExtra)
     
-    await saveOnboardingProgress()
     onNext()
   }
 

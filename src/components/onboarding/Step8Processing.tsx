@@ -2,7 +2,9 @@
 import React, { useEffect, useState } from 'react'
 import { Brain, CheckCircle, Loader2, Sparkles } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
+import { useOnboardingStore } from '@/store/modules/onboardingStore'
 import { useFinancialStore } from '@/store/financialStore'
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
 
 interface Step8ProcessingProps {
   onNext: () => void
@@ -10,7 +12,9 @@ interface Step8ProcessingProps {
 }
 
 const Step8Processing: React.FC<Step8ProcessingProps> = ({ onNext, onBack }) => {
-  const { generateAIPlan, generateActionPlan, isLoading, error, financialData } = useFinancialStore()
+  const { financialData, completeOnboarding } = useOnboardingStore()
+  const { generateAIPlan, generateActionPlan, isLoading, error } = useFinancialStore()
+  const { updateOnboardingStatus } = useOnboardingStatus()
   const [currentStep, setCurrentStep] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
 
@@ -35,28 +39,36 @@ const Step8Processing: React.FC<Step8ProcessingProps> = ({ onNext, onBack }) => 
   useEffect(() => {
     const generatePlans = async () => {
       try {
+        console.log('🤖 Starting AI plan generation...')
         setCurrentStep(0)
         await new Promise(resolve => setTimeout(resolve, 1500))
         
+        console.log('📊 Generating AI plan...')
         setCurrentStep(1)
         await generateAIPlan(financialData)
         await new Promise(resolve => setTimeout(resolve, 1000))
         
+        console.log('📝 Generating action plan...')
         setCurrentStep(2)
         await generateActionPlan()
         await new Promise(resolve => setTimeout(resolve, 1000))
         
+        console.log('✅ Completing onboarding...')
+        await completeOnboarding()
+        await updateOnboardingStatus(true)
+        
         setIsComplete(true)
         setTimeout(() => {
+          console.log('🎯 Redirecting to dashboard...')
           onNext()
         }, 1500)
       } catch (error) {
-        console.error('Error generating plans:', error)
+        console.error('❌ Error generating plans:', error)
       }
     }
 
     generatePlans()
-  }, [generateAIPlan, generateActionPlan, onNext, financialData])
+  }, [generateAIPlan, generateActionPlan, completeOnboarding, updateOnboardingStatus, onNext, financialData])
 
   const canProceed = false // No se puede proceder manualmente
 
@@ -77,7 +89,7 @@ const Step8Processing: React.FC<Step8ProcessingProps> = ({ onNext, onBack }) => 
             <div className="bg-gradient-to-r from-emerald-100 to-teal-100 p-8 rounded-full">
               <Brain className="h-16 w-16 text-emerald-600" />
             </div>
-            {isLoading && (
+            {(isLoading || !isComplete) && (
               <div className="absolute -top-2 -right-2 bg-white rounded-full p-2 shadow-lg">
                 <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
               </div>
@@ -110,7 +122,7 @@ const Step8Processing: React.FC<Step8ProcessingProps> = ({ onNext, onBack }) => 
                         ? 'bg-green-100' 
                         : 'bg-gray-100'
                   }`}>
-                    {isActive ? (
+                    {isActive && !isComplete ? (
                       <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
                     ) : isCompleted ? (
                       <CheckCircle className="h-6 w-6 text-green-600" />
@@ -160,6 +172,9 @@ const Step8Processing: React.FC<Step8ProcessingProps> = ({ onNext, onBack }) => 
                 ¡Tu plan financiero está listo!
               </p>
             </div>
+            <p className="text-green-700 text-sm text-center mt-2">
+              Redirigiendo al dashboard...
+            </p>
           </div>
         )}
       </div>

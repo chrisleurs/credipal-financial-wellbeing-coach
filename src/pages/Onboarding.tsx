@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +12,9 @@ import Step6Complete from '@/components/onboarding/Step6Complete'
 import Step7Summary from '@/components/onboarding/Step7Summary'
 import Step8Processing from '@/components/onboarding/Step8Processing'
 import { useOnboardingStore } from '@/store/modules/onboardingStore'
+import { useOnboardingDataConsolidation } from '@/hooks/useOnboardingDataConsolidation'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { useAuth } from '@/hooks/useAuth'
 
 const TOTAL_STEPS = 6
 
@@ -27,34 +29,121 @@ const stepTitles = [
 
 export default function Onboarding() {
   const navigate = useNavigate()
-  const { currentStep, setCurrentStep, financialData, isOnboardingComplete } = useOnboardingStore()
-  const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
+  const { 
+    currentStep, 
+    setCurrentStep, 
+    financialData, 
+    isOnboardingComplete,
+    loadOnboardingProgress,
+    saveOnboardingProgress 
+  } = useOnboardingStore()
+  
+  const { consolidateOnboardingData } = useOnboardingDataConsolidation()
+  const [isInitializing, setIsInitializing] = useState(true)
+  const [isProcessing, setIsProcessing] = useState(false)
 
+  // Initialize onboarding data when component mounts
   useEffect(() => {
-    if (isOnboardingComplete) {
+    const initializeOnboarding = async () => {
+      if (!user) return
+      
+      try {
+        console.log('🚀 Initializing onboarding for user:', user.id)
+        await loadOnboardingProgress()
+        setIsInitializing(false)
+      } catch (error) {
+        console.error('❌ Error initializing onboarding:', error)
+        setIsInitializing(false)
+      }
+    }
+
+    initializeOnboarding()
+  }, [user, loadOnboardingProgress])
+
+  // Redirect if onboarding is complete
+  useEffect(() => {
+    if (isOnboardingComplete && !isProcessing) {
+      console.log('✅ Onboarding complete, redirecting to dashboard')
       navigate('/dashboard')
     }
-  }, [isOnboardingComplete, navigate])
+  }, [isOnboardingComplete, navigate, isProcessing])
 
+  // Ensure current step is within bounds
   useEffect(() => {
     if (currentStep > TOTAL_STEPS) {
+      console.log('📝 Adjusting step from', currentStep, 'to', TOTAL_STEPS)
       setCurrentStep(TOTAL_STEPS)
     }
-  }, [currentStep, setCurrentStep])
+    if (currentStep < 1 && !isInitializing) {
+      console.log('📝 Setting initial step to 1')
+      setCurrentStep(1)
+    }
+  }, [currentStep, setCurrentStep, isInitializing])
 
-  const handleNext = () => {
-    if (currentStep < 8) {
-      setCurrentStep(currentStep + 1)
+  const handleNext = async () => {
+    console.log('➡️ Moving to next step from:', currentStep)
+    
+    if (currentStep < TOTAL_STEPS) {
+      const nextStep = currentStep + 1
+      setCurrentStep(nextStep)
+      await saveOnboardingProgress()
+      console.log('✅ Moved to step:', nextStep)
+    } else if (currentStep === TOTAL_STEPS) {
+      // Complete onboarding and process data
+      setIsProcessing(true)
+      setCurrentStep(7) // Summary step
+      await saveOnboardingProgress()
     }
   }
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    console.log('⬅️ Moving to previous step from:', currentStep)
+    
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
+      const prevStep = currentStep - 1
+      setCurrentStep(prevStep)
+      await saveOnboardingProgress()
+      console.log('✅ Moved to step:', prevStep)
     }
+  }
+
+  const handleComplete = async () => {
+    console.log('🎉 Completing onboarding')
+    setIsProcessing(true)
+    
+    try {
+      // Consolidate all onboarding data
+      const success = await consolidateOnboardingData()
+      
+      if (success) {
+        setCurrentStep(8) // Processing step
+        console.log('✅ Data consolidated, showing processing step')
+      } else {
+        console.error('❌ Failed to consolidate data')
+        setIsProcessing(false)
+      }
+    } catch (error) {
+      console.error('❌ Error completing onboarding:', error)
+      setIsProcessing(false)
+    }
+  }
+
+  const handleProcessingComplete = () => {
+    console.log('🎯 Processing complete, redirecting to dashboard')
+    navigate('/dashboard')
   }
 
   const renderStepContent = () => {
+    if (isInitializing) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12">
+          <LoadingSpinner />
+          <p className="mt-4 text-gray-600">Cargando tu progreso...</p>
+        </div>
+      )
+    }
+
     switch (currentStep) {
       case 1:
         return <Step1Income onNext={handleNext} onBack={handleBack} />
@@ -67,14 +156,47 @@ export default function Onboarding() {
       case 5:
         return <Step5Goals onNext={handleNext} onBack={handleBack} />
       case 6:
-        return <Step6Complete onBack={handleBack} />
+        return <Step6Complete onNext={handleComplete} onBack={handleBack} />
       case 7:
-        return <Step7Summary onNext={handleNext} onBack={handleBack} />
+        return <Step7Summary onNext={handleComplete} onBack={handleBack} />
       case 8:
-        return <Step8Processing onNext={handleNext} onBack={handleBack} />
+        return <Step8Processing onNext={handleProcessingComplete} onBack={handleBack} />
       default:
-        return null
+        return (
+          <div className="text-center py-8">
+            <p className="text-gray-600">Paso no encontrado</p>
+          </div>
+        )
     }
+  }
+
+  const getProgressValue = () => {
+    if (currentStep <= TOTAL_STEPS) {
+      return (currentStep / TOTAL_STEPS) * 100
+    }
+    return 100
+  }
+
+  const getCurrentStepTitle = () => {
+    if (currentStep <= TOTAL_STEPS) {
+      return stepTitles[currentStep - 1]
+    }
+    if (currentStep === 7) return 'Resumen'
+    if (currentStep === 8) return 'Procesando'
+    return 'Completar'
+  }
+
+  if (isInitializing) {
+    return (
+      <div className="container h-screen flex items-center justify-center">
+        <Card className="w-[90%] md:w-[600px] shadow-xl">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner />
+            <p className="mt-4 text-gray-600">Inicializando onboarding...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -83,15 +205,20 @@ export default function Onboarding() {
         <CardHeader>
           <CardTitle>Bienvenido a Credi</CardTitle>
           <CardDescription>
-            {stepTitles[currentStep - 1]}: Completa los datos para personalizar tu plan financiero.
+            {getCurrentStepTitle()}: Completa los datos para personalizar tu plan financiero.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">
-          <Progress value={(currentStep / TOTAL_STEPS) * 100} />
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Paso {Math.min(currentStep, TOTAL_STEPS)} de {TOTAL_STEPS}</span>
+              <span>{Math.round(getProgressValue())}% completado</span>
+            </div>
+            <Progress value={getProgressValue()} />
+          </div>
           {renderStepContent()}
         </CardContent>
       </Card>
     </div>
   )
 }
-

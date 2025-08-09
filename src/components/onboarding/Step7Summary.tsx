@@ -2,7 +2,7 @@
 import React from 'react'
 import { DollarSign, TrendingUp, CreditCard, Target } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
-import { useFinancialStore } from '@/store/financialStore'
+import { useOnboardingStore } from '@/store/modules/onboardingStore'
 
 interface Step7SummaryProps {
   onNext: () => void
@@ -10,7 +10,7 @@ interface Step7SummaryProps {
 }
 
 const Step7Summary: React.FC<Step7SummaryProps> = ({ onNext, onBack }) => {
-  const { financialData } = useFinancialStore()
+  const { financialData } = useOnboardingStore()
 
   const totalIncome = financialData.monthlyIncome + financialData.extraIncome
   const totalExpenses = financialData.monthlyExpenses
@@ -27,7 +27,7 @@ const Step7Summary: React.FC<Step7SummaryProps> = ({ onNext, onBack }) => {
       onNext={onNext}
       onBack={onBack}
       canProceed={canProceed}
-      nextButtonText="Ir al Dashboard"
+      nextButtonText="Generar mi plan financiero"
     >
       <div className="space-y-4">
         {/* Ingresos */}
@@ -140,6 +140,17 @@ const Step7Summary: React.FC<Step7SummaryProps> = ({ onNext, onBack }) => {
           <div className="mt-2 text-sm text-indigo-700">
             Capacidad mensual: ${financialData.monthlySavingsCapacity.toLocaleString()}
           </div>
+        </div>
+
+        {/* Call to action */}
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6 text-center">
+          <h3 className="font-semibold text-emerald-800 mb-2">
+            ¡Todo está listo! 🎉
+          </h3>
+          <p className="text-sm text-emerald-700">
+            Vamos a crear tu plan financiero personalizado con inteligencia artificial.
+            Esto tomará solo unos segundos.
+          </p>
         </div>
       </div>
     </OnboardingStep>

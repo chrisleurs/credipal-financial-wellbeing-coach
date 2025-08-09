@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react'
 import { Home, Car, Utensils, CreditCard, MoreHorizontal, Calculator } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
-import { useFinancialStore } from '@/store/financialStore'
+import { useOnboardingStore } from '@/store/modules/onboardingStore'
 import { useOnboardingExpenses, OnboardingExpense } from '@/hooks/useOnboardingExpenses'
 import { ExpenseCategorySection } from './ExpenseCategorySection'
 
@@ -45,7 +45,7 @@ const EXPENSE_CATEGORIES = [
 ];
 
 const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
-  const { financialData, updateFinancialData } = useFinancialStore()
+  const { financialData, updateExpenses } = useOnboardingStore()
   const { expenses, addExpense, updateExpense, deleteExpense } = useOnboardingExpenses()
   const [editingExpense, setEditingExpense] = useState<OnboardingExpense | null>(null)
 
@@ -77,6 +77,8 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
   };
 
   const handleNext = () => {
+    console.log('💸 Saving expenses data:', { totalExpenses, expensesByCategory })
+    
     // Convert individual expenses to the format expected by the store
     const expenseCategories: Record<string, number> = {};
     
@@ -87,11 +89,7 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
       }
     });
 
-    updateFinancialData({
-      expenseCategories,
-      monthlyExpenses: totalExpenses
-    });
-    
+    updateExpenses(expenseCategories, totalExpenses);
     onNext();
   };
 
