@@ -1,330 +1,146 @@
-import { useMemo } from 'react'
-import { useAuth } from './useAuth'
-import { useFinancialData } from './useFinancialData'
-import { useUserFinancialData } from './useUserFinancialData'
-import { useDebts } from './useDebts'
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
-import { Income } from '@/types/income'
 
-export interface ConsolidatedUserProfile {
-  // Basic info
-  userId: string
-  name: string
-  
-  // Financial overview
-  monthlyIncome: number
-  extraIncome: number
-  monthlyExpenses: number
-  monthlyBalance: number
-  
-  // Detailed breakdown
-  expenseCategories: Record<string, number>
-  totalExpensesByCategory: Record<string, number>
-  
-  // Debts information
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+
+interface ConsolidatedFinancialData {
+  monthlyIncome: number;
+  monthlyExpenses: number;
+  currentSavings: number;
+  totalDebts: number;
+  monthlyDebtPayments: number;
+  financialGoals: string[];
+  expenseCategories: Record<string, number>;
   debts: Array<{
-    id: string
-    creditor_name: string
-    total_amount: number
-    current_balance: number
-    annual_interest_rate: number
-    minimum_payment: number
-    due_day: number
-  }>
-  totalDebtBalance: number
-  totalMonthlyDebtPayments: number
-  
-  // Goals
-  goals: Array<{
-    id: string
-    goal_name: string
-    target_amount: number
-    current_amount: number
-    target_date: string
-    status: string
-    priority: string
-  }>
-  
-  // Savings
-  currentSavings: number
-  monthlySavingsCapacity: number
-  savingsGoal: number
-  emergencyFundGoal: number
-  
-  // Data quality indicators
-  hasOnboardingData: boolean
-  hasRealFinancialData: boolean
-  hasDebtsData: boolean
-  hasGoalsData: boolean
-  dataCompleteness: number
+    id: string;
+    creditor_name: string;
+    current_balance: number;
+    minimum_payment: number;
+  }>;
 }
 
 export const useConsolidatedFinancialData = () => {
-  const { user } = useAuth()
-  const { financialDataRecord } = useFinancialData()
-  const { userFinancialData } = useUserFinancialData()
-  const { debts } = useDebts()
+  const { user } = useAuth();
 
-  // Fetch incomes
-  const { data: incomes = [] } = useQuery({
-    queryKey: ['incomes', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return []
-      
-      const { data, error } = await supabase
-        .from('incomes')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-      
-      if (error) {
-        console.error('Error fetching incomes:', error)
-        return []
+  return useQuery({
+    queryKey: ['consolidated-financial-data', user?.id],
+    queryFn: async (): Promise<ConsolidatedFinancialData> => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
       }
-      
-      return (data || []) as Income[]
+
+      console.log('Fetching consolidated financial data for user:', user.id);
+
+      // Inicializar datos por defecto
+      let result: ConsolidatedFinancialData = {
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        currentSavings: 0,
+        totalDebts: 0,
+        monthlyDebtPayments: 0,
+        financialGoals: [],
+        expenseCategories: {},
+        debts: []
+      };
+
+      try {
+        // 1. Obtener datos financieros principales del usuario
+        const { data: userFinancialData } = await supabase
+          .from('user_financial_data')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (userFinancialData) {
+          result.monthlyIncome = (userFinancialData.ingresos || 0) + (userFinancialData.ingresos_extras || 0);
+          result.monthlyExpenses = userFinancialData.gastos_totales || 0;
+          result.currentSavings = userFinancialData.ahorros_actuales || 0;
+          result.financialGoals = userFinancialData.metas_financieras || [];
+          
+          // Procesar gastos categorizados
+          if (userFinancialData.gastos_categorizados && Array.isArray(userFinancialData.gastos_categorizados)) {
+            const categories: Record<string, number> = {};
+            userFinancialData.gastos_categorizados.forEach((expense: any) => {
+              if (expense.category && expense.amount) {
+                categories[expense.category] = (categories[expense.category] || 0) + Number(expense.amount);
+              }
+            });
+            result.expenseCategories = categories;
+          }
+        }
+
+        // 2. Obtener deudas específicas del usuario
+        const { data: debts } = await supabase
+          .from('debts')
+          .select('id, creditor_name, current_balance, minimum_payment')
+          .eq('user_id', user.id);
+
+        if (debts && debts.length > 0) {
+          result.debts = debts;
+          result.totalDebts = debts.reduce((sum, debt) => sum + (debt.current_balance || 0), 0);
+          result.monthlyDebtPayments = debts.reduce((sum, debt) => sum + (debt.minimum_payment || 0), 0);
+        }
+
+        // 3. Si no hay datos consolidados, intentar obtener de otras fuentes del usuario
+        if (!userFinancialData) {
+          console.log('No consolidated data found, checking individual tables for user:', user.id);
+          
+          // Obtener ingresos del usuario
+          const { data: incomes } = await supabase
+            .from('incomes')
+            .select('amount, frequency')
+            .eq('user_id', user.id)
+            .eq('is_active', true);
+
+          if (incomes && incomes.length > 0) {
+            result.monthlyIncome = incomes.reduce((sum, income) => {
+              const amount = income.amount || 0;
+              return sum + (income.frequency === 'monthly' ? amount : amount / 12);
+            }, 0);
+          }
+
+          // Obtener gastos del usuario
+          const { data: expenses } = await supabase
+            .from('expenses')
+            .select('amount, category')
+            .eq('user_id', user.id);
+
+          if (expenses && expenses.length > 0) {
+            const categories: Record<string, number> = {};
+            let totalExpenses = 0;
+            
+            expenses.forEach(expense => {
+              const amount = expense.amount || 0;
+              totalExpenses += amount;
+              categories[expense.category] = (categories[expense.category] || 0) + amount;
+            });
+            
+            result.monthlyExpenses = totalExpenses;
+            result.expenseCategories = categories;
+          }
+
+          // Obtener metas del usuario
+          const { data: goals } = await supabase
+            .from('goals')
+            .select('goal_name')
+            .eq('user_id', user.id)
+            .eq('status', 'active');
+
+          if (goals && goals.length > 0) {
+            result.financialGoals = goals.map(goal => goal.goal_name);
+          }
+        }
+
+        console.log('Consolidated financial data for user:', user.id, result);
+        return result;
+
+      } catch (error) {
+        console.error('Error fetching consolidated financial data:', error);
+        return result; // Retornar datos por defecto en caso de error
+      }
     },
     enabled: !!user?.id,
-  })
-
-  // Fetch goals
-  const { data: goals = [] } = useQuery({
-    queryKey: ['goals', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return []
-      
-      const { data, error } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-      
-      if (error) {
-        console.error('Error fetching goals:', error)
-        return []
-      }
-      
-      return data || []
-    },
-    enabled: !!user?.id,
-  })
-
-  // Fetch user profile for name
-  const { data: profile } = useQuery({
-    queryKey: ['profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      
-      if (error) {
-        console.error('Error fetching profile:', error)
-        return null
-      }
-      
-      return data
-    },
-    enabled: !!user?.id,
-  })
-
-  const consolidatedProfile = useMemo((): ConsolidatedUserProfile | null => {
-    if (!user) return null
-
-    console.log('🔄 Consolidating financial data for user:', user.id)
-    console.log('📊 Available data sources:')
-    console.log('  - userFinancialData:', userFinancialData)
-    console.log('  - financialDataRecord:', financialDataRecord)
-    console.log('  - debts:', debts)
-    console.log('  - incomes:', incomes)
-    
-    // Basic info
-    const name = profile?.first_name || 'Usuario'
-    
-    // Income data calculation with priority
-    const calculateMonthlyIncome = () => {
-      // Primero intentar con ingresos reales de la tabla incomes
-      if (incomes && incomes.length > 0) {
-        return incomes.reduce((sum, inc) => {
-          const multiplier = inc.frequency === 'weekly' ? 4 : 
-                            inc.frequency === 'biweekly' ? 2 : 1
-          return sum + (inc.amount * multiplier)
-        }, 0)
-      }
-      
-      // Si no hay ingresos, usar datos del onboarding
-      return userFinancialData?.ingresos || financialDataRecord?.monthly_income || 0
-    }
-
-    const monthlyIncome = calculateMonthlyIncome()
-    const extraIncome = userFinancialData?.ingresos_extras || 0
-    
-    console.log('💰 Income calculated:', { monthlyIncome, extraIncome, incomesCount: incomes.length })
-    
-    // Expenses - calculate from categorized expenses if available
-    let monthlyExpenses = 0
-    let expenseCategories: Record<string, number> = {}
-    let totalExpensesByCategory: Record<string, number> = {}
-    
-    if (userFinancialData?.gastos_categorizados && Array.isArray(userFinancialData.gastos_categorizados)) {
-      console.log('💸 Processing categorized expenses:', userFinancialData.gastos_categorizados)
-      
-      userFinancialData.gastos_categorizados.forEach((expense: any) => {
-        const category = expense.category || 'Other'
-        const subcategory = expense.subcategory || category
-        const amount = expense.amount || 0
-        
-        monthlyExpenses += amount
-        expenseCategories[subcategory] = amount
-        totalExpensesByCategory[category] = (totalExpensesByCategory[category] || 0) + amount
-      })
-    } else if (financialDataRecord?.monthly_expenses) {
-      monthlyExpenses = financialDataRecord.monthly_expenses
-      // Create a generic category for display
-      expenseCategories['Gastos generales'] = financialDataRecord.monthly_expenses
-      totalExpensesByCategory['Gastos generales'] = financialDataRecord.monthly_expenses
-    }
-    
-    console.log('💸 Expenses calculated:', { monthlyExpenses, expenseCategories, totalExpensesByCategory })
-    
-    // Calculate monthly balance
-    const totalIncome = monthlyIncome + extraIncome
-    const monthlyBalance = totalIncome - monthlyExpenses
-    
-    // Debts processing - prioritize onboarding data from userFinancialData
-    let processedDebts: Array<{
-      id: string
-      creditor_name: string
-      total_amount: number
-      current_balance: number
-      annual_interest_rate: number
-      minimum_payment: number
-      due_day: number
-    }> = []
-    
-    let totalDebtBalance = 0
-    let totalMonthlyDebtPayments = 0
-    
-    // First check for real debts from the debts table
-    if (debts && debts.length > 0) {
-      processedDebts = debts.map(debt => ({
-        id: debt.id,
-        creditor_name: debt.creditor_name,
-        total_amount: debt.total_amount,
-        current_balance: debt.current_balance,
-        annual_interest_rate: debt.annual_interest_rate,
-        minimum_payment: debt.minimum_payment,
-        due_day: debt.due_day,
-      }))
-      totalDebtBalance = debts.reduce((sum, debt) => sum + (debt.current_balance || 0), 0)
-      totalMonthlyDebtPayments = debts.reduce((sum, debt) => sum + (debt.minimum_payment || 0), 0)
-    } else if (userFinancialData?.deudas && Array.isArray(userFinancialData.deudas) && userFinancialData.deudas.length > 0) {
-      // Use onboarding debts data if no real debts exist
-      console.log('🏦 Processing onboarding debts:', userFinancialData.deudas)
-      
-      processedDebts = userFinancialData.deudas.map((debt: any, index: number) => ({
-        id: `onboarding-debt-${index}`,
-        creditor_name: debt.name || debt.creditor_name || `Deuda ${index + 1}`,
-        total_amount: debt.amount || debt.total_amount || 0,
-        current_balance: debt.amount || debt.current_balance || 0,
-        annual_interest_rate: debt.interest_rate || debt.annual_interest_rate || 0,
-        minimum_payment: debt.monthly_payment || debt.minimum_payment || 0,
-        due_day: debt.due_day || 1,
-      }))
-      
-      totalDebtBalance = processedDebts.reduce((sum, debt) => sum + debt.current_balance, 0)
-      totalMonthlyDebtPayments = processedDebts.reduce((sum, debt) => sum + debt.minimum_payment, 0)
-    }
-    
-    console.log('🏦 Debts calculated:', { processedDebts, totalDebtBalance, totalMonthlyDebtPayments })
-    
-    // Savings data
-    let currentSavings = 0
-    let monthlySavingsCapacity = 0
-    
-    if (userFinancialData?.ahorros && typeof userFinancialData.ahorros === 'object') {
-      const ahorros = userFinancialData.ahorros as any
-      currentSavings = ahorros.actual || 0
-      monthlySavingsCapacity = ahorros.mensual || 0
-    }
-    
-    // If no monthly savings capacity defined, estimate from balance
-    if (monthlySavingsCapacity === 0 && monthlyBalance > 0) {
-      monthlySavingsCapacity = Math.max(monthlyBalance * 0.1, 50) // At least 10% or $50
-    }
-    
-    const savingsGoal = financialDataRecord?.savings_goal || currentSavings * 2
-    const emergencyFundGoal = financialDataRecord?.emergency_fund_goal || monthlyExpenses * 6
-    
-    // Data quality assessment
-    const hasOnboardingData = !!(userFinancialData && (monthlyIncome > 0 || monthlyExpenses > 0))
-    const hasRealFinancialData = !!(financialDataRecord && financialDataRecord.monthly_income > 0)
-    const hasDebtsData = processedDebts.length > 0
-    const hasGoalsData = goals.length > 0
-    
-    const dataCompleteness = [
-      hasOnboardingData,
-      hasRealFinancialData || hasOnboardingData, // Accept either source
-      true, // Always have basic user data
-      monthlyExpenses > 0 || monthlyIncome > 0,
-    ].filter(Boolean).length / 4 * 100
-    
-    const consolidatedData: ConsolidatedUserProfile = {
-      userId: user.id,
-      name,
-      monthlyIncome,
-      extraIncome,
-      monthlyExpenses,
-      monthlyBalance,
-      expenseCategories,
-      totalExpensesByCategory,
-      debts: processedDebts,
-      totalDebtBalance,
-      totalMonthlyDebtPayments,
-      goals: goals.map(goal => ({
-        id: goal.id,
-        goal_name: goal.goal_name,
-        target_amount: goal.target_amount,
-        current_amount: goal.current_amount,
-        target_date: goal.target_date || '',
-        status: goal.status,
-        priority: goal.priority,
-      })),
-      currentSavings,
-      monthlySavingsCapacity,
-      savingsGoal,
-      emergencyFundGoal,
-      hasOnboardingData,
-      hasRealFinancialData,
-      hasDebtsData,
-      hasGoalsData,
-      dataCompleteness,
-    }
-    
-    console.log('✅ Final consolidated financial profile:', {
-      userId: consolidatedData.userId,
-      name: consolidatedData.name,
-      monthlyIncome: consolidatedData.monthlyIncome,
-      monthlyExpenses: consolidatedData.monthlyExpenses,
-      monthlyBalance: consolidatedData.monthlyBalance,
-      totalDebts: consolidatedData.totalDebtBalance,
-      expenseCategoriesCount: Object.keys(consolidatedData.expenseCategories).length,
-      debtsCount: consolidatedData.debts.length,
-      goalsCount: consolidatedData.goals.length,
-      dataCompleteness: consolidatedData.dataCompleteness + '%'
-    })
-    
-    return consolidatedData
-    
-  }, [user, profile, userFinancialData, financialDataRecord, debts, goals, incomes])
-
-  return {
-    consolidatedProfile,
-    isLoading: !user || consolidatedProfile === null,
-    hasCompleteData: consolidatedProfile ? consolidatedProfile.dataCompleteness >= 75 : false,
-  }
-}
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
+  });
+};

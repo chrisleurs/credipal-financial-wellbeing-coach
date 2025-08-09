@@ -39,20 +39,20 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
       if (error) {
         console.error('Error checking onboarding status:', error);
-        // Si hay error, crear perfil nuevo
-        await createUserProfile(false);
+        // Si hay error, el perfil no existe, crear uno nuevo
+        await createUserProfile();
         return;
       }
 
       if (!data) {
-        console.log('No profile found, creating new one for onboarding...');
-        await createUserProfile(false);
+        console.log('No profile found, creating new one for user:', user.id);
+        await createUserProfile();
         return;
       }
 
-      // Para usuarios existentes, verificar el estado del onboarding
-      const completed = data.onboarding_completed || false;
-      console.log('Onboarding status:', completed);
+      // Usuario existente - usar su estado real
+      const completed = data.onboarding_completed === true;
+      console.log('Existing user onboarding status:', completed);
       setOnboardingCompleted(completed);
     } catch (error) {
       console.error('Exception checking onboarding status:', error);
@@ -62,22 +62,24 @@ export const useOnboardingStatus = (): OnboardingStatus => {
     }
   };
 
-  const createUserProfile = async (completed: boolean) => {
+  const createUserProfile = async () => {
     if (!user) return;
 
     try {
-      console.log('Creating user profile with onboarding_completed:', completed);
+      console.log('Creating new profile for user:', user.id);
       
       const { error } = await supabase
         .from('profiles')
-        .insert({ 
+        .upsert({ 
           user_id: user.id, 
-          onboarding_completed: completed,
+          onboarding_completed: false,
           onboarding_step: 0,
           onboarding_data: {},
           email: user.email,
           first_name: user.user_metadata?.first_name || null,
           last_name: user.user_metadata?.last_name || null
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) {
@@ -86,8 +88,8 @@ export const useOnboardingStatus = (): OnboardingStatus => {
         return;
       }
 
-      setOnboardingCompleted(completed);
-      console.log('Profile created successfully with onboarding_completed:', completed);
+      setOnboardingCompleted(false); // Nuevo usuario = onboarding incompleto
+      console.log('New profile created successfully for user:', user.id);
     } catch (error) {
       console.error('Exception creating profile:', error);
       setOnboardingCompleted(false);
@@ -105,36 +107,19 @@ export const useOnboardingStatus = (): OnboardingStatus => {
       
       const updateData: any = { onboarding_completed: completed };
       
-      // Si se marca como completado, resetear los campos de progreso
       if (completed) {
         updateData.onboarding_step = 0;
         updateData.onboarding_data = {};
       }
 
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('user_id', user.id);
 
-      if (updateError) {
-        console.log('Update failed, trying to insert profile:', updateError);
-        
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({ 
-            user_id: user.id, 
-            onboarding_completed: completed,
-            onboarding_step: completed ? 0 : undefined,
-            onboarding_data: completed ? {} : undefined,
-            email: user.email,
-            first_name: user.user_metadata?.first_name || null,
-            last_name: user.user_metadata?.last_name || null
-          });
-
-        if (insertError) {
-          console.error('Error inserting profile:', insertError);
-          throw insertError;
-        }
+      if (error) {
+        console.error('Error updating onboarding status:', error);
+        throw error;
       }
 
       setOnboardingCompleted(completed);
