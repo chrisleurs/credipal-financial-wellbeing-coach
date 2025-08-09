@@ -33,10 +33,10 @@ export default function Onboarding() {
   const { 
     currentStep, 
     setCurrentStep, 
-    financialData, 
     isOnboardingComplete,
     loadOnboardingProgress,
-    saveOnboardingProgress 
+    saveOnboardingProgress,
+    resetOnboardingData 
   } = useOnboardingStore()
   
   const { consolidateOnboardingData } = useOnboardingDataConsolidation()
@@ -51,6 +51,13 @@ export default function Onboarding() {
       try {
         console.log('🚀 Initializing onboarding for user:', user.id)
         await loadOnboardingProgress()
+        
+        // Reset if we're starting fresh
+        if (currentStep === 0) {
+          resetOnboardingData()
+          setCurrentStep(1)
+        }
+        
         setIsInitializing(false)
       } catch (error) {
         console.error('❌ Error initializing onboarding:', error)
@@ -59,27 +66,27 @@ export default function Onboarding() {
     }
 
     initializeOnboarding()
-  }, [user, loadOnboardingProgress])
+  }, [user, loadOnboardingProgress, currentStep, resetOnboardingData, setCurrentStep])
 
   // Redirect if onboarding is complete
   useEffect(() => {
     if (isOnboardingComplete && !isProcessing) {
       console.log('✅ Onboarding complete, redirecting to dashboard')
-      navigate('/dashboard')
+      navigate('/dashboard', { replace: true })
     }
   }, [isOnboardingComplete, navigate, isProcessing])
 
   // Ensure current step is within bounds
   useEffect(() => {
-    if (currentStep > TOTAL_STEPS) {
+    if (currentStep > TOTAL_STEPS && currentStep < 7) {
       console.log('📝 Adjusting step from', currentStep, 'to', TOTAL_STEPS)
       setCurrentStep(TOTAL_STEPS)
     }
-    if (currentStep < 1 && !isInitializing) {
+    if (currentStep < 1 && !isInitializing && !isOnboardingComplete) {
       console.log('📝 Setting initial step to 1')
       setCurrentStep(1)
     }
-  }, [currentStep, setCurrentStep, isInitializing])
+  }, [currentStep, setCurrentStep, isInitializing, isOnboardingComplete])
 
   const handleNext = async () => {
     console.log('➡️ Moving to next step from:', currentStep)
@@ -90,7 +97,7 @@ export default function Onboarding() {
       await saveOnboardingProgress()
       console.log('✅ Moved to step:', nextStep)
     } else if (currentStep === TOTAL_STEPS) {
-      // Complete onboarding and process data
+      // Complete onboarding
       setIsProcessing(true)
       setCurrentStep(7) // Summary step
       await saveOnboardingProgress()
@@ -109,7 +116,7 @@ export default function Onboarding() {
   }
 
   const handleComplete = async () => {
-    console.log('🎉 Completing onboarding')
+    console.log('🎉 Starting completion process')
     setIsProcessing(true)
     
     try {
@@ -131,7 +138,7 @@ export default function Onboarding() {
 
   const handleProcessingComplete = () => {
     console.log('🎯 Processing complete, redirecting to dashboard')
-    navigate('/dashboard')
+    navigate('/dashboard', { replace: true })
   }
 
   const renderStepContent = () => {
@@ -156,7 +163,7 @@ export default function Onboarding() {
       case 5:
         return <Step5Goals onNext={handleNext} onBack={handleBack} />
       case 6:
-        return <Step6Complete onNext={handleComplete} onBack={handleBack} />
+        return <Step6Complete onBack={handleBack} />
       case 7:
         return <Step7Summary onNext={handleComplete} onBack={handleBack} />
       case 8:
