@@ -29,11 +29,19 @@ export const useOnboardingDataConsolidation = () => {
           category: category,
           subcategory: category,
           amount: amount
-        })),
-        deudas: financialData.debts || [],
+        })) as any, // Convert to Json type
+        deudas: (financialData.debts || []).map(debt => ({
+          id: debt.id,
+          name: debt.name,
+          amount: debt.amount,
+          monthlyPayment: debt.monthlyPayment,
+          paymentDueDate: debt.paymentDueDate,
+          termInMonths: debt.termInMonths,
+          estimatedPayoffDate: debt.estimatedPayoffDate
+        })) as any, // Convert to Json type
         ahorros_actuales: financialData.currentSavings || 0,
         capacidad_ahorro: financialData.monthlySavingsCapacity || 0,
-        metas_financieras: financialData.financialGoals || []
+        metas_financieras: financialData.financialGoals || [] as any // Convert to Json type
       }
       
       const { error: dataError } = await supabase
@@ -72,9 +80,10 @@ export const useOnboardingDataConsolidation = () => {
         const goalsToInsert = financialData.financialGoals.map((goal) => ({
           user_id: user.id,
           goal_name: goal,
+          goal_type: 'financial', // Add required field
           target_amount: 0,
           current_amount: 0,
-          status: 'pending',
+          status: 'active',
           priority: 'medium'
         }))
         
@@ -99,8 +108,7 @@ export const useOnboardingDataConsolidation = () => {
           amount: exp.amount || 0,
           category: exp.category || 'Other',
           description: exp.subcategory || '',
-          date: new Date().toISOString(),
-          is_recurring: true
+          expense_date: new Date().toISOString().split('T')[0] // Use correct field name and format
         }))
         
         const { error: expensesError } = await supabase
