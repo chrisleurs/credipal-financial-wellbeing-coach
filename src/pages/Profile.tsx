@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { User, Mail, Phone, Calendar, Settings, ArrowRight } from 'lucide-react'
+import { User, Mail, Calendar, Settings, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -112,14 +112,6 @@ export default function Profile() {
                   <span className="text-muted-foreground">Miembro desde:</span>
                   <span className="font-medium">{memberSince}</span>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">WhatsApp:</span>
-                  <span className="font-medium">
-                    {financialData.whatsappOptin ? 'Habilitado' : 'Deshabilitado'}
-                  </span>
-                </div>
               </div>
 
               <Button variant="outline" className="w-fit">
@@ -187,20 +179,6 @@ export default function Profile() {
           <CardTitle>Configuración de Cuenta</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {onboardingCompleted && (
-            <>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-foreground">Notificaciones por WhatsApp</h4>
-                  <p className="text-sm text-muted-foreground">Recibe consejos y recordatorios</p>
-                </div>
-                <Badge variant={financialData.whatsappOptin ? "default" : "secondary"}>
-                  {financialData.whatsappOptin ? "Activo" : "Inactivo"}
-                </Badge>
-              </div>
-            </>
-          )}
-          
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-medium text-foreground">Perfil completo</h4>

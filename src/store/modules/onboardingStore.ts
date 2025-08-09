@@ -17,7 +17,6 @@ export interface OnboardingSlice {
   updateDebts: (debts: Debt[]) => void
   updateSavings: (current: number, monthly: number) => void
   updateGoals: (goals: string[]) => void
-  setWhatsAppOptIn: (optin: boolean) => void
   completeOnboarding: () => void
   
   // Persistence
@@ -33,8 +32,7 @@ const initialFinancialData: FinancialData = {
   debts: [],
   currentSavings: 0,
   monthlySavingsCapacity: 0,
-  financialGoals: [],
-  whatsappOptin: false
+  financialGoals: []
 }
 
 export const createOnboardingSlice: StateCreator<OnboardingSlice> = (set, get) => ({
@@ -87,13 +85,6 @@ export const createOnboardingSlice: StateCreator<OnboardingSlice> = (set, get) =
   updateGoals: (goals) => {
     set((state) => ({
       financialData: { ...state.financialData, financialGoals: goals }
-    }))
-    get().saveOnboardingProgress()
-  },
-
-  setWhatsAppOptIn: (optin) => {
-    set((state) => ({
-      financialData: { ...state.financialData, whatsappOptin: optin }
     }))
     get().saveOnboardingProgress()
   },
