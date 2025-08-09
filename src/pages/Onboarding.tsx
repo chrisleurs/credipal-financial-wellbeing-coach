@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -41,24 +42,36 @@ export default function Onboarding() {
     }
   }, [currentStep, setCurrentStep])
 
+  const handleNext = () => {
+    if (currentStep < 8) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <Step1Income />
+        return <Step1Income onNext={handleNext} onBack={handleBack} />
       case 2:
-        return <Step2Expenses />
+        return <Step2Expenses onNext={handleNext} onBack={handleBack} />
       case 3:
-        return <Step3Debts />
+        return <Step3Debts onNext={handleNext} onBack={handleBack} />
       case 4:
-        return <Step4Savings />
+        return <Step4Savings onNext={handleNext} onBack={handleBack} />
       case 5:
-        return <Step5Goals />
+        return <Step5Goals onNext={handleNext} onBack={handleBack} />
       case 6:
-        return <Step6Complete />
+        return <Step6Complete onBack={handleBack} />
       case 7:
-        return <Step7Summary />
+        return <Step7Summary onNext={handleNext} onBack={handleBack} />
       case 8:
-        return <Step8Processing />
+        return <Step8Processing onNext={handleNext} onBack={handleBack} />
       default:
         return null
     }
@@ -81,3 +94,4 @@ export default function Onboarding() {
     </div>
   )
 }
+
