@@ -12,25 +12,21 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen w-full bg-gray-50 flex">
+      <div className="min-h-screen flex w-full bg-gray-50">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col">
           <AppHeader />
           
-          <main className="flex-1 overflow-auto">
-            <div className="h-full w-full">
-              <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-                {children}
-              </div>
+          <main className="flex-1 p-8 overflow-auto bg-white">
+            <div className="max-w-7xl mx-auto">
+              {children}
             </div>
           </main>
         </div>
 
-        {/* Chat flotante con posición fija */}
-        <div className="fixed bottom-4 right-4 z-50">
-          <ChatBubble />
-        </div>
+        {/* Chat flotante restaurado */}
+        <ChatBubble />
       </div>
     </SidebarProvider>
   )
