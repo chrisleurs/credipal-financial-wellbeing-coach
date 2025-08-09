@@ -1,3 +1,4 @@
+
 export interface Debt {
   id: string
   name: string
@@ -61,4 +62,49 @@ export interface CrediMessage {
   id: string;
   text: string;
   type: 'celebration' | 'suggestion' | 'reminder' | 'default';
+}
+
+// AI-related types
+export interface AIGeneratedPlan {
+  recommendations: string[];
+  monthlyBalance: number;
+  savingsSuggestion: number;
+  budgetBreakdown: {
+    fixedExpenses: number;
+    variableExpenses: number;
+    savings: number;
+    emergency: number;
+  };
+  timeEstimate: string;
+  motivationalMessage: string;
+}
+
+export interface ActionTask {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  dueDate: string;
+  completed: boolean;
+}
+
+export interface ActionPlan {
+  tasks: ActionTask[];
+  nextReviewDate: string;
+}
+
+export interface AIPlan {
+  id: string;
+  recommendations: string[];
+  monthlyBalance: number;
+  savingsSuggestion: number;
+  budgetBreakdown: {
+    fixedExpenses: number;
+    variableExpenses: number;
+    savings: number;
+    emergency: number;
+  };
+  timeEstimate: string;
+  motivationalMessage: string;
+  createdAt: string;
 }
