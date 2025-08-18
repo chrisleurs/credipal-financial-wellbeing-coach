@@ -15,6 +15,9 @@ export * from '../domains/savings/types/savings.types'
 export * from '../domains/planning/types/planning.types'
 export * from '../domains/analytics/types/analytics.types'
 
+// Import OnboardingDebt from debt types
+import { OnboardingDebt } from '../domains/debts/types/debt.types'
+
 // Legacy compatibility types
 export interface FinancialData {
   monthlyIncome: number

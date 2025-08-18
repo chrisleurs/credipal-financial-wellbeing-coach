@@ -1,50 +1,75 @@
 
-import { useMemo } from 'react'
-import { useFinancialStore } from '@/store/financialStore'
+import { useQuery } from '@tanstack/react-query'
+import { useAuth } from './useAuth'
+import { useIncomes } from '@/domains/income/hooks/useIncomes'
+import { useExpenses } from '@/domains/expenses/hooks/useExpenses'
+import { useDebts } from '@/domains/debts/hooks/useDebts'
+import { useGoals } from '@/domains/savings/hooks/useGoals'
 import { ConsolidatedProfile } from '@/types/unified'
 
 export const useConsolidatedProfile = () => {
-  const { financialData, isOnboardingComplete } = useFinancialStore()
+  const { user } = useAuth()
+  const { incomes, totalMonthlyIncome } = useIncomes()
+  const { expenses, totalExpenses } = useExpenses()
+  const { debts, totalDebt, totalMonthlyPayments } = useDebts()
+  const { goals } = useGoals()
 
-  const consolidatedProfile = useMemo((): ConsolidatedProfile => {
-    const monthlyBalance = financialData.monthlyIncome - financialData.monthlyExpenses
-    const totalDebtBalance = financialData.debts.reduce((sum, debt) => sum + debt.amount, 0)
-    const totalMonthlyDebtPayments = financialData.debts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
-    
-    // Convert debts to expected format
-    const formattedDebts = financialData.debts.map(debt => ({
-      id: debt.id,
-      creditor: debt.name,
-      current_balance: debt.amount,
-      monthly_payment: debt.monthlyPayment,
-      annual_interest_rate: 0 // Default rate for onboarding debts
-    }))
-    
-    return {
-      userId: 'current-user',
-      name: 'Usuario',
-      monthlyIncome: financialData.monthlyIncome,
-      extraIncome: financialData.extraIncome,
-      monthlyExpenses: financialData.monthlyExpenses,
-      monthlyBalance,
-      currentSavings: financialData.currentSavings,
-      totalDebtBalance,
-      totalMonthlyDebtPayments,
-      savingsCapacity: financialData.monthlySavingsCapacity,
-      financialGoals: financialData.financialGoals,
-      expenseCategories: financialData.expenseCategories,
-      debts: formattedDebts,
-      dataCompleteness: isOnboardingComplete ? 1 : 0.7
-    }
-  }, [financialData, isOnboardingComplete])
+  const consolidatedProfile = useQuery({
+    queryKey: ['consolidated-profile', user?.id],
+    queryFn: async (): Promise<ConsolidatedProfile> => {
+      if (!user?.id) throw new Error('User not authenticated')
 
-  const hasCompleteData = isOnboardingComplete && 
-    financialData.monthlyIncome > 0 && 
-    financialData.monthlyExpenses > 0
+      // Calculate expense categories
+      const expenseCategories: Record<string, number> = {}
+      expenses.forEach(expense => {
+        expenseCategories[expense.category] = (expenseCategories[expense.category] || 0) + expense.amount.amount
+      })
+
+      // Map debts to legacy format
+      const legacyDebts = debts.map(debt => ({
+        id: debt.id,
+        creditor: debt.creditor,
+        current_balance: debt.currentBalance.amount,
+        monthly_payment: debt.monthlyPayment.amount,
+        annual_interest_rate: debt.interestRate
+      }))
+
+      // Calculate financial goals
+      const financialGoals = goals.map(goal => goal.title)
+
+      // Calculate savings capacity
+      const savingsCapacity = Math.max(0, totalMonthlyIncome - totalExpenses - totalMonthlyPayments)
+
+      // Calculate data completeness
+      let completeness = 0
+      if (incomes.length > 0) completeness += 30
+      if (expenses.length > 0) completeness += 30
+      if (debts.length > 0) completeness += 20
+      if (goals.length > 0) completeness += 20
+
+      return {
+        userId: user.id,
+        name: user.email || 'Usuario',
+        monthlyIncome: totalMonthlyIncome,
+        extraIncome: 0,
+        monthlyExpenses: totalExpenses,
+        monthlyBalance: totalMonthlyIncome - totalExpenses,
+        currentSavings: 0,
+        totalDebtBalance: totalDebt,
+        totalMonthlyDebtPayments: totalMonthlyPayments,
+        savingsCapacity,
+        financialGoals,
+        expenseCategories,
+        debts: legacyDebts,
+        dataCompleteness: completeness
+      }
+    },
+    enabled: !!user?.id,
+  })
 
   return {
-    consolidatedProfile,
-    hasCompleteData,
-    isLoading: false
+    consolidatedProfile: consolidatedProfile.data,
+    hasCompleteData: (consolidatedProfile.data?.dataCompleteness || 0) >= 80,
+    isLoading: consolidatedProfile.isLoading
   }
 }

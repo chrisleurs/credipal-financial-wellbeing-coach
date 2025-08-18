@@ -10,21 +10,20 @@ export const useIncomes = () => {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // Fetch income sources
+  // Fetch incomes
   const {
     data: incomes = [],
     isLoading,
     error
   } = useQuery({
-    queryKey: ['income-sources', user?.id],
+    queryKey: ['incomes', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated')
       
       const { data, error } = await supabase
-        .from('income_sources')
+        .from('incomes')
         .select('*')
         .eq('user_id', user.id)
-        .eq('is_active', true)
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -33,9 +32,9 @@ export const useIncomes = () => {
       return (data || []).map(dbIncome => ({
         id: dbIncome.id,
         userId: dbIncome.user_id,
-        source: dbIncome.source_name, // Map source_name to source
+        source: dbIncome.source,
         amount: { amount: dbIncome.amount, currency: 'MXN' as const },
-        frequency: dbIncome.frequency,
+        frequency: dbIncome.frequency as 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly',
         isActive: dbIncome.is_active,
         description: dbIncome.description || '',
         createdAt: dbIncome.created_at,
@@ -51,14 +50,13 @@ export const useIncomes = () => {
       if (!user?.id) throw new Error('User not authenticated')
       
       const { data, error } = await supabase
-        .from('income_sources')
+        .from('incomes')
         .insert({
           user_id: user.id,
-          source_name: incomeData.source, // Map source to source_name
+          source: incomeData.source,
           amount: incomeData.amount.amount,
           frequency: incomeData.frequency,
-          is_active: incomeData.isActive ?? true,
-          description: incomeData.description
+          is_active: incomeData.isActive ?? true
         })
         .select()
         .single()
@@ -67,11 +65,11 @@ export const useIncomes = () => {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['income-sources'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['incomes'] })
+      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Ingreso agregado",
-        description: "La fuente de ingresos se ha registrado exitosamente.",
+        description: "La fuente de ingresos se ha agregado exitosamente.",
       })
     },
     onError: () => {
@@ -87,13 +85,12 @@ export const useIncomes = () => {
   const updateIncomeMutation = useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateIncomeData>) => {
       const { data, error } = await supabase
-        .from('income_sources')
+        .from('incomes')
         .update({
-          source_name: updates.source,
+          source: updates.source,
           amount: updates.amount?.amount,
           frequency: updates.frequency,
-          is_active: updates.isActive,
-          description: updates.description
+          is_active: updates.isActive
         })
         .eq('id', id)
         .select()
@@ -103,8 +100,8 @@ export const useIncomes = () => {
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['income-sources'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['incomes'] })
+      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Ingreso actualizado",
         description: "Los cambios se han guardado exitosamente.",
@@ -113,7 +110,7 @@ export const useIncomes = () => {
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo actualizar la fuente de ingresos.",
+        description: "No se pudo actualizar el ingreso.",
         variant: "destructive",
       })
     },
@@ -123,15 +120,15 @@ export const useIncomes = () => {
   const deleteIncomeMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('income_sources')
-        .update({ is_active: false })
+        .from('incomes')
+        .delete()
         .eq('id', id)
       
       if (error) throw error
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['income-sources'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['incomes'] })
+      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Ingreso eliminado",
         description: "La fuente de ingresos se ha eliminado exitosamente.",
@@ -140,17 +137,30 @@ export const useIncomes = () => {
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo eliminar la fuente de ingresos.",
+        description: "No se pudo eliminar el ingreso.",
         variant: "destructive",
       })
     },
   })
 
+  // Calculate totals
   const totalMonthlyIncome = incomes.reduce((sum, income) => {
-    const multiplier = income.frequency === 'weekly' ? 4 : 
-                      income.frequency === 'biweekly' ? 2 : 
-                      income.frequency === 'yearly' ? 1/12 : 1
-    return sum + (income.amount.amount * multiplier)
+    if (!income.isActive) return sum
+    
+    const amount = income.amount.amount
+    switch (income.frequency) {
+      case 'daily':
+        return sum + (amount * 30)
+      case 'weekly':
+        return sum + (amount * 4)
+      case 'biweekly':
+        return sum + (amount * 2)
+      case 'yearly':
+        return sum + (amount / 12)
+      case 'monthly':
+      default:
+        return sum + amount
+    }
   }, 0)
 
   return {

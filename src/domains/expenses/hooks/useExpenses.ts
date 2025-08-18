@@ -162,7 +162,7 @@ export const useExpenses = () => {
     createExpense: createExpenseMutation.mutate,
     updateExpense: updateExpenseMutation.mutate,
     deleteExpense: deleteExpenseMutation.mutate,
-    isCreating: createIncomeMutation.isPending,
+    isCreating: createExpenseMutation.isPending,
     isUpdating: updateExpenseMutation.isPending,
     isDeleting: deleteExpenseMutation.isPending,
   }
