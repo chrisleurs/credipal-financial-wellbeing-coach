@@ -571,10 +571,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_financial_dashboard: {
+        Row: {
+          active_goals_count: number | null
+          debt_to_income_ratio: number | null
+          email: string | null
+          emergency_fund: number | null
+          emergency_fund_months: number | null
+          first_name: string | null
+          last_calculated: string | null
+          last_name: string | null
+          latest_plan_created: string | null
+          latest_plan_id: string | null
+          latest_plan_status: Database["public"]["Enums"]["plan_status"] | null
+          latest_plan_type: string | null
+          monthly_debt_payments: number | null
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
+          savings_capacity: number | null
+          savings_rate: number | null
+          total_current_amount: number | null
+          total_debt: number | null
+          total_monthly_expenses: number | null
+          total_monthly_income: number | null
+          total_target_amount: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_financial_summary: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
+      calculate_user_financial_summary: {
         Args: { target_user_id: string }
         Returns: undefined
       }

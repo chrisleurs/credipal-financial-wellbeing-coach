@@ -23,7 +23,7 @@ const Debts = () => {
   const {
     debts,
     payments,
-    isLoadingDebts,
+    isLoading: isLoadingDebts,
     createDebt,
     updateDebt,
     deleteDebt,

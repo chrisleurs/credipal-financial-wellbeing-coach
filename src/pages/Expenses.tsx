@@ -34,8 +34,6 @@ const Expenses = () => {
     ? expenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
     : consolidatedProfile?.monthlyExpenses || 0
 
-  console.log('📱 Total expenses calculated:', { hasSpecificExpenses, totalExpenses, fromProfile: consolidatedProfile?.monthlyExpenses })
-
   // Get expense categories from consolidated data when no specific expenses
   const expensesByCategory = hasSpecificExpenses
     ? expenses.reduce((acc, expense) => {
@@ -55,6 +53,8 @@ const Expenses = () => {
           date: new Date().toISOString().split('T')[0],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          subcategory: null,
+          is_recurring: false,
         }] as Expense[]
         return acc
       }, {} as Record<string, Expense[]>)
@@ -96,12 +96,19 @@ const Expenses = () => {
   }) => {
     try {
       if (editingExpense) {
-        await updateExpense({ id: editingExpense.id, ...expenseData })
+        await updateExpense({ 
+          id: editingExpense.id, 
+          ...expenseData,
+          is_recurring: editingExpense.is_recurring
+        })
         setIsModalOpen(false)
         setEditingExpense(null)
         return { success: true }
       } else {
-        await createExpense(expenseData)
+        await createExpense({
+          ...expenseData,
+          is_recurring: false
+        })
         setIsModalOpen(false)
         return { success: true }
       }

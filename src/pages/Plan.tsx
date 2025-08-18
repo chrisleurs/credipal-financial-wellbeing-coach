@@ -1,267 +1,231 @@
 
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { PlanGenerationModal } from '@/components/dashboard/PlanGenerationModal'
-import { useFinancialPlan } from '@/hooks/useFinancialPlan'
+import { Separator } from '@/components/ui/separator'
 import { useFinancialPlanGenerator } from '@/hooks/useFinancialPlanGenerator'
-import { CheckCircle, Clock, TrendingUp, Target, Sparkles, Plus } from 'lucide-react'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { TrendingUp, Target, AlertCircle, CheckCircle, Lightbulb } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
 
 const Plan = () => {
-  const navigate = useNavigate()
-  const { dashboardData, isLoading, hasActivePlan, updateGoalProgress, refetch } = useFinancialPlan()
-  const { 
-    isGenerating, 
-    generatedPlan, 
-    generatePlan, 
-    savePlan, 
-    clearPlan 
+  const {
+    consolidatedProfile,
+    hasCompleteData,
+    isLoading,
+    generatePlan,
+    isGenerating,
+    generatedPlan,
+    savePlan,
+    clearPlan
   } = useFinancialPlanGenerator()
-  
-  const [showGenerationModal, setShowGenerationModal] = useState(false)
-  const [isConfirming, setIsConfirming] = useState(false)
-
-  const handleGenerateNewPlan = async () => {
-    const success = await generatePlan()
-    if (success && generatedPlan) {
-      setShowGenerationModal(true)
-    }
-  }
-
-  const handleConfirmPlan = async () => {
-    setIsConfirming(true)
-    try {
-      const success = await savePlan()
-      if (success) {
-        setShowGenerationModal(false)
-        clearPlan()
-        await refetch() // Refresh the data
-      }
-    } finally {
-      setIsConfirming(false)
-    }
-  }
-
-  const handleAdjustPlan = () => {
-    // For now, close modal and allow regeneration
-    // In production, this could open an adjustment interface
-    setShowGenerationModal(false)
-    clearPlan()
-  }
-
-  const handleCloseModal = () => {
-    setShowGenerationModal(false)
-    clearPlan()
-  }
-
-  const handleGoalAction = (goalId: string) => {
-    // Mock action - in production this would open a contribution modal
-    const amount = 50
-    updateGoalProgress(goalId, amount)
-  }
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Cargando tu plan financiero..." />
+        <LoadingSpinner size="lg" text="Cargando información financiera..." />
       </div>
     )
   }
 
-  // No Active Plan State
-  if (!hasActivePlan || !dashboardData) {
+  if (!hasCompleteData) {
     return (
-      <div className="space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Tu Plan Financiero Personalizado
-          </h1>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="text-center">
+            <CardContent className="p-8">
+              <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+              <h1 className="text-2xl font-bold mb-4">Información Incompleta</h1>
+              <p className="text-muted-foreground mb-6">
+                Para generar un plan financiero personalizado, necesitamos más información sobre tus finanzas.
+              </p>
+              <div className="space-y-2 mb-6">
+                <p className="text-sm">• Agrega tus fuentes de ingresos</p>
+                <p className="text-sm">• Registra tus gastos mensuales</p>
+                <p className="text-sm">• Incluye información sobre deudas</p>
+                <p className="text-sm">• Define tus metas financieras</p>
+              </div>
+              <Button onClick={() => window.location.href = '/dashboard'}>
+                Completar Información
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Plan Financiero Personalizado</h1>
           <p className="text-muted-foreground">
-            Deja que Credi analice tu situación y cree un plan inteligente para ti
+            Generamos recomendaciones basadas en tu situación financiera actual
           </p>
         </div>
 
-        <Card className="max-w-2xl mx-auto text-center">
-          <CardContent className="pt-8 pb-8">
-            <div className="mb-6">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-10 w-10 text-primary" />
+        {/* Profile Summary */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Resumen Financiero</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(consolidatedProfile?.monthlyIncome || 0)}
+                </div>
+                <p className="text-sm text-muted-foreground">Ingresos Mensuales</p>
               </div>
-              <h2 className="text-xl font-semibold mb-2">
-                ¡Es hora de crear tu plan financiero!
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Credi utilizará tu información existente para generar automáticamente 
-                un plan de 3 metas basado en la metodología probada 3-2-1.
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <Button
-                onClick={handleGenerateNewPlan}
-                disabled={isGenerating}
-                size="lg"
-                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                {isGenerating ? (
-                  <>
-                    <LoadingSpinner size="sm" className="mr-2" />
-                    Credi está analizando...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-5 w-5 mr-2" />
-                    Crear mi Plan con Credi
-                  </>
-                )}
-              </Button>
-              
-              <p className="text-sm text-muted-foreground">
-                No te preocupes, podrás ajustarlo después de verlo
-              </p>
-            </div>
-
-            <div className="mt-8 pt-6 border-t">
-              <h3 className="font-semibold mb-3">¿Qué incluye tu plan?</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-green-600" />
-                  <span>Meta corto plazo</span>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(consolidatedProfile?.monthlyExpenses || 0)}
                 </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-yellow-600" />
-                  <span>Meta mediano plazo</span>
+                <p className="text-sm text-muted-foreground">Gastos Mensuales</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {formatCurrency(consolidatedProfile?.currentSavings || 0)}
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-blue-600" />
-                  <span>Meta largo plazo</span>
+                <p className="text-sm text-muted-foreground">Ahorros Actuales</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {formatCurrency(consolidatedProfile?.totalDebtBalance || 0)}
                 </div>
+                <p className="text-sm text-muted-foreground">Deudas Totales</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Generation Modal */}
-        {generatedPlan && (
-          <PlanGenerationModal
-            isOpen={showGenerationModal}
-            onClose={handleCloseModal}
-            goals={generatedPlan.goals}
-            analysis={generatedPlan.analysis}
-            motivationalMessage={generatedPlan.motivationalMessage}
-            monthlyCapacity={generatedPlan.monthlyCapacity}
-            onConfirm={handleConfirmPlan}
-            onAdjust={handleAdjustPlan}
-            isConfirming={isConfirming}
-          />
-        )}
-      </div>
-    )
-  }
-
-  // Active Plan State
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          {dashboardData.greeting}
-        </h1>
-        <p className="text-muted-foreground">
-          {dashboardData.motivationalMessage}
-        </p>
-      </div>
-
-      {/* Goals Grid */}
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-        {dashboardData.goals.map((goal) => (
-          <Card key={goal.id} className="relative overflow-hidden transition-all duration-200 hover:shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{goal.emoji}</span>
-                  <div>
-                    <h3 className="font-semibold text-lg text-foreground">
-                      {goal.title}
-                    </h3>
-                    <Badge variant="outline" className="text-xs">
-                      {goal.type === 'short' ? 'Corto plazo' : 
-                       goal.type === 'medium' ? 'Mediano plazo' : 'Largo plazo'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Progreso</span>
-                  <span className="text-sm font-medium">{Math.round(goal.progress)}%</span>
-                </div>
-                <Progress value={goal.progress} className="h-3 mb-2" />
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold text-primary">
-                    {formatCurrency(goal.currentAmount)}
-                  </span>
-                  <span className="text-muted-foreground">
-                    de {formatCurrency(goal.targetAmount)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action */}
-              <Button
-                onClick={() => handleGoalAction(goal.id)}
-                className="w-full bg-primary hover:bg-primary/90"
-                disabled={goal.status === 'completed'}
+        {/* Generate Plan Section */}
+        {!generatedPlan ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-yellow-500" />
+                Generar Plan Financiero
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-6">
+                Analizaremos tu situación financiera y crearemos un plan personalizado con recomendaciones específicas para mejorar tus finanzas.
+              </p>
+              <Button 
+                onClick={generatePlan} 
+                disabled={isGenerating}
+                className="w-full"
               >
-                {goal.status === 'completed' ? 'Completada' : goal.actionText}
+                {isGenerating ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Generando Plan...
+                  </>
+                ) : (
+                  'Generar Plan Financiero'
+                )}
               </Button>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        ) : (
+          /* Generated Plan Display */
+          <div className="space-y-6">
+            {/* Plan Header */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    Tu Plan Financiero Personalizado
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button onClick={savePlan} variant="default">
+                      Guardar Plan
+                    </Button>
+                    <Button onClick={clearPlan} variant="outline">
+                      Generar Nuevo
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
 
-      {/* Regenerate Plan Button */}
-      <div className="text-center pt-6">
-        <Button
-          onClick={handleGenerateNewPlan}
-          disabled={isGenerating}
-          variant="outline"
-          size="lg"
-        >
-          {isGenerating ? (
-            <>
-              <LoadingSpinner size="sm" className="mr-2" />
-              Generando nuevo plan...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-5 w-5 mr-2" />
-              Actualizar mi Plan con Credi
-            </>
-          )}
-        </Button>
-      </div>
+            {/* Plan Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Recommendations */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-blue-500" />
+                    Recomendaciones Prioritarias
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {generatedPlan.recommendations?.map((rec: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{rec.title}</h4>
+                        <Badge variant={rec.priority === 'high' ? 'destructive' : 
+                                      rec.priority === 'medium' ? 'default' : 'secondary'}>
+                          {rec.priority === 'high' ? 'Alta' : 
+                           rec.priority === 'medium' ? 'Media' : 'Baja'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{rec.description}</p>
+                    </div>
+                  )) || <p className="text-muted-foreground">No hay recomendaciones específicas disponibles.</p>}
+                </CardContent>
+              </Card>
 
-      {/* Generation Modal */}
-      {generatedPlan && (
-        <PlanGenerationModal
-          isOpen={showGenerationModal}
-          onClose={handleCloseModal}
-          goals={generatedPlan.goals}
-          analysis={generatedPlan.analysis}
-          motivationalMessage={generatedPlan.motivationalMessage}
-          monthlyCapacity={generatedPlan.monthlyCapacity}
-          onConfirm={handleConfirmPlan}
-          onAdjust={handleAdjustPlan}
-          isConfirming={isConfirming}
-        />
-      )}
+              {/* Action Plan */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    Plan de Acción
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {generatedPlan.actionPlan?.map((action: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium mb-1">{action.title}</h4>
+                          <p className="text-sm text-muted-foreground">{action.description}</p>
+                          {action.timeline && (
+                            <Badge variant="outline" className="mt-2">
+                              {action.timeline}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )) || <p className="text-muted-foreground">Plan de acción no disponible.</p>}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Summary */}
+            {generatedPlan.summary && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resumen del Plan</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">{generatedPlan.summary}</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
