@@ -1,74 +1,82 @@
 
 /**
- * Expense Domain Types - Expense tracking and budgeting
+ * Expenses Domain Types - Expense tracking and categorization
  */
 
-import { Money, Currency } from '../../core/money'
+import { Money } from '../../core/money'
 import { DateRange, RecurrencePattern } from '../../core/dates'
 
-export type ExpenseCategory = 
-  | 'housing' 
-  | 'food' 
-  | 'transportation' 
-  | 'utilities'
-  | 'healthcare' 
-  | 'entertainment' 
-  | 'shopping' 
-  | 'education'
-  | 'personal_care' 
-  | 'travel' 
-  | 'debt_payments' 
-  | 'savings'
-  | 'insurance' 
-  | 'taxes' 
-  | 'other'
+export type ExpenseFrequency = 'one_time' | 'daily' | 'weekly' | 'monthly' | 'yearly'
+export type ExpenseCategory = 'food' | 'transport' | 'housing' | 'utilities' | 'entertainment' | 'healthcare' | 'education' | 'shopping' | 'bills' | 'other'
 
 export interface Expense {
   id: string
   userId: string
-  category: ExpenseCategory
   amount: Money
+  category: ExpenseCategory
+  subcategory?: string
   description: string
   date: string // ISO date string
   isRecurring: boolean
-  recurrence?: RecurrencePattern
+  recurrencePattern?: RecurrencePattern
   tags?: string[]
   createdAt: string
   updatedAt: string
 }
 
+export interface ExpenseCategory {
+  id: string
+  userId: string
+  name: string
+  color: string
+  icon?: string
+  budget?: Money
+  isDefault: boolean
+  createdAt: string
+}
+
 export interface ExpensesByCategory {
-  [K in ExpenseCategory]: Money
+  [category: string]: {
+    total: Money
+    expenses: Expense[]
+    budget?: Money
+    percentageOfTotal: number
+  }
+}
+
+export interface ExpenseSummary {
+  totalExpenses: Money
+  monthlyAverage: Money
+  byCategory: ExpensesByCategory
+  topCategories: Array<{
+    category: string
+    amount: Money
+    percentage: number
+  }>
+  trendDirection: 'up' | 'down' | 'stable'
+  comparedToPreviousMonth: number
 }
 
 export interface Budget {
   id: string
   userId: string
   category: ExpenseCategory
-  budgetedAmount: Money
-  spentAmount: Money
+  amount: Money
   period: DateRange
-  alertThreshold?: number // percentage (e.g., 80 for 80%)
+  alertThreshold: number // percentage (0-100)
+  isActive: boolean
   createdAt: string
   updatedAt: string
 }
 
-export interface ExpenseSummary {
-  totalMonthlyExpenses: Money
-  byCategory: ExpensesByCategory
-  budgetStatus: {
-    totalBudget: Money
-    totalSpent: Money
-    remainingBudget: Money
-    categoriesOverBudget: ExpenseCategory[]
-  }
-  trends: {
-    monthOverMonth: number // percentage change
-    yearOverYear: number // percentage change
-    topCategories: Array<{
-      category: ExpenseCategory
-      amount: Money
-      percentage: number
-    }>
-  }
+export interface ExpenseAlert {
+  id: string
+  userId: string
+  budgetId: string
+  type: 'approaching_limit' | 'over_budget' | 'unusual_spending'
+  message: string
+  amount: Money
+  threshold: Money
+  createdAt: string
+  acknowledged: boolean
 }

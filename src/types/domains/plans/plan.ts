@@ -1,65 +1,79 @@
 
 /**
- * Plans Domain Types - AI-generated financial plans and actions
+ * Plans Domain Types - AI-generated financial plans and action items
  */
 
 import { Money } from '../../core/money'
 import { DateRange } from '../../core/dates'
 
-export type PlanType = 'debt_payoff' | 'savings' | 'budget_optimization' | 'comprehensive'
-export type ActionStatus = 'pending' | 'in_progress' | 'completed' | 'skipped'
-export type ActionPriority = 'high' | 'medium' | 'low'
+export type PlanStatus = 'draft' | 'active' | 'completed' | 'paused'
+export type ActionStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+export type ActionCategory = 'debt' | 'savings' | 'expense' | 'income' | 'investment'
 
 export interface AIFinancialPlan {
   id: string
   userId: string
+  planType: 'debt_freedom' | 'savings_boost' | 'budget_optimization' | 'comprehensive'
+  status: PlanStatus
+  
+  // Plan content
   title: string
   description: string
-  type: PlanType
-  generatedAt: string
-  targetDate: string
-  estimatedSavings: Money
-  confidenceScore: number // 0-100
-  isActive: boolean
+  motivationalMessage: string
+  recommendations: string[]
+  
+  // Financial projections
+  currentBalance: Money
+  monthlyBalance: Money
+  projectedSavings: Money
+  savingsSuggestion: string
+  timelineMonths: number
+  
+  // Metadata
   createdAt: string
   updatedAt: string
+  completedAt?: string
 }
 
 export interface ActionItem {
   id: string
   planId: string
   userId: string
+  
+  // Action details
   title: string
   description: string
-  category: string
-  priority: ActionPriority
+  category: ActionCategory
+  priority: 'high' | 'medium' | 'low'
   status: ActionStatus
-  estimatedImpact: Money
+  
+  // Targets and metrics
+  targetAmount?: Money
+  currentProgress?: Money
   dueDate?: string
+  
+  // Completion tracking
   completedAt?: string
+  notes?: string
+  
+  // Metadata
   createdAt: string
   updatedAt: string
 }
 
 export interface PlanProgress {
-  plan: AIFinancialPlan
+  planId: string
   totalActions: number
   completedActions: number
   progressPercentage: number
   estimatedCompletion: string
-  actualSavings: Money
-  projectedSavings: Money
+  currentMilestone: string
 }
 
-export interface PlanSummary {
-  activePlans: AIFinancialPlan[]
-  completedPlans: AIFinancialPlan[]
-  totalEstimatedSavings: Money
-  totalActualSavings: Money
-  overallProgress: number
-  upcomingActions: ActionItem[]
+export interface PlanMetrics {
+  totalSavingsAchieved: Money
+  debtReductionAchieved: Money
+  monthlyImprovements: Money
+  goalsReached: number
+  planEfficiencyScore: number
 }
-
-// Legacy compatibility exports
-export type AIPlan = AIFinancialPlan
-export type ActionTask = ActionItem

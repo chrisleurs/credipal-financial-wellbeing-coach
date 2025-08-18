@@ -1,106 +1,133 @@
 
-import { StateCreator } from 'zustand'
-import type { AIPlan, ActionTask } from '@/types'
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import { AIFinancialPlan, ActionItem } from '@/types'
 
-export interface DashboardSlice {
-  // State
-  aiPlan: AIPlan | null
-  actionTasks: ActionTask[]
-  isLoading: boolean
-  error: string | null
+interface DashboardState {
+  // AI Plan state
+  aiPlan: AIFinancialPlan | null
+  isGeneratingPlan: boolean
+  planError: string | null
+  
+  // Action items state  
+  actionItems: ActionItem[]
+  isLoadingActions: boolean
+  
+  // UI state
+  selectedTimeframe: 'week' | 'month' | 'quarter' | 'year'
+  showAIPanel: boolean
   
   // Actions
-  generateAIPlan: (financialData: any) => Promise<void>
-  generateActionPlan: () => Promise<void>
-  setError: (error: string | null) => void
-  setLoading: (loading: boolean) => void
-  reset: () => void
+  setAIPlan: (plan: AIFinancialPlan | null) => void
+  setIsGeneratingPlan: (loading: boolean) => void
+  setPlanError: (error: string | null) => void
+  setActionItems: (items: ActionItem[]) => void
+  setIsLoadingActions: (loading: boolean) => void
+  setSelectedTimeframe: (timeframe: 'week' | 'month' | 'quarter' | 'year') => void
+  setShowAIPanel: (show: boolean) => void
+  completeActionItem: (id: string) => void
+  addActionItem: (item: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt'>) => void
 }
 
-export const createDashboardSlice: StateCreator<DashboardSlice> = (set, get) => ({
-  // Initial state
-  aiPlan: null,
-  actionTasks: [],
-  isLoading: false,
-  error: null,
-
-  // Actions
-  generateAIPlan: async (financialData) => {
-    set({ isLoading: true, error: null })
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const balance = financialData.monthlyIncome + financialData.extraIncome - financialData.monthlyExpenses
-      
-      const mockPlan: AIPlan = {
-        id: Date.now().toString(),
+export const useDashboardStore = create<DashboardState>()(
+  persist(
+    (set, get) => ({
+      aiPlan: {
+        id: 'default',
+        userId: 'demo',
+        planType: 'comprehensive',
+        status: 'active',  
+        title: 'Plan Financiero Personalizado',
+        description: 'Tu roadmap hacia la libertad financiera',
+        motivationalMessage: '¡Estás en el camino correcto! Cada pequeño paso cuenta hacia tu libertad financiera.',
         recommendations: [
-          'Crea un presupuesto 50/30/20: 50% gastos esenciales, 30% gastos personales, 20% ahorros',
-          'Establece un fondo de emergencia equivalente a 3-6 meses de gastos',
-          'Paga primero las deudas con mayor tasa de interés',
-          'Automatiza tus ahorros para que se transfieran automáticamente',
-          'Revisa tus gastos mensuales para identificar áreas de mejora'
+          'Reduce gastos en entretenimiento en un 15%',
+          'Considera aumentar tu pago mínimo de deudas',
+          'Establece un fondo de emergencia de $10,000'
         ],
-        monthlyBalance: balance,
-        savingsSuggestion: Math.max(balance * 0.2, 0),
-        budgetBreakdown: {
-          fixedExpenses: financialData.monthlyExpenses * 0.6,
-          variableExpenses: financialData.monthlyExpenses * 0.4,
-          savings: Math.max(balance * 0.2, 0),
-          emergency: Math.max(balance * 0.1, 0)
-        },
-        timeEstimate: '6-12 meses para ver resultados significativos',
-        motivationalMessage: '¡Estás en el camino correcto! Con disciplina y estos ajustes, mejorarás tu situación financiera.',
-        createdAt: new Date().toISOString()
-      }
-      
-      set({ aiPlan: mockPlan })
-    } catch (error) {
-      set({ error: 'Error generando tu plan financiero. Intenta nuevamente.' })
-    } finally {
-      set({ isLoading: false })
-    }
-  },
-
-  generateActionPlan: async () => {
-    set({ isLoading: true, error: null })
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      const mockTasks: ActionTask[] = [
+        currentBalance: { amount: 2500, currency: 'MXN' },
+        monthlyBalance: { amount: 2500, currency: 'MXN' },
+        projectedSavings: { amount: 30000, currency: 'MXN' },
+        savingsSuggestion: 'Podrías ahorrar $500 más al mes optimizando gastos',
+        timelineMonths: 12,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      isGeneratingPlan: false,
+      planError: null,
+      actionItems: [
         {
           id: '1',
-          title: 'Registrar gastos diarios',
-          description: 'Anota todos tus gastos durante una semana',
+          planId: 'default',
+          userId: 'demo',
+          title: 'Reducir gastos en entretenimiento',
+          description: 'Disminuir gastos en entretenimiento en 15% este mes',
+          category: 'expense',
           priority: 'high',
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          completed: false
+          status: 'pending',
+          targetAmount: { amount: 300, currency: 'MXN' },
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         },
         {
-          id: '2',
-          title: 'Abrir cuenta de ahorros',
-          description: 'Separa tus ahorros en una cuenta dedicada',
+          id: '2', 
+          planId: 'default',
+          userId: 'demo',
+          title: 'Pago extra de deuda',
+          description: 'Hacer un pago adicional de $500 a la tarjeta de crédito',
+          category: 'debt',
           priority: 'medium',
-          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          completed: false
+          status: 'pending',
+          targetAmount: { amount: 500, currency: 'MXN' },
+          dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }
-      ]
+      ],
+      isLoadingActions: false,
+      selectedTimeframe: 'month',
+      showAIPanel: true,
+
+      // Actions
+      setAIPlan: (plan) => set({ aiPlan: plan }),
+      setIsGeneratingPlan: (loading) => set({ isGeneratingPlan: loading }),
+      setPlanError: (error) => set({ planError: error }),
+      setActionItems: (items) => set({ actionItems: items }),
+      setIsLoadingActions: (loading) => set({ isLoadingActions: loading }),
+      setSelectedTimeframe: (timeframe) => set({ selectedTimeframe: timeframe }),
+      setShowAIPanel: (show) => set({ showAIPanel: show }),
       
-      set({ actionTasks: mockTasks })
-    } catch (error) {
-      set({ error: 'Error generando plan de acción' })
-    } finally {
-      set({ isLoading: false })
+      completeActionItem: (id: string) => {
+        const items = get().actionItems.map(item => 
+          item.id === id 
+            ? { 
+                ...item, 
+                status: 'completed' as const,
+                completedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              }
+            : item
+        )
+        set({ actionItems: items })
+      },
+      
+      addActionItem: (newItem) => {
+        const item: ActionItem = {
+          ...newItem,
+          id: Math.random().toString(36).substr(2, 9),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+        set({ actionItems: [...get().actionItems, item] })
+      }
+    }),
+    {
+      name: 'dashboard-store',
+      partialize: (state) => ({
+        selectedTimeframe: state.selectedTimeframe,
+        showAIPanel: state.showAIPanel
+      })
     }
-  },
-
-  setError: (error) => set({ error }),
-  setLoading: (loading) => set({ isLoading: loading }),
-
-  reset: () => set({
-    aiPlan: null,
-    actionTasks: [],
-    isLoading: false,
-    error: null
-  })
-})
+  )
+)

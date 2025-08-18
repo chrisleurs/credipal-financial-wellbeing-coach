@@ -18,8 +18,8 @@ interface ConsolidatedFinancialData {
   debts: Array<{
     id: string
     creditor: string
-    current_balance: number
-    monthly_payment: number
+    currentBalance: number
+    monthlyPayment: number
   }>
   savingsCapacity: number
   hasRealData: boolean
@@ -69,8 +69,8 @@ export const useConsolidatedFinancialData = () => {
         debts: debts.map(debt => ({
           id: debt.id,
           creditor: debt.creditor,
-          current_balance: debt.current_balance,
-          monthly_payment: debt.monthly_payment
+          currentBalance: debt.currentBalance.amount,
+          monthlyPayment: debt.monthlyPayment.amount
         })),
         savingsCapacity: financialSummary?.savings_capacity || (totalMonthlyIncome - monthlyExpenses - totalMonthlyPayments),
         hasRealData: incomes.length > 0 || expenses.length > 0 || debts.length > 0 || goals.length > 0

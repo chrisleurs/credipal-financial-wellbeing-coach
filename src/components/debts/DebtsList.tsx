@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, CreditCard, Trash2, Edit } from 'lucide-react'
-import { formatCurrency } from '@/utils/helpers'
+import { formatMoney } from '@/types/core/money'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export const DebtsList = () => {
@@ -14,35 +14,36 @@ export const DebtsList = () => {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     creditor: '',
-    original_amount: '',
-    current_balance: '',
-    monthly_payment: '',
-    interest_rate: '',
-    due_date: '',
+    originalAmount: '',
+    currentBalance: '',
+    monthlyPayment: '',
+    interestRate: '',
+    dueDate: '',
     status: 'active' as const
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.creditor || !formData.original_amount || !formData.current_balance) return
+    if (!formData.creditor || !formData.originalAmount || !formData.currentBalance) return
 
     createDebt({
       creditor: formData.creditor,
-      original_amount: parseFloat(formData.original_amount),
-      current_balance: parseFloat(formData.current_balance),
-      monthly_payment: parseFloat(formData.monthly_payment) || 0,
-      interest_rate: parseFloat(formData.interest_rate) || 0,
-      due_date: formData.due_date || undefined,
-      status: formData.status
+      originalAmount: { amount: parseFloat(formData.originalAmount), currency: 'MXN' },
+      currentBalance: { amount: parseFloat(formData.currentBalance), currency: 'MXN' },
+      monthlyPayment: { amount: parseFloat(formData.monthlyPayment) || 0, currency: 'MXN' },
+      interestRate: parseFloat(formData.interestRate) || 0,
+      dueDate: formData.dueDate || new Date().toISOString().split('T')[0],
+      status: formData.status,
+      priority: 'medium'
     })
 
     setFormData({
       creditor: '',
-      original_amount: '',
-      current_balance: '',
-      monthly_payment: '',
-      interest_rate: '',
-      due_date: '',
+      originalAmount: '',
+      currentBalance: '',
+      monthlyPayment: '',
+      interestRate: '',
+      dueDate: '',
       status: 'active'
     })
     setShowForm(false)
@@ -72,7 +73,7 @@ export const DebtsList = () => {
               <div>
                 <p className="text-sm text-red-600 font-medium">Total de Deudas</p>
                 <p className="text-2xl font-bold text-red-800">
-                  {formatCurrency(totalDebt)}
+                  ${totalDebt.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -86,7 +87,7 @@ export const DebtsList = () => {
               <div>
                 <p className="text-sm text-orange-600 font-medium">Pagos Mensuales</p>
                 <p className="text-2xl font-bold text-orange-800">
-                  {formatCurrency(totalMonthlyPayments)}
+                  ${totalMonthlyPayments.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -123,8 +124,8 @@ export const DebtsList = () => {
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.original_amount}
-                    onChange={(e) => setFormData({...formData, original_amount: e.target.value})}
+                    value={formData.originalAmount}
+                    onChange={(e) => setFormData({...formData, originalAmount: e.target.value})}
                     required
                   />
                 </div>
@@ -137,8 +138,8 @@ export const DebtsList = () => {
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.current_balance}
-                    onChange={(e) => setFormData({...formData, current_balance: e.target.value})}
+                    value={formData.currentBalance}
+                    onChange={(e) => setFormData({...formData, currentBalance: e.target.value})}
                     required
                   />
                 </div>
@@ -153,8 +154,8 @@ export const DebtsList = () => {
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.monthly_payment}
-                    onChange={(e) => setFormData({...formData, monthly_payment: e.target.value})}
+                    value={formData.monthlyPayment}
+                    onChange={(e) => setFormData({...formData, monthlyPayment: e.target.value})}
                   />
                 </div>
 
@@ -166,8 +167,8 @@ export const DebtsList = () => {
                     type="number"
                     step="0.01"
                     placeholder="0.00"
-                    value={formData.interest_rate}
-                    onChange={(e) => setFormData({...formData, interest_rate: e.target.value})}
+                    value={formData.interestRate}
+                    onChange={(e) => setFormData({...formData, interestRate: e.target.value})}
                   />
                 </div>
               </div>
@@ -179,8 +180,8 @@ export const DebtsList = () => {
                   </label>
                   <Input
                     type="date"
-                    value={formData.due_date}
-                    onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+                    value={formData.dueDate}
+                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
                   />
                 </div>
 
@@ -235,8 +236,8 @@ export const DebtsList = () => {
           </Card>
         ) : (
           debts.map((debt) => {
-            const progress = debt.original_amount > 0 
-              ? ((debt.original_amount - debt.current_balance) / debt.original_amount) * 100 
+            const progress = debt.originalAmount.amount > 0 
+              ? ((debt.originalAmount.amount - debt.currentBalance.amount) / debt.originalAmount.amount) * 100 
               : 0
 
             return (
@@ -246,16 +247,16 @@ export const DebtsList = () => {
                     <div>
                       <h4 className="font-medium">{debt.creditor}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Balance: {formatCurrency(debt.current_balance)} de {formatCurrency(debt.original_amount)}
+                        Balance: {formatMoney(debt.currentBalance)} de {formatMoney(debt.originalAmount)}
                       </p>
-                      {debt.monthly_payment > 0 && (
+                      {debt.monthlyPayment.amount > 0 && (
                         <p className="text-sm text-muted-foreground">
-                          Pago mensual: {formatCurrency(debt.monthly_payment)}
+                          Pago mensual: {formatMoney(debt.monthlyPayment)}
                         </p>
                       )}
-                      {debt.due_date && (
+                      {debt.dueDate && (
                         <p className="text-sm text-muted-foreground">
-                          Vence: {new Date(debt.due_date).toLocaleDateString('es-ES')}
+                          Vence: {new Date(debt.dueDate).toLocaleDateString('es-ES')}
                         </p>
                       )}
                     </div>
