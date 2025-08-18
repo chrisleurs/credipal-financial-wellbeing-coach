@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Filter, Download, TrendingUp, Calendar, DollarSign } from 'lucide-react'
 import { useExpenses } from '@/hooks/useExpenses'
-import ExpenseModal from '@/components/expenses/ExpenseModal'
-import ExpenseFilters from '@/components/expenses/ExpenseFilters'
-import CategoryManagement from '@/components/expenses/CategoryManagement'
+import { ExpenseModal } from '@/components/expenses/ExpenseModal'
+import { ExpenseFilters } from '@/components/expenses/ExpenseFilters'
+import { CategoryManagement } from '@/components/expenses/CategoryManagement'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Expense, ExpenseCategoryType } from '@/domains/expenses/types/expense.types'
 
@@ -27,37 +27,30 @@ export default function ExpensesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [dateRange, setDateRange] = useState<'week' | 'month' | 'year'>('month')
+  const [filters, setFilters] = useState({
+    category: 'all',
+    dateFrom: '',
+    dateTo: ''
+  })
 
   const filteredExpenses = useMemo(() => {
     let filtered = expenses
 
     // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(expense => expense.category === selectedCategory)
+    if (filters.category !== 'all') {
+      filtered = filtered.filter(expense => expense.category === filters.category)
     }
 
     // Filter by date range
-    const now = new Date()
-    const startDate = new Date()
-    
-    switch (dateRange) {
-      case 'week':
-        startDate.setDate(now.getDate() - 7)
-        break
-      case 'month':
-        startDate.setMonth(now.getMonth() - 1)
-        break
-      case 'year':
-        startDate.setFullYear(now.getFullYear() - 1)
-        break
+    if (filters.dateFrom) {
+      filtered = filtered.filter(expense => new Date(expense.date) >= new Date(filters.dateFrom))
+    }
+    if (filters.dateTo) {
+      filtered = filtered.filter(expense => new Date(expense.date) <= new Date(filters.dateTo))
     }
 
-    filtered = filtered.filter(expense => new Date(expense.date) >= startDate)
-
     return filtered
-  }, [expenses, selectedCategory, dateRange])
+  }, [expenses, filters])
 
   const expensesByCategory = useMemo(() => {
     const categories: Record<string, { total: number; count: number }> = {}
@@ -89,26 +82,43 @@ export default function ExpensesPage() {
     setIsModalOpen(true)
   }
 
-  const handleSaveExpense = (expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
-    // Ensure category is valid ExpenseCategoryType
-    const validCategories = ['food', 'transport', 'housing', 'utilities', 'entertainment', 'healthcare', 'education', 'shopping', 'bills', 'other'] as const
-    const category = validCategories.includes(expenseData.category as ExpenseCategoryType) 
-      ? expenseData.category as ExpenseCategoryType 
-      : 'other'
+  const handleSaveExpense = async (expenseData: {
+    amount: number
+    category: string
+    description: string
+    date: string
+  }) => {
+    // Map category to ExpenseCategoryType
+    const categoryMap: Record<string, ExpenseCategoryType> = {
+      'Alimentación': 'Food & Dining',
+      'Transporte': 'Transportation',
+      'Vivienda': 'Housing & Utilities',
+      'Entretenimiento': 'Entertainment',
+      'Salud': 'Healthcare',
+      'Educación': 'Education',
+      'Ropa': 'Shopping',
+      'Servicios': 'Bills & Services',
+      'Otros': 'Other'
+    }
+
+    const category = categoryMap[expenseData.category] || 'Other'
 
     if (editingExpense) {
       updateExpense({ 
         ...expenseData, 
         id: editingExpense.id,
-        category 
+        category,
+        is_recurring: false
       })
     } else {
       createExpense({ 
         ...expenseData, 
-        category 
+        category,
+        is_recurring: false
       })
     }
     setIsModalOpen(false)
+    return { success: true }
   }
 
   const handleDeleteExpense = (expense: Expense) => {
@@ -122,7 +132,7 @@ export default function ExpensesPage() {
       ['Fecha', 'Descripción', 'Categoría', 'Monto'],
       ...filteredExpenses.map(expense => [
         expense.date,
-        expense.description,
+        expense.description || '',
         expense.category,
         expense.amount.toString()
       ])
@@ -223,10 +233,8 @@ export default function ExpensesPage() {
 
         {/* Filters */}
         <ExpenseFilters
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
+          filters={filters}
+          onFiltersChange={setFilters}
         />
 
         {/* Expenses List */}
@@ -305,9 +313,9 @@ export default function ExpensesPage() {
         <ExpenseModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSave={handleSaveExpense}
+          onSubmit={handleSaveExpense}
           expense={editingExpense}
-          isLoading={isCreating || isUpdating}
+          title={editingExpense ? 'Editar Gasto' : 'Agregar Gasto'}
         />
 
         <CategoryManagement

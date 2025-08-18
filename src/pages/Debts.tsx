@@ -10,7 +10,6 @@ import PaymentModal from '@/components/debts/PaymentModal'
 import ScenarioAnalysis from '@/components/debts/ScenarioAnalysis'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Debt } from '@/domains/debts/types/debt.types'
-import { formatMoney } from '@/types/core/money'
 
 export default function DebtsPage() {
   const { 
@@ -74,7 +73,16 @@ export default function DebtsPage() {
     setEditingDebt(null)
   }
 
-  const handleSaveDebt = (debtData: Omit<Debt, 'id' | 'created_at' | 'user_id' | 'updated_at'>) => {
+  const handleSaveDebt = (debtData: {
+    creditor: string
+    original_amount: number
+    current_balance: number
+    monthly_payment: number
+    interest_rate: number
+    due_date?: string
+    status?: 'active' | 'paid' | 'delinquent'
+    description?: string
+  }) => {
     if (editingDebt) {
       updateDebt({ ...debtData, id: editingDebt.id })
     } else {
@@ -267,9 +275,9 @@ export default function DebtsPage() {
           onSubmit={handlePaymentSubmit}
           debt={selectedDebt ? {
             id: selectedDebt.id,
-            name: selectedDebt.creditor,
-            amount: selectedDebt.current_balance,
-            monthlyPayment: selectedDebt.monthly_payment
+            creditor: selectedDebt.creditor,
+            current_balance: selectedDebt.current_balance,
+            monthly_payment: selectedDebt.monthly_payment
           } : null}
           isLoading={false}
         />
@@ -279,9 +287,9 @@ export default function DebtsPage() {
           onClose={() => setIsScenarioModalOpen(false)}
           debt={activeDebts[0] ? {
             id: activeDebts[0].id,
-            name: activeDebts[0].creditor,
-            amount: activeDebts[0].current_balance,
-            monthlyPayment: activeDebts[0].monthly_payment
+            creditor: activeDebts[0].creditor,
+            current_balance: activeDebts[0].current_balance,
+            monthly_payment: activeDebts[0].monthly_payment
           } : null}
           payments={[]}
         />

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, Smartphone, CheckCircle, X } from 'lucide-react'
@@ -34,7 +35,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       
       // ✨ NUEVA FUNCIONALIDAD: Consolidar todos los datos del onboarding
       console.log('🔄 Consolidando datos del onboarding...')
-      await consolidateOnboardingData()
+      await consolidateOnboardingData(true) // Pass true to indicate completion
       console.log('✅ Datos consolidados exitosamente')
       
       // Update onboarding status in database
