@@ -27,7 +27,7 @@ export const useDebts = () => {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      return data as Debt[]
+      return (data || []) as Debt[]
     },
     enabled: !!user?.id,
   })
@@ -40,8 +40,14 @@ export const useDebts = () => {
       const { data, error } = await supabase
         .from('debts')
         .insert({
-          ...debtData,
-          user_id: user.id
+          user_id: user.id,
+          creditor: debtData.creditor,
+          original_amount: debtData.original_amount,
+          current_balance: debtData.current_balance,
+          monthly_payment: debtData.monthly_payment,
+          interest_rate: debtData.interest_rate,
+          due_date: debtData.due_date,
+          status: debtData.status || 'active'
         })
         .select()
         .single()

@@ -1,31 +1,30 @@
+
 import React, { useState } from 'react'
 import { Plus, CreditCard, TrendingDown, AlertCircle, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import DebtModal from '@/components/debts/DebtModal'
-import PaymentModal from '@/components/debts/PaymentModal'
-import ScenarioAnalysis from '@/components/debts/ScenarioAnalysis'
+import { Badge } from '@/components/ui/badge'
+import { DebtModal } from '@/components/debts/DebtModal'
+import { PaymentModal } from '@/components/debts/PaymentModal'
+import { ScenarioAnalysis } from '@/components/debts/ScenarioAnalysis'
 import { useDebts } from '@/hooks/useDebts'
-import { useConsolidatedProfile } from '@/hooks/useConsolidatedProfile'
-import { useLanguage } from '@/contexts/LanguageContext'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
 import type { Debt } from '@/types/database'
 
-const Debts = () => {
+export default function Debts() {
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false)
+  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null)
-  const [selectedDebtForPayment, setSelectedDebtForPayment] = useState<Debt | null>(null)
 
-  const {
-    debts,
-    payments,
-    isLoading: isLoadingDebts,
-    createDebt,
-    updateDebt,
-    deleteDebt,
+  const { 
+    debts, 
+    totalDebt, 
+    totalMonthlyPayments,
+    createDebt, 
+    updateDebt, 
+    deleteDebt, 
     registerPayment,
     isCreating,
     isUpdating,
@@ -33,122 +32,86 @@ const Debts = () => {
     isRegisteringPayment
   } = useDebts()
 
-  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedProfile()
-  const { t } = useLanguage()
+  const { data: consolidatedData } = useConsolidatedFinancialData()
 
-  console.log('🏦 Debts page - consolidated profile:', consolidatedProfile)
-  console.log('🏦 Debts page - specific debts:', debts)
+  // Calculate summary from existing debts or consolidated data
+  const totalDebtBalance = totalDebt || consolidatedData?.totalDebts || 0
+  const monthlyDebtPayments = totalMonthlyPayments || consolidatedData?.monthlyDebtPayments || 0
+  const hasSpecificDebts = debts && debts.length > 0
 
-  // Use consolidated data when no specific debts are recorded
-  const hasSpecificDebts = debts.length > 0
-  const totalDebtBalance = hasSpecificDebts
-    ? debts.reduce((sum, debt) => sum + debt.current_balance, 0)
-    : consolidatedProfile?.totalDebtBalance || 0
-  
-  const totalMonthlyPayments = hasSpecificDebts
-    ? debts.reduce((sum, debt) => sum + debt.monthly_payment, 0)
-    : consolidatedProfile?.totalMonthlyDebtPayments || 0
-
-  console.log('🏦 Debt totals:', { hasSpecificDebts, totalDebtBalance, totalMonthlyPayments })
-
-  // Create display debts - use real debts if available, otherwise consolidated data
-  const displayDebts = hasSpecificDebts 
+  // Display debts - use actual debts if available, otherwise show consolidated data
+  const displayDebts: Debt[] = hasSpecificDebts 
     ? debts 
-    : consolidatedProfile?.debts?.map(debt => ({
+    : (consolidatedData?.debts || []).map(debt => ({
         id: debt.id,
-        user_id: consolidatedProfile?.userId || '',
+        user_id: '',
         creditor: debt.creditor,
         original_amount: debt.current_balance,
         current_balance: debt.current_balance,
         monthly_payment: debt.monthly_payment,
-        interest_rate: debt.annual_interest_rate,
+        interest_rate: 0,
         due_date: null,
         status: 'active' as const,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Debt)) || []
+        updated_at: new Date().toISOString()
+      }))
 
-  console.log('🏦 Display debts:', displayDebts)
+  const activeDebts = displayDebts.filter(debt => debt.status === 'active')
+  const averageInterestRate = activeDebts.length > 0 
+    ? activeDebts.reduce((sum, debt) => sum + debt.interest_rate, 0) / activeDebts.length 
+    : 0
 
-  const handleCreateDebt = async (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    createDebt(debtData)
-    setIsDebtModalOpen(false)
-  }
+  const nextDueDate = activeDebts
+    .filter(debt => debt.due_date)
+    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())[0]?.due_date
 
   const handleEditDebt = (debt: Debt) => {
-    if (!hasSpecificDebts) {
-      // Convert consolidated data to editable debt
-      setIsDebtModalOpen(true)
-      return
-    }
     setEditingDebt(debt)
     setIsDebtModalOpen(true)
   }
 
-  const handleUpdateDebt = async (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (editingDebt) {
-      updateDebt({ id: editingDebt.id, ...debtData })
-      setEditingDebt(null)
-      setIsDebtModalOpen(false)
-    }
-  }
-
-  const handleDeleteDebt = async (debt: Debt) => {
-    if (!hasSpecificDebts) return // Can't delete consolidated data
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta deuda?')) {
+  const handleDeleteDebt = (debt: Debt) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta deuda?')) {
       deleteDebt(debt.id)
     }
   }
 
-  const handleRegisterPayment = async (paymentData: {
-    debt_id: string
-    amount: number
-    payment_date: string
-    notes?: string
-  }) => {
-    registerPayment(paymentData)
-    setIsPaymentModalOpen(false)
-    setSelectedDebtForPayment(null)
-  }
-
-  const calculateProgress = (debt: Debt) => {
-    if (!debt.original_amount || debt.original_amount === 0) return 0
-    const paidAmount = debt.original_amount - debt.current_balance
-    return (paidAmount / debt.original_amount) * 100
-  }
-
-  if (isLoadingDebts || isLoadingProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text={t('loading_debts')} />
-      </div>
-    )
+  const handleRegisterPayment = (debt: Debt) => {
+    setSelectedDebt(debt)
+    setIsPaymentModalOpen(true)
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-white border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-text-primary">
-                {t('debt_management')}
-              </h1>
-              <p className="text-text-secondary">
-                {hasSpecificDebts 
-                  ? t('debt_management_desc')
-                  : 'Datos del onboarding - Agrega deudas específicas para mayor control'
-                }
-              </p>
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <CreditCard className="mx-auto h-16 w-16 mb-4 opacity-90" />
+            <h1 className="text-4xl font-bold mb-4">Gestión de Deudas</h1>
+            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+              Controla y optimiza tus deudas para alcanzar la libertad financiera
+            </p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold mb-2">
+                ${totalDebtBalance.toLocaleString()}
+              </div>
+              <div className="text-blue-200">Deuda Total</div>
             </div>
-            <Button
-              onClick={() => setIsDebtModalOpen(true)}
-              className="flex items-center gap-2"
-              disabled={isCreating}
-            >
-              <Plus className="h-4 w-4" />
-              {t('add_debt')}
-            </Button>
+            <div className="text-center">
+              <div className="text-3xl font-bold mb-2">
+                ${monthlyDebtPayments.toLocaleString()}
+              </div>
+              <div className="text-blue-200">Pagos Mensuales</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold mb-2">
+                {activeDebts.length}
+              </div>
+              <div className="text-blue-200">Deudas Activas</div>
+            </div>
           </div>
         </div>
       </div>
@@ -157,71 +120,63 @@ const Debts = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('total_debt_balance')}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Deuda Total</CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-2xl font-bold">
                 ${totalDebtBalance.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                {hasSpecificDebts ? `de $${debts.reduce((sum, debt) => sum + debt.original_amount, 0).toLocaleString()} original` : 'Del onboarding'}
+                Saldo pendiente total
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('monthly_payments')}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Pagos Mensuales</CardTitle>
               <TrendingDown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                ${totalMonthlyPayments.toLocaleString()}
+              <div className="text-2xl font-bold">
+                ${monthlyDebtPayments.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                {hasSpecificDebts ? 'Total mensual mínimo' : 'Estimado'}
+                Total mensual a pagar
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('total_progress')}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Tasa Promedio</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {displayDebts.length > 0 
-                  ? Math.round(displayDebts.reduce((sum, debt) => sum + calculateProgress(debt), 0) / displayDebts.length)
-                  : 0
-                }%
+              <div className="text-2xl font-bold">
+                {averageInterestRate.toFixed(1)}%
               </div>
               <p className="text-xs text-muted-foreground">
-                {hasSpecificDebts ? `${payments.length} pagos registrados` : 'Progreso estimado'}
+                Interés promedio anual
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('active_debts')}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Próximo Vencimiento</CardTitle>
               <AlertCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {displayDebts.length}
+                {nextDueDate ? new Date(nextDueDate).getDate() : '-'}
               </div>
               <p className="text-xs text-muted-foreground">
-                {hasSpecificDebts ? 'Deudas activas' : 'Del onboarding'}
+                {nextDueDate 
+                  ? `${new Date(nextDueDate).toLocaleDateString('es-ES', { month: 'short' })}`
+                  : 'Sin fecha próxima'
+                }
               </p>
             </CardContent>
           </Card>
@@ -230,121 +185,141 @@ const Debts = () => {
         {!hasSpecificDebts && totalDebtBalance > 0 && (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2">
-              <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
-              <p className="text-blue-800 font-medium">
-                Mostrando datos del onboarding
-              </p>
+              <AlertCircle className="h-5 w-5 text-blue-600" />
+              <div>
+                <h3 className="font-medium text-blue-900">Datos desde el perfil financiero</h3>
+                <p className="text-sm text-blue-700">
+                  Mostrando información de deudas desde tu perfil. Agrega deudas específicas para un mejor control y análisis detallado.
+                </p>
+              </div>
             </div>
-            <p className="text-blue-700 text-sm mt-1">
-              Agrega deudas específicas para registrar pagos y obtener análisis detallados de progreso.
-            </p>
           </div>
         )}
 
         <div className="bg-white rounded-lg border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
             <h2 className="text-lg font-semibold text-text-primary">
-              {t('your_debts')}
+              Mis Deudas ({displayDebts.length})
             </h2>
           </div>
-          
+
           {displayDebts.length === 0 ? (
-            <div className="p-8 text-center">
-              <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <div className="p-12 text-center">
+              <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium text-text-primary mb-2">
-                {totalDebtBalance > 0 ? 'Agrega deudas específicas' : t('no_debts_registered')}
+                No tienes deudas registradas
               </h3>
-              <p className="text-text-secondary mb-4">
-                {totalDebtBalance > 0 
-                  ? 'Tus datos del onboarding muestran deudas, pero agrega deudas específicas para mayor control'
-                  : t('no_debts_desc')
-                }
+              <p className="text-text-secondary mb-6">
+                Comienza agregando tus deudas para tener un mejor control de tus finanzas
               </p>
               <Button onClick={() => setIsDebtModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t('add_first_debt')}
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Primera Deuda
               </Button>
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {displayDebts.map((debt) => {
-                const progress = calculateProgress(debt)
-                return (
-                  <div key={debt.id} className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-semibold text-text-primary">
-                            {debt.creditor}
-                          </h3>
-                          {!hasSpecificDebts && (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                              Onboarding
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-text-secondary">
-                          <span>Tasa: {debt.interest_rate}%</span>
-                        </div>
+              {displayDebts.map((debt) => (
+                <div key={debt.id} className="p-6 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-text-primary">
+                          {debt.creditor}
+                        </h3>
+                        <Badge 
+                          variant={debt.status === 'active' ? 'default' : 
+                                   debt.status === 'paid' ? 'secondary' : 'destructive'}
+                        >
+                          {debt.status === 'active' ? 'Activa' : 
+                           debt.status === 'paid' ? 'Pagada' : 'Morosa'}
+                        </Badge>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-red-600 mb-1">
-                          ${debt.current_balance.toLocaleString()}
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-text-secondary">Saldo Actual:</span>
+                          <div className="font-medium">${debt.current_balance.toLocaleString()}</div>
                         </div>
-                        <div className="text-sm text-text-secondary">
-                          de ${debt.original_amount.toLocaleString()}
+                        <div>
+                          <span className="text-text-secondary">Pago Mensual:</span>
+                          <div className="font-medium">${debt.monthly_payment.toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <span className="text-text-secondary">Tasa de Interés:</span>
+                          <div className="font-medium">{debt.interest_rate}%</div>
+                        </div>
+                        <div>
+                          <span className="text-text-secondary">Fecha de Vencimiento:</span>
+                          <div className="font-medium">
+                            {debt.due_date ? new Date(debt.due_date).toLocaleDateString() : 'No definida'}
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-text-secondary">Progreso</span>
-                        <span className="text-sm font-medium">{progress.toFixed(1)}%</span>
+                    {hasSpecificDebts && (
+                      <div className="flex gap-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRegisterPayment(debt)}
+                          disabled={isRegisteringPayment}
+                        >
+                          Registrar Pago
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditDebt(debt)}
+                          disabled={isUpdating}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteDebt(debt)}
+                          disabled={isDeleting}
+                        >
+                          Eliminar
+                        </Button>
                       </div>
-                      <Progress value={progress} className="h-2" />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-text-secondary">
-                        Pago mínimo: <span className="font-medium text-text-primary">${debt?.monthly_payment?.toLocaleString()}</span>
-                      </div>
-                      {hasSpecificDebts && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedDebtForPayment(debt)
-                              setIsPaymentModalOpen(true)
-                            }}
-                            disabled={isRegisteringPayment}
-                          >
-                            {t('register_payment')}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditDebt(debt)}
-                            disabled={isUpdating}
-                          >
-                            {t('edit')}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteDebt(debt)}
-                            disabled={isDeleting}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            {t('delete')}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
-                )
-              })}
+
+                  {debt.current_balance > 0 && (
+                    <div className="mt-4 bg-muted rounded-lg p-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Progreso de pago</span>
+                        <span>
+                          {Math.round(((debt.original_amount - debt.current_balance) / debt.original_amount) * 100)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted-foreground/20 rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${Math.min(100, ((debt.original_amount - debt.current_balance) / debt.original_amount) * 100)}%` 
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {hasSpecificDebts && (
+            <div className="px-6 py-4 border-t border-border bg-muted/20">
+              <Button 
+                onClick={() => setIsDebtModalOpen(true)}
+                disabled={isCreating}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Nueva Deuda
+              </Button>
             </div>
           )}
         </div>
@@ -352,11 +327,13 @@ const Debts = () => {
         {displayDebts.length > 0 && hasSpecificDebts && (
           <div className="mt-8">
             <Button
+              variant="outline"
+              size="lg"
               onClick={() => setIsScenarioModalOpen(true)}
               className="w-full"
-              variant="outline"
             >
-              Ver Análisis de Escenarios
+              <Target className="mr-2 h-4 w-4" />
+              Analizar Escenarios de Pago
             </Button>
           </div>
         )}
@@ -368,32 +345,44 @@ const Debts = () => {
           setIsDebtModalOpen(false)
           setEditingDebt(null)
         }}
-        onSubmit={editingDebt ? handleUpdateDebt : handleCreateDebt}
+        onSubmit={(debtData) => {
+          if (editingDebt) {
+            updateDebt({ id: editingDebt.id, ...debtData })
+          } else {
+            createDebt(debtData)
+          }
+          setIsDebtModalOpen(false)
+          setEditingDebt(null)
+        }}
         debt={editingDebt}
+        isSubmitting={isCreating || isUpdating}
       />
 
-      {selectedDebtForPayment && (
-        <PaymentModal
-          isOpen={isPaymentModalOpen}
-          onClose={() => {
-            setIsPaymentModalOpen(false)
-            setSelectedDebtForPayment(null)
-          }}
-          onSubmit={handleRegisterPayment}
-          debt={selectedDebtForPayment}
-        />
-      )}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+          setIsPaymentModalOpen(false)
+          setSelectedDebt(null)
+        }}
+        onSubmit={(paymentData) => {
+          if (selectedDebt) {
+            registerPayment({
+              debt_id: selectedDebt.id,
+              ...paymentData
+            })
+          }
+          setIsPaymentModalOpen(false)
+          setSelectedDebt(null)
+        }}
+        debt={selectedDebt}
+        isSubmitting={isRegisteringPayment}
+      />
 
-      {displayDebts.length > 0 && hasSpecificDebts && (
-        <ScenarioAnalysis
-          isOpen={isScenarioModalOpen}
-          onClose={() => setIsScenarioModalOpen(false)}
-          debt={displayDebts[0]}
-          payments={payments}
-        />
-      )}
+      <ScenarioAnalysis
+        isOpen={isScenarioModalOpen}
+        onClose={() => setIsScenarioModalOpen(false)}
+        debts={activeDebts}
+      />
     </div>
   )
 }
-
-export default Debts
