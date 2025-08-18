@@ -8,10 +8,10 @@ import DebtModal from '@/components/debts/DebtModal'
 import PaymentModal from '@/components/debts/PaymentModal'
 import ScenarioAnalysis from '@/components/debts/ScenarioAnalysis'
 import { useDebts } from '@/hooks/useDebts'
-import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
+import { useConsolidatedProfile } from '@/hooks/useConsolidatedProfile'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import type { Debt } from '@/types/debt'
+import type { Debt } from '@/types/database'
 
 const Debts = () => {
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false)
@@ -34,7 +34,7 @@ const Debts = () => {
     isRegisteringPayment
   } = useDebts()
 
-  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedFinancialData()
+  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedProfile()
   const { t } = useLanguage()
 
   console.log('🏦 Debts page - consolidated profile:', consolidatedProfile)
@@ -47,7 +47,7 @@ const Debts = () => {
     : consolidatedProfile?.totalDebtBalance || 0
   
   const totalMonthlyPayments = hasSpecificDebts
-    ? debts.reduce((sum, debt) => sum + debt.minimum_payment, 0)
+    ? debts.reduce((sum, debt) => sum + debt.monthly_payment, 0)
     : consolidatedProfile?.totalMonthlyDebtPayments || 0
 
   console.log('🏦 Debt totals:', { hasSpecificDebts, totalDebtBalance, totalMonthlyPayments })
@@ -56,9 +56,15 @@ const Debts = () => {
   const displayDebts = hasSpecificDebts 
     ? debts 
     : consolidatedProfile?.debts?.map(debt => ({
-        ...debt,
+        id: debt.id,
         user_id: consolidatedProfile?.userId || '',
-        description: `Deuda consolidada de ${debt.creditor_name}`,
+        creditor: debt.creditor,
+        original_amount: debt.current_balance,
+        current_balance: debt.current_balance,
+        monthly_payment: debt.monthly_payment,
+        interest_rate: debt.annual_interest_rate,
+        due_date: null,
+        status: 'active' as const,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } as Debt)) || []
@@ -107,9 +113,9 @@ const Debts = () => {
   }
 
   const calculateProgress = (debt: Debt) => {
-    if (!debt.total_amount || debt.total_amount === 0) return 0
-    const paidAmount = debt.total_amount - debt.current_balance
-    return (paidAmount / debt.total_amount) * 100
+    if (!debt.original_amount || debt.original_amount === 0) return 0
+    const paidAmount = debt.original_amount - debt.current_balance
+    return (paidAmount / debt.original_amount) * 100
   }
 
   if (isLoadingDebts || isLoadingProfile) {
@@ -163,7 +169,7 @@ const Debts = () => {
                 ${totalDebtBalance.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                {hasSpecificDebts ? `de $${debts.reduce((sum, debt) => sum + debt.total_amount, 0).toLocaleString()} original` : 'Del onboarding'}
+                {hasSpecificDebts ? `de $${debts.reduce((sum, debt) => sum + debt.original_amount, 0).toLocaleString()} original` : 'Del onboarding'}
               </p>
             </CardContent>
           </Card>
@@ -273,7 +279,7 @@ const Debts = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-lg font-semibold text-text-primary">
-                            {debt.creditor_name}
+                            {debt.creditor}
                           </h3>
                           {!hasSpecificDebts && (
                             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
@@ -281,14 +287,8 @@ const Debts = () => {
                             </span>
                           )}
                         </div>
-                        {debt.description && (
-                          <p className="text-text-secondary text-sm mb-2">
-                            {debt.description}
-                          </p>
-                        )}
                         <div className="flex items-center gap-4 text-sm text-text-secondary">
-                          <span>Vence día {debt.due_day}</span>
-                          <span>Tasa: {debt.annual_interest_rate}%</span>
+                          <span>Tasa: {debt.interest_rate}%</span>
                         </div>
                       </div>
                       <div className="text-right">
@@ -296,7 +296,7 @@ const Debts = () => {
                           ${debt.current_balance.toLocaleString()}
                         </div>
                         <div className="text-sm text-text-secondary">
-                          de ${debt.total_amount.toLocaleString()}
+                          de ${debt.original_amount.toLocaleString()}
                         </div>
                       </div>
                     </div>
@@ -311,7 +311,7 @@ const Debts = () => {
 
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-text-secondary">
-                        Pago mínimo: <span className="font-medium text-text-primary">${debt.minimum_payment.toLocaleString()}</span>
+                        Pago mínimo: <span className="font-medium text-text-primary">${debt?.monthly_payment?.toLocaleString()}</span>
                       </div>
                       {hasSpecificDebts && (
                         <div className="flex gap-2">

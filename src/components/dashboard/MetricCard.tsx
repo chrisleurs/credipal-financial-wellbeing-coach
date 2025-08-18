@@ -10,8 +10,13 @@ interface MetricCardProps {
     direction: 'up' | 'down';
     percentage: string;
   };
+  trendValue?: {
+    direction: 'up' | 'down';
+    percentage: string;
+  };
   icon: LucideIcon;
   variant?: 'default' | 'positive' | 'warning' | 'neutral';
+  className?: string;
 }
 
 const variantStyles = {
@@ -37,22 +42,26 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   title,
   value,
   trend,
+  trendValue,
   icon: Icon,
-  variant = 'default'
+  variant = 'default',
+  className = ''
 }) => {
+  const displayTrend = trendValue || trend;
+
   return (
-    <Card className="bg-white rounded-2xl p-6 shadow-clean border border-gray-100 hover-clean group">
+    <Card className={`bg-white rounded-2xl p-6 shadow-clean border border-gray-100 hover-clean group ${className}`}>
       <CardContent className="p-0">
         <div className="flex items-center justify-between mb-4">
           <div className={`p-3 rounded-xl ${iconVariantStyles[variant]} group-hover:scale-110 transition-transform duration-200`}>
             <Icon className="h-5 w-5" />
           </div>
-          {trend && (
-            <div className={`flex items-center text-sm font-medium ${trendColors[trend.direction]}`}>
+          {displayTrend && (
+            <div className={`flex items-center text-sm font-medium ${trendColors[displayTrend.direction]}`}>
               <span className="text-xs mr-1">
-                {trend.direction === 'up' ? '↗' : '↘'}
+                {displayTrend.direction === 'up' ? '↗' : '↘'}
               </span>
-              {trend.percentage}
+              {displayTrend.percentage}
             </div>
           )}
         </div>

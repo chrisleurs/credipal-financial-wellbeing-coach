@@ -123,6 +123,47 @@ export const useDebts = () => {
     },
   })
 
+  // Mock payment registration (since we don't have payments table yet)
+  const registerPaymentMutation = useMutation({
+    mutationFn: async (paymentData: {
+      debt_id: string
+      amount: number
+      payment_date: string
+      notes?: string
+    }) => {
+      // For now, just update the debt balance
+      const debt = debts.find(d => d.id === paymentData.debt_id)
+      if (!debt) throw new Error('Debt not found')
+      
+      const newBalance = Math.max(0, debt.current_balance - paymentData.amount)
+      
+      const { data, error } = await supabase
+        .from('debts')
+        .update({ current_balance: newBalance })
+        .eq('id', paymentData.debt_id)
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
+      toast({
+        title: "Pago registrado",
+        description: "El pago se ha registrado exitosamente.",
+      })
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo registrar el pago.",
+        variant: "destructive",
+      })
+    },
+  })
+
   const activeDebts = debts.filter(debt => debt.status === 'active')
   const totalDebt = activeDebts.reduce((sum, debt) => sum + debt.current_balance, 0)
   const totalMonthlyPayments = activeDebts.reduce((sum, debt) => sum + debt.monthly_payment, 0)
@@ -132,13 +173,17 @@ export const useDebts = () => {
     activeDebts,
     totalDebt,
     totalMonthlyPayments,
+    payments: [], // Mock empty payments array
     isLoading,
+    isLoadingDebts: isLoading,
     error,
     createDebt: createDebtMutation.mutate,
     updateDebt: updateDebtMutation.mutate,
     deleteDebt: deleteDebtMutation.mutate,
+    registerPayment: registerPaymentMutation.mutate,
     isCreating: createDebtMutation.isPending,
     isUpdating: updateDebtMutation.isPending,
     isDeleting: deleteDebtMutation.isPending,
+    isRegisteringPayment: registerPaymentMutation.isPending,
   }
 }

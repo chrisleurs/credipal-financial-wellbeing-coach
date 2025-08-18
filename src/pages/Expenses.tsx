@@ -7,7 +7,7 @@ import { ExpenseModal } from '@/components/expenses/ExpenseModal'
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters'
 import { DeleteExpenseDialog } from '@/components/expenses/DeleteExpenseDialog'
 import { useExpenses } from '@/hooks/useExpenses'
-import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
+import { useConsolidatedProfile } from '@/hooks/useConsolidatedProfile'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import type { Expense } from '@/hooks/useExpenses'
@@ -21,8 +21,8 @@ const Expenses = () => {
   const [dateFrom, setDateFrom] = useState<string>('')
   const [dateTo, setDateTo] = useState<string>('')
 
-  const { expenses, isLoading: isLoadingExpenses, addExpense, updateExpense, deleteExpense } = useExpenses()
-  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedFinancialData()
+  const { expenses, isLoading: isLoadingExpenses, createExpense, updateExpense, deleteExpense } = useExpenses()
+  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedProfile()
   const { t } = useLanguage()
 
   console.log('📱 Expenses page - consolidated profile:', consolidatedProfile)
@@ -52,7 +52,7 @@ const Expenses = () => {
           amount: amount,
           category: category,
           description: `Gastos de ${category}`,
-          expense_date: new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split('T')[0],
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }] as Expense[]
@@ -67,8 +67,8 @@ const Expenses = () => {
   // Filter expenses
   const filteredExpenses = hasSpecificExpenses ? expenses.filter(expense => {
     const matchesCategory = !selectedCategory || expense.category === selectedCategory
-    const matchesDateFrom = !dateFrom || expense.expense_date >= dateFrom
-    const matchesDateTo = !dateTo || expense.expense_date <= dateTo
+    const matchesDateFrom = !dateFrom || expense.date >= dateFrom
+    const matchesDateTo = !dateTo || expense.date <= dateTo
     return matchesCategory && matchesDateFrom && matchesDateTo
   }) : Object.values(expensesByCategory).flat()
 
@@ -85,28 +85,28 @@ const Expenses = () => {
   const handleDeleteExpense = (expense: Expense) => {
     if (!hasSpecificExpenses) return // Can't delete consolidated data
     setDeleteExpenseId(expense.id)
-    setDeleteExpenseDescription(expense.description)
+    setDeleteExpenseDescription(expense.description || '')
   }
 
   const handleModalSubmit = async (expenseData: {
     amount: number
     category: string
     description: string
-    expense_date: string
+    date: string
   }) => {
-    if (editingExpense) {
-      const result = await updateExpense(editingExpense.id, expenseData)
-      if (result.success) {
+    try {
+      if (editingExpense) {
+        await updateExpense({ id: editingExpense.id, ...expenseData })
         setIsModalOpen(false)
         setEditingExpense(null)
-      }
-      return result
-    } else {
-      const result = await addExpense(expenseData)
-      if (result.success) {
+        return { success: true }
+      } else {
+        await createExpense(expenseData)
         setIsModalOpen(false)
+        return { success: true }
       }
-      return result
+    } catch (error) {
+      return { success: false, error }
     }
   }
 
@@ -284,7 +284,7 @@ const Expenses = () => {
                         )}
                       </div>
                       <p className="text-sm text-text-secondary">
-                        {new Date(expense.expense_date).toLocaleDateString('es-ES', {
+                        {new Date(expense.date).toLocaleDateString('es-ES', {
                           weekday: 'long',
                           year: 'numeric',
                           month: 'long',

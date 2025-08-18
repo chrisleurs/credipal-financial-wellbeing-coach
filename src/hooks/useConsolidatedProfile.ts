@@ -11,6 +11,7 @@ interface ConsolidatedProfile {
   monthlyBalance: number
   currentSavings: number
   totalDebtBalance: number
+  totalMonthlyDebtPayments: number
   expenseCategories: Record<string, number>
   debts: Array<{
     id: string
@@ -42,6 +43,7 @@ export const useConsolidatedProfile = () => {
     monthlyBalance: financialData.savingsCapacity,
     currentSavings: financialData.currentSavings,
     totalDebtBalance: financialData.totalDebts,
+    totalMonthlyDebtPayments: financialData.monthlyDebtPayments,
     expenseCategories: financialData.expenseCategories,
     debts: financialData.debts.map(debt => ({
       ...debt,
@@ -55,6 +57,7 @@ export const useConsolidatedProfile = () => {
   const hasCompleteData = consolidatedProfile ? consolidatedProfile.dataCompleteness > 0.5 : false
 
   return {
+    data: financialData,
     consolidatedProfile,
     hasCompleteData,
     isLoading,
