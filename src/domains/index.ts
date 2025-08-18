@@ -1,20 +1,16 @@
 
 /**
- * Domains Index - Exporta todos los tipos de dominios
+ * Domain Index - Central export hub for all domain modules
  */
 
-// Shared types
-export * from '../shared/types/core.types'
-export * from '../shared/types/database.types'
+// Domain hooks
+export * from './debts/hooks/useDebts'
+export * from './expenses/hooks/useExpenses'
+export * from './income/hooks/useIncomes'
+export * from './savings/hooks/useGoals'
 
-// Domain exports
+// Domain types
 export * from './debts/types/debt.types'
-export * from './debts/mappers/debt.mappers'
 export * from './expenses/types/expense.types'
 export * from './income/types/income.types'
 export * from './savings/types/savings.types'
-export * from './planning/types/planning.types'
-export * from './analytics/types/analytics.types'
-
-// Utilities
-export * from '../shared/utils/money.utils'

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { useDebts } from '@/hooks/useDebts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,8 +32,7 @@ export const DebtsList = () => {
       monthly_payment: parseFloat(formData.monthlyPayment) || 0,
       interest_rate: parseFloat(formData.interestRate) || 0,
       due_date: formData.dueDate || new Date().toISOString().split('T')[0],
-      status: formData.status,
-      priority: 'medium'
+      status: formData.status
     })
 
     setFormData({

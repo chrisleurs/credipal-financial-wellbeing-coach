@@ -1,73 +1,62 @@
 
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from './useAuth'
 import { useIncomes } from '@/domains/income/hooks/useIncomes'
 import { useExpenses } from '@/domains/expenses/hooks/useExpenses'
 import { useDebts } from '@/domains/debts/hooks/useDebts'
 import { useGoals } from '@/domains/savings/hooks/useGoals'
-import { useFinancialSummary } from './useFinancialSummary'
-import { useAuth } from './useAuth'
-import { ConsolidatedFinancialData } from '@/types/unified'
+
+export interface ConsolidatedFinancialData {
+  monthlyIncome: number
+  extraIncome: number
+  monthlyExpenses: number
+  monthlyBalance: number
+  currentSavings: number
+  totalDebtBalance: number
+  totalMonthlyDebtPayments: number
+  savingsCapacity: number
+  hasRealData: boolean
+}
 
 export const useConsolidatedFinancialData = () => {
   const { user } = useAuth()
   const { incomes, totalMonthlyIncome } = useIncomes()
-  const { expenses } = useExpenses()
+  const { expenses, totalExpenses } = useExpenses()
   const { debts, totalDebt, totalMonthlyPayments } = useDebts()
   const { goals } = useGoals()
-  const { financialSummary } = useFinancialSummary()
 
-  return useQuery({
+  const consolidatedData = useQuery({
     queryKey: ['consolidated-financial-data', user?.id],
     queryFn: async (): Promise<ConsolidatedFinancialData> => {
-      if (!user?.id) {
-        throw new Error('User not authenticated')
-      }
+      if (!user?.id) throw new Error('User not authenticated')
 
-      // Calculate expense categories
-      const expenseCategories: Record<string, number> = {}
-      expenses.forEach(expense => {
-        expenseCategories[expense.category] = (expenseCategories[expense.category] || 0) + expense.amount.amount
-      })
+      // Calculate monthly balance
+      const monthlyBalance = totalMonthlyIncome - totalExpenses
 
-      // Calculate monthly expenses from actual expenses (last 3 months average)
-      const now = new Date()
-      const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
-      
-      const recentExpenses = expenses.filter(expense => 
-        new Date(expense.date) >= threeMonthsAgo
-      )
-      
-      const monthlyExpenses = recentExpenses.length > 0 
-        ? recentExpenses.reduce((sum, expense) => sum + expense.amount.amount, 0) / 3
-        : 0
+      // Calculate savings capacity
+      const savingsCapacity = Math.max(0, monthlyBalance - totalMonthlyPayments)
 
-      // Convert debts to onboarding format
-      const onboardingDebts = debts.map(debt => ({
-        id: debt.id,
-        name: debt.creditor,
-        amount: debt.currentBalance.amount,
-        monthlyPayment: debt.monthlyPayment.amount
-      }))
+      // Check if we have real data (not just onboarding estimates)
+      const hasRealData = incomes.length > 0 || expenses.length > 0 || debts.length > 0
 
-      const result: ConsolidatedFinancialData = {
+      return {
         monthlyIncome: totalMonthlyIncome,
-        extraIncome: 0,
-        monthlyExpenses: financialSummary?.total_monthly_expenses || monthlyExpenses,
-        currentSavings: financialSummary?.emergency_fund || 0,
-        monthlySavingsCapacity: financialSummary?.savings_capacity || (totalMonthlyIncome - monthlyExpenses - totalMonthlyPayments),
-        financialGoals: goals.map(goal => goal.title),
-        expenseCategories,
-        debts: onboardingDebts,
-        totalDebts: totalDebt,
-        monthlyDebtPayments: totalMonthlyPayments,
-        savingsCapacity: financialSummary?.savings_capacity || (totalMonthlyIncome - monthlyExpenses - totalMonthlyPayments),
-        hasRealData: incomes.length > 0 || expenses.length > 0 || debts.length > 0 || goals.length > 0
+        extraIncome: 0, // Not tracked separately
+        monthlyExpenses: totalExpenses,
+        monthlyBalance,
+        currentSavings: goals.reduce((sum, goal) => sum + goal.current_amount, 0),
+        totalDebtBalance: totalDebt,
+        totalMonthlyDebtPayments: totalMonthlyPayments,
+        savingsCapacity,
+        hasRealData
       }
-
-      return result
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
   })
+
+  return {
+    consolidatedData: consolidatedData.data,
+    isLoading: consolidatedData.isLoading,
+    error: consolidatedData.error
+  }
 }

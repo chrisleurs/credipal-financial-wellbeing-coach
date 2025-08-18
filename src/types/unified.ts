@@ -10,6 +10,16 @@ export * from '../domains/income/types/income.types'
 export * from '../domains/savings/types/savings.types'
 
 // Legacy compatibility types
+export interface OnboardingDebt {
+  id: string
+  name: string
+  amount: number
+  monthlyPayment: number
+  paymentDueDate?: number
+  termInMonths?: number
+  estimatedPayoffDate?: string
+}
+
 export interface FinancialData {
   monthlyIncome: number
   extraIncome: number
