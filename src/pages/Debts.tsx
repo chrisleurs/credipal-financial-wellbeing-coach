@@ -21,6 +21,7 @@ export default function Debts() {
     debts, 
     totalDebt, 
     totalMonthlyPayments,
+    payments,
     createDebt, 
     updateDebt, 
     deleteDebt, 
@@ -394,6 +395,7 @@ export default function Debts() {
         isOpen={isScenarioModalOpen}
         onClose={() => setIsScenarioModalOpen(false)}
         debt={activeDebts[0] ? convertToDebtType(activeDebts[0]) : null}
+        payments={payments || []}
       />
     </div>
   )
