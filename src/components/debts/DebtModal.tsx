@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -24,7 +23,7 @@ export default function DebtModal({ isOpen, onClose, onSubmit, debt, isLoading =
     interest_rate: '',
     monthly_payment: '',
     due_date: '',
-    status: 'active' as const
+    status: 'active' as 'active' | 'paid' | 'delinquent'
   })
 
   const [calculations, setCalculations] = useState({
@@ -50,7 +49,7 @@ export default function DebtModal({ isOpen, onClose, onSubmit, debt, isLoading =
         interest_rate: '',
         monthly_payment: '',
         due_date: '',
-        status: 'active' as const
+        status: 'active'
       })
     }
   }, [debt, isOpen])

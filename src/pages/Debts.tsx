@@ -34,8 +34,7 @@ const Debts = () => {
     isRegisteringPayment
   } = useDebts()
 
-  const { data: consolidatedData, isLoading: isLoadingProfile } = useConsolidatedProfile()
-  const consolidatedProfile = consolidatedData?.consolidatedProfile
+  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedProfile()
   const { t } = useLanguage()
 
   console.log('🏦 Debts page - consolidated profile:', consolidatedProfile)
