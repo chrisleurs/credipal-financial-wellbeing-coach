@@ -34,8 +34,7 @@ export const useFinancialStore = create<FinancialStore>()(
       },
 
       reset: () => {
-        set((state) => ({
-          ...state,
+        set({
           financialData: {
             monthlyIncome: 0,
             extraIncome: 0,
@@ -44,11 +43,16 @@ export const useFinancialStore = create<FinancialStore>()(
             debts: [],
             financialGoals: [],
             expenseCategories: {},
-            whatsappNumber: ''
+            whatsappNumber: '',
+            monthlySavingsCapacity: 0,
+            whatsappOptin: false
           },
           currentStep: 0,
-          isComplete: false
-        }))
+          isOnboardingComplete: false,
+          aiPlan: null,
+          isLoading: false,
+          error: null
+        })
       },
 
       loadFromSupabase: async () => {
