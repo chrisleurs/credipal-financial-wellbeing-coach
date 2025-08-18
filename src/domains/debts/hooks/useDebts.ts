@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Debt } from '../types/debt.types'
+import { Debt, CreateDebtData, UpdateDebtData } from '../types/debt.types'
 
 export const useDebts = () => {
   const { user } = useAuth()
@@ -27,43 +27,21 @@ export const useDebts = () => {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      
-      return (data || []).map(dbDebt => ({
-        id: dbDebt.id,
-        user_id: dbDebt.user_id,
-        creditor: dbDebt.creditor,
-        original_amount: dbDebt.original_amount,
-        current_balance: dbDebt.current_balance,
-        monthly_payment: dbDebt.monthly_payment,
-        interest_rate: dbDebt.interest_rate,
-        due_date: dbDebt.due_date,
-        status: dbDebt.status,
-        priority: 'medium',
-        description: dbDebt.description || '',
-        created_at: dbDebt.created_at,
-        updated_at: dbDebt.updated_at
-      })) as Debt[]
+      return data as Debt[]
     },
     enabled: !!user?.id,
   })
 
   // Create debt mutation
   const createDebtMutation = useMutation({
-    mutationFn: async (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (debtData: CreateDebtData) => {
       if (!user?.id) throw new Error('User not authenticated')
       
       const { data, error } = await supabase
         .from('debts')
         .insert({
           user_id: user.id,
-          creditor: debtData.creditor,
-          original_amount: debtData.original_amount,
-          current_balance: debtData.current_balance,
-          monthly_payment: debtData.monthly_payment,
-          interest_rate: debtData.interest_rate,
-          due_date: debtData.due_date,
-          status: debtData.status,
-          description: debtData.description
+          ...debtData
         })
         .select()
         .single()
@@ -89,19 +67,10 @@ export const useDebts = () => {
 
   // Update debt mutation
   const updateDebtMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
+    mutationFn: async ({ id, ...updates }: UpdateDebtData) => {
       const { data, error } = await supabase
         .from('debts')
-        .update({
-          creditor: updates.creditor,
-          original_amount: updates.original_amount,
-          current_balance: updates.current_balance,
-          monthly_payment: updates.monthly_payment,
-          interest_rate: updates.interest_rate,
-          due_date: updates.due_date,
-          status: updates.status,
-          description: updates.description
-        })
+        .update(updates)
         .eq('id', id)
         .select()
         .single()

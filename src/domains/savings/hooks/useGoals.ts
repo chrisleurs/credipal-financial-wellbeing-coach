@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { SavingsGoal, CreateSavingsGoalData, SavingsGoalStatus } from '../types/savings.types'
+import { SavingsGoal, CreateSavingsGoalData, UpdateSavingsGoalData } from '../types/savings.types'
 
 export const useGoals = () => {
   const { user } = useAuth()
@@ -27,21 +27,7 @@ export const useGoals = () => {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      
-      // Convert to domain type
-      return (data || []).map(dbGoal => ({
-        id: dbGoal.id,
-        user_id: dbGoal.user_id,
-        title: dbGoal.title,
-        description: dbGoal.description,
-        target_amount: dbGoal.target_amount || 0,
-        current_amount: dbGoal.current_amount || 0,
-        deadline: dbGoal.deadline,
-        priority: (dbGoal.priority || 'medium') as 'high' | 'medium' | 'low',
-        status: dbGoal.status as SavingsGoalStatus,
-        created_at: dbGoal.created_at,
-        updated_at: dbGoal.updated_at
-      })) as SavingsGoal[]
+      return data as SavingsGoal[]
     },
     enabled: !!user?.id,
   })
@@ -55,13 +41,7 @@ export const useGoals = () => {
         .from('goals')
         .insert({
           user_id: user.id,
-          title: goalData.title,
-          description: goalData.description,
-          target_amount: goalData.target_amount,
-          current_amount: goalData.current_amount || 0,
-          deadline: goalData.deadline,
-          priority: goalData.priority || 'medium',
-          status: goalData.status || 'active'
+          ...goalData
         })
         .select()
         .single()
@@ -72,14 +52,14 @@ export const useGoals = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
       toast({
-        title: "Meta creada",
-        description: "La meta se ha creado exitosamente.",
+        title: "Meta agregada",
+        description: "La meta de ahorro se ha agregado exitosamente.",
       })
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo crear la meta.",
+        description: "No se pudo agregar la meta de ahorro.",
         variant: "destructive",
       })
     },
@@ -87,18 +67,10 @@ export const useGoals = () => {
 
   // Update goal mutation
   const updateGoalMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateSavingsGoalData>) => {
+    mutationFn: async ({ id, ...updates }: UpdateSavingsGoalData) => {
       const { data, error } = await supabase
         .from('goals')
-        .update({
-          title: updates.title,
-          description: updates.description,
-          target_amount: updates.target_amount,
-          current_amount: updates.current_amount,
-          deadline: updates.deadline,
-          priority: updates.priority,
-          status: updates.status
-        })
+        .update(updates)
         .eq('id', id)
         .select()
         .single()
@@ -116,7 +88,7 @@ export const useGoals = () => {
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo actualizar la meta.",
+        description: "No se pudo actualizar la meta de ahorro.",
         variant: "destructive",
       })
     },
@@ -136,25 +108,20 @@ export const useGoals = () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
       toast({
         title: "Meta eliminada",
-        description: "La meta se ha eliminado exitosamente.",
+        description: "La meta de ahorro se ha eliminado exitosamente.",
       })
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo eliminar la meta.",
+        description: "No se pudo eliminar la meta de ahorro.",
         variant: "destructive",
       })
     },
   })
 
-  const activeGoals = goals.filter(goal => goal.status === 'active')
-  const completedGoals = goals.filter(goal => goal.status === 'completed')
-
   return {
     goals,
-    activeGoals,
-    completedGoals,
     isLoading,
     error,
     createGoal: createGoalMutation.mutate,

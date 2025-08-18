@@ -1,6 +1,11 @@
 
-import { Money, Status, FrequencyType } from '@/shared/types/core.types'
+/**
+ * Income Domain Types - Simplified and consistent with database
+ */
 
+export type FrequencyType = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly'
+
+// Main income interface matching database exactly
 export interface Income {
   id: string
   user_id: string
@@ -13,6 +18,7 @@ export interface Income {
   updated_at: string
 }
 
+// For creating new income sources
 export interface CreateIncomeData {
   source: string
   amount: number
@@ -21,6 +27,7 @@ export interface CreateIncomeData {
   description?: string
 }
 
+// For updating income sources
 export interface UpdateIncomeData extends Partial<CreateIncomeData> {
   id: string
 }

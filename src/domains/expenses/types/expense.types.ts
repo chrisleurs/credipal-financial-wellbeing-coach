@@ -1,5 +1,7 @@
 
-import { Money } from '@/shared/types/core.types'
+/**
+ * Expenses Domain Types - Simplified and consistent with database
+ */
 
 export type ExpenseCategoryType = 
   | 'Food & Dining'
@@ -12,13 +14,14 @@ export type ExpenseCategoryType =
   | 'Bills & Services'
   | 'Other'
 
+// Main expense interface matching database exactly
 export interface Expense {
   id: string
   user_id: string
   amount: number
   category: ExpenseCategoryType
   subcategory?: string
-  description: string
+  description?: string
   date: string
   is_recurring: boolean
   tags?: string[]
@@ -26,6 +29,7 @@ export interface Expense {
   updated_at: string
 }
 
+// For creating new expenses
 export interface CreateExpenseData {
   amount: number
   category: ExpenseCategoryType
@@ -36,6 +40,7 @@ export interface CreateExpenseData {
   tags?: string[]
 }
 
+// For updating expenses
 export interface UpdateExpenseData extends Partial<CreateExpenseData> {
   id: string
 }

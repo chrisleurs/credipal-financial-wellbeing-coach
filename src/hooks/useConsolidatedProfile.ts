@@ -5,7 +5,29 @@ import { useIncomes } from '@/domains/income/hooks/useIncomes'
 import { useExpenses } from '@/domains/expenses/hooks/useExpenses'
 import { useDebts } from '@/domains/debts/hooks/useDebts'
 import { useGoals } from '@/domains/savings/hooks/useGoals'
-import { ConsolidatedProfile } from '@/types/unified'
+
+export interface ConsolidatedProfile {
+  userId: string
+  name: string
+  monthlyIncome: number
+  extraIncome: number
+  monthlyExpenses: number
+  monthlyBalance: number
+  currentSavings: number
+  totalDebtBalance: number
+  totalMonthlyDebtPayments: number
+  savingsCapacity: number
+  financialGoals: string[]
+  expenseCategories: Record<string, number>
+  debts: Array<{
+    id: string
+    creditor: string
+    current_balance: number
+    monthly_payment: number
+    annual_interest_rate: number
+  }>
+  dataCompleteness: number
+}
 
 export const useConsolidatedProfile = () => {
   const { user } = useAuth()

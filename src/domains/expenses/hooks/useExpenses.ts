@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Expense, CreateExpenseData } from '../types/expense.types'
+import { Expense, CreateExpenseData, UpdateExpenseData } from '../types/expense.types'
 
 export const useExpenses = () => {
   const { user } = useAuth()
@@ -27,21 +27,7 @@ export const useExpenses = () => {
         .order('date', { ascending: false })
       
       if (error) throw error
-      
-      // Convert to domain type
-      return (data || []).map(dbExpense => ({
-        id: dbExpense.id,
-        user_id: dbExpense.user_id,
-        amount: dbExpense.amount,
-        category: dbExpense.category,
-        subcategory: dbExpense.subcategory,
-        description: dbExpense.description || '',
-        date: dbExpense.date,
-        is_recurring: dbExpense.is_recurring || false,
-        tags: [], // Empty array since tags column doesn't exist in DB
-        created_at: dbExpense.created_at,
-        updated_at: dbExpense.updated_at
-      })) as Expense[]
+      return data as Expense[]
     },
     enabled: !!user?.id,
   })
@@ -55,12 +41,7 @@ export const useExpenses = () => {
         .from('expenses')
         .insert({
           user_id: user.id,
-          amount: expenseData.amount,
-          category: expenseData.category,
-          subcategory: expenseData.subcategory,
-          description: expenseData.description,
-          date: expenseData.date,
-          is_recurring: expenseData.is_recurring
+          ...expenseData
         })
         .select()
         .single()
@@ -70,7 +51,6 @@ export const useExpenses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
-      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Gasto agregado",
         description: "El gasto se ha agregado exitosamente.",
@@ -87,17 +67,10 @@ export const useExpenses = () => {
 
   // Update expense mutation
   const updateExpenseMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateExpenseData>) => {
+    mutationFn: async ({ id, ...updates }: UpdateExpenseData) => {
       const { data, error } = await supabase
         .from('expenses')
-        .update({
-          amount: updates.amount,
-          category: updates.category,
-          subcategory: updates.subcategory,
-          description: updates.description,
-          date: updates.date,
-          is_recurring: updates.is_recurring
-        })
+        .update(updates)
         .eq('id', id)
         .select()
         .single()
@@ -107,7 +80,6 @@ export const useExpenses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
-      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Gasto actualizado",
         description: "Los cambios se han guardado exitosamente.",
@@ -134,7 +106,6 @@ export const useExpenses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
-      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Gasto eliminado",
         description: "El gasto se ha eliminado exitosamente.",
@@ -151,12 +122,10 @@ export const useExpenses = () => {
 
   // Calculate totals
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
-  const recurringExpenses = expenses.filter(expense => expense.is_recurring)
 
   return {
     expenses,
     totalExpenses,
-    recurringExpenses,
     isLoading,
     error,
     createExpense: createExpenseMutation.mutate,
