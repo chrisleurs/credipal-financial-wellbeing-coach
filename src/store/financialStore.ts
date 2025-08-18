@@ -8,6 +8,7 @@ import { createDashboardSlice, type DashboardSlice } from './modules/dashboardSt
 interface FinancialStore extends OnboardingSlice, DashboardSlice {
   addExpense: (name: string, amount: number) => void
   loadFromSupabase: () => Promise<void>
+  reset: () => void
 }
 
 export const useFinancialStore = create<FinancialStore>()(
@@ -29,6 +30,24 @@ export const useFinancialStore = create<FinancialStore>()(
             expenseCategories: newCategories,
             monthlyExpenses: state.financialData.monthlyExpenses + amount
           }
+        }))
+      },
+
+      reset: () => {
+        set((state) => ({
+          ...state,
+          financialData: {
+            monthlyIncome: 0,
+            extraIncome: 0,
+            monthlyExpenses: 0,
+            currentSavings: 0,
+            debts: [],
+            financialGoals: [],
+            expenseCategories: {},
+            whatsappNumber: ''
+          },
+          currentStep: 0,
+          isComplete: false
         }))
       },
 

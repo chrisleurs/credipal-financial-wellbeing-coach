@@ -46,7 +46,10 @@ export const useConsolidatedProfile = () => {
     totalMonthlyDebtPayments: financialData.monthlyDebtPayments,
     expenseCategories: financialData.expenseCategories,
     debts: financialData.debts.map(debt => ({
-      ...debt,
+      id: debt.id,
+      creditor: debt.creditor,
+      current_balance: debt.currentBalance,
+      monthly_payment: debt.monthlyPayment,
       annual_interest_rate: 0 // Default value since it's not in our current data
     })),
     goals: [], // Empty for now since we don't have detailed goals structure

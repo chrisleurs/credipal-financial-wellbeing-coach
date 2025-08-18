@@ -3,17 +3,17 @@
  * Expenses Domain Types - Expense tracking and categorization
  */
 
-import { Money } from '../../core/money'
-import { DateRange, RecurrencePattern } from '../../core/dates'
+import { Money } from '../core/money'
+import { DateRange, RecurrencePattern } from '../core/dates'
 
 export type ExpenseFrequency = 'one_time' | 'daily' | 'weekly' | 'monthly' | 'yearly'
-export type ExpenseCategory = 'food' | 'transport' | 'housing' | 'utilities' | 'entertainment' | 'healthcare' | 'education' | 'shopping' | 'bills' | 'other'
+export type ExpenseCategoryType = 'food' | 'transport' | 'housing' | 'utilities' | 'entertainment' | 'healthcare' | 'education' | 'shopping' | 'bills' | 'other'
 
 export interface Expense {
   id: string
   userId: string
   amount: Money
-  category: ExpenseCategory
+  category: ExpenseCategoryType
   subcategory?: string
   description: string
   date: string // ISO date string
@@ -60,7 +60,7 @@ export interface ExpenseSummary {
 export interface Budget {
   id: string
   userId: string
-  category: ExpenseCategory
+  category: ExpenseCategoryType
   amount: Money
   period: DateRange
   alertThreshold: number // percentage (0-100)

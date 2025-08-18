@@ -9,7 +9,9 @@ import DebtModal from '@/components/debts/DebtModal'
 import PaymentModal from '@/components/debts/PaymentModal'
 import ScenarioAnalysis from '@/components/debts/ScenarioAnalysis'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { Debt, formatMoney, toLegacyDebt } from '@/types'
+import { Debt } from '@/types/domains/debts/debt'
+import { formatMoney } from '@/types/core/money'
+import { toLegacyDebt } from '@/utils/mappers/debtMappers'
 
 export default function DebtsPage() {
   const { 
