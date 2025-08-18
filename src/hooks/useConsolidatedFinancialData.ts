@@ -6,24 +6,7 @@ import { useDebts } from './useDebts'
 import { useGoals } from './useGoals'
 import { useFinancialSummary } from './useFinancialSummary'
 import { useAuth } from './useAuth'
-
-interface ConsolidatedFinancialData {
-  monthlyIncome: number
-  monthlyExpenses: number
-  currentSavings: number
-  totalDebts: number
-  monthlyDebtPayments: number
-  financialGoals: string[]
-  expenseCategories: Record<string, number>
-  debts: Array<{
-    id: string
-    creditor: string
-    currentBalance: number
-    monthlyPayment: number
-  }>
-  savingsCapacity: number
-  hasRealData: boolean
-}
+import { ConsolidatedFinancialData } from '@/types/unified'
 
 export const useConsolidatedFinancialData = () => {
   const { user } = useAuth()
@@ -58,20 +41,25 @@ export const useConsolidatedFinancialData = () => {
         ? recentExpenses.reduce((sum, expense) => sum + expense.amount, 0) / 3
         : 0
 
+      // Convert debts to onboarding format
+      const onboardingDebts = debts.map(debt => ({
+        id: debt.id,
+        name: debt.creditor,
+        amount: debt.currentBalance.amount,
+        monthlyPayment: debt.monthlyPayment.amount
+      }))
+
       const result: ConsolidatedFinancialData = {
         monthlyIncome: totalMonthlyIncome,
+        extraIncome: 0,
         monthlyExpenses: financialSummary?.total_monthly_expenses || monthlyExpenses,
         currentSavings: financialSummary?.emergency_fund || 0,
-        totalDebts: totalDebt,
-        monthlyDebtPayments: totalMonthlyPayments,
+        monthlySavingsCapacity: financialSummary?.savings_capacity || (totalMonthlyIncome - monthlyExpenses - totalMonthlyPayments),
         financialGoals: goals.map(goal => goal.title),
         expenseCategories,
-        debts: debts.map(debt => ({
-          id: debt.id,
-          creditor: debt.creditor,
-          currentBalance: debt.currentBalance.amount,
-          monthlyPayment: debt.monthlyPayment.amount
-        })),
+        debts: onboardingDebts,
+        totalDebts: totalDebt,
+        monthlyDebtPayments: totalMonthlyPayments,
         savingsCapacity: financialSummary?.savings_capacity || (totalMonthlyIncome - monthlyExpenses - totalMonthlyPayments),
         hasRealData: incomes.length > 0 || expenses.length > 0 || debts.length > 0 || goals.length > 0
       }
