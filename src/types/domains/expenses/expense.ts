@@ -3,8 +3,8 @@
  * Expenses Domain Types - Expense tracking and categorization
  */
 
-import { Money } from '../core/money'
-import { DateRange, RecurrencePattern } from '../core/dates'
+import { Money } from '../../core/money'
+import { DateRange, RecurrencePattern } from '../../core/dates'
 
 export type ExpenseFrequency = 'one_time' | 'daily' | 'weekly' | 'monthly' | 'yearly'
 export type ExpenseCategoryType = 'food' | 'transport' | 'housing' | 'utilities' | 'entertainment' | 'healthcare' | 'education' | 'shopping' | 'bills' | 'other'

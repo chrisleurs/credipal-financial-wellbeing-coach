@@ -43,7 +43,6 @@ export const useFinancialStore = create<FinancialStore>()(
             debts: [],
             financialGoals: [],
             expenseCategories: {},
-            whatsappNumber: '',
             monthlySavingsCapacity: 0,
             whatsappOptin: false
           },
