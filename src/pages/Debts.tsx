@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,7 +9,7 @@ import DebtModal from '@/components/debts/DebtModal'
 import PaymentModal from '@/components/debts/PaymentModal'
 import ScenarioAnalysis from '@/components/debts/ScenarioAnalysis'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { Debt } from '@/types/unified'
+import { Debt, formatMoney, toLegacyDebt } from '@/types'
 
 export default function DebtsPage() {
   const { 
@@ -34,13 +35,6 @@ export default function DebtsPage() {
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null)
 
   const activeDebts = debts.filter(debt => debt.status === 'active')
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
-  }
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return 'No set'
@@ -82,7 +76,7 @@ export default function DebtsPage() {
     setEditingDebt(null)
   }
 
-  const handleSaveDebt = (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const handleSaveDebt = (debtData: Omit<Debt, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     if (editingDebt) {
       updateDebt({ ...debtData, id: editingDebt.id })
     } else {
@@ -135,7 +129,7 @@ export default function DebtsPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalDebt)}</div>
+              <div className="text-2xl font-bold text-red-600">${totalDebt.toLocaleString()}</div>
             </CardContent>
           </Card>
 
@@ -145,7 +139,7 @@ export default function DebtsPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalMonthlyPayments)}</div>
+              <div className="text-2xl font-bold">${totalMonthlyPayments.toLocaleString()}</div>
             </CardContent>
           </Card>
 
@@ -208,19 +202,19 @@ export default function DebtsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Current Balance</p>
-                        <p className="font-semibold text-red-600">{formatCurrency(debt.current_balance)}</p>
+                        <p className="font-semibold text-red-600">{formatMoney(debt.currentBalance)}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                        <p className="font-semibold">{formatCurrency(debt.monthly_payment)}</p>
+                        <p className="font-semibold">{formatMoney(debt.monthlyPayment)}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Interest Rate</p>
-                        <p className="font-semibold">{debt.interest_rate}%</p>
+                        <p className="font-semibold">{debt.interestRate}%</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Due Date</p>
-                        <p className="font-semibold">{formatDate(debt.due_date)}</p>
+                        <p className="font-semibold">{formatDate(debt.dueDate)}</p>
                       </div>
                     </div>
 
@@ -274,14 +268,14 @@ export default function DebtsPage() {
             setSelectedDebt(null)
           }}
           onSubmit={handlePaymentSubmit}
-          debt={selectedDebt}
+          debt={selectedDebt ? toLegacyDebt(selectedDebt) : null}
           isLoading={isRegisteringPayment}
         />
 
         <ScenarioAnalysis
           isOpen={isScenarioModalOpen}
           onClose={() => setIsScenarioModalOpen(false)}
-          debt={activeDebts[0] || null}
+          debt={activeDebts[0] ? toLegacyDebt(activeDebts[0]) : null}
           payments={payments || []}
         />
       </div>
