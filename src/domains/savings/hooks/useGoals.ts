@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { SavingsGoal } from '../types/savings.types'
+import { SavingsGoal, CreateSavingsGoalData, SavingsGoalStatus } from '../types/savings.types'
 
 export const useGoals = () => {
   const { user } = useAuth()
@@ -36,9 +36,9 @@ export const useGoals = () => {
         description: dbGoal.description,
         targetAmount: { amount: dbGoal.target_amount || 0, currency: 'MXN' as const },
         currentAmount: { amount: dbGoal.current_amount || 0, currency: 'MXN' as const },
-        targetDate: dbGoal.target_date,
+        targetDate: dbGoal.deadline, // Map deadline to targetDate
         priority: (dbGoal.priority || 'medium') as 'high' | 'medium' | 'low',
-        status: (dbGoal.status || 'active') as 'active' | 'inactive' | 'completed',
+        status: dbGoal.status as SavingsGoalStatus,
         createdAt: dbGoal.created_at,
         updatedAt: dbGoal.updated_at
       })) as SavingsGoal[]
@@ -48,7 +48,7 @@ export const useGoals = () => {
 
   // Create goal mutation
   const createGoalMutation = useMutation({
-    mutationFn: async (goalData: Omit<SavingsGoal, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    mutationFn: async (goalData: CreateSavingsGoalData) => {
       if (!user?.id) throw new Error('User not authenticated')
       
       const { data, error } = await supabase
@@ -58,10 +58,10 @@ export const useGoals = () => {
           title: goalData.title,
           description: goalData.description,
           target_amount: goalData.targetAmount.amount,
-          current_amount: goalData.currentAmount.amount,
-          target_date: goalData.targetDate,
-          priority: goalData.priority,
-          status: goalData.status
+          current_amount: goalData.currentAmount?.amount || 0,
+          deadline: goalData.targetDate, // Map targetDate to deadline
+          priority: goalData.priority || 'medium',
+          status: goalData.status || 'active'
         })
         .select()
         .single()
@@ -87,7 +87,7 @@ export const useGoals = () => {
 
   // Update goal mutation
   const updateGoalMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<SavingsGoal> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateSavingsGoalData>) => {
       const { data, error } = await supabase
         .from('goals')
         .update({
@@ -95,7 +95,7 @@ export const useGoals = () => {
           description: updates.description,
           target_amount: updates.targetAmount?.amount,
           current_amount: updates.currentAmount?.amount,
-          target_date: updates.targetDate,
+          deadline: updates.targetDate,
           priority: updates.priority,
           status: updates.status
         })

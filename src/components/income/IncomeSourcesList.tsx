@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react'
-import { useIncomes } from '@/hooks/useIncomes'
+import { useIncomes } from '@/domains/income/hooks/useIncomes'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,28 +8,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, DollarSign, Trash2, Edit } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { CreateIncomeData } from '@/domains/income/types/income.types'
 
 export const IncomeSourcesList = () => {
   const { incomes, totalMonthlyIncome, isLoading, createIncome, deleteIncome, isCreating } = useIncomes()
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
-    source_name: '',
+    source: '',
     amount: '',
     frequency: 'monthly' as const
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.source_name || !formData.amount) return
+    if (!formData.source || !formData.amount) return
 
-    createIncome({
-      source_name: formData.source_name,
-      amount: parseFloat(formData.amount),
+    const incomeData: CreateIncomeData = {
+      source: formData.source,
+      amount: { amount: parseFloat(formData.amount), currency: 'MXN' },
       frequency: formData.frequency,
-      is_active: true
-    })
+      isActive: true
+    }
 
-    setFormData({ source_name: '', amount: '', frequency: 'monthly' })
+    createIncome(incomeData)
+    setFormData({ source: '', amount: '', frequency: 'monthly' })
     setShowForm(false)
   }
 
@@ -77,8 +79,8 @@ export const IncomeSourcesList = () => {
                 </label>
                 <Input
                   placeholder="ej. Salario, Freelance, Negocio"
-                  value={formData.source_name}
-                  onChange={(e) => setFormData({...formData, source_name: e.target.value})}
+                  value={formData.source}
+                  onChange={(e) => setFormData({...formData, source: e.target.value})}
                   required
                 />
               </div>
@@ -148,19 +150,19 @@ export const IncomeSourcesList = () => {
           </Card>
         ) : (
           incomes.map((income) => {
-            const monthlyAmount = income.frequency === 'weekly' ? income.amount * 4 :
-                                 income.frequency === 'biweekly' ? income.amount * 2 :
-                                 income.frequency === 'yearly' ? income.amount / 12 :
-                                 income.amount
+            const monthlyAmount = income.frequency === 'weekly' ? income.amount.amount * 4 :
+                                 income.frequency === 'biweekly' ? income.amount.amount * 2 :
+                                 income.frequency === 'yearly' ? income.amount.amount / 12 :
+                                 income.amount.amount
 
             return (
               <Card key={income.id}>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h4 className="font-medium">{income.source_name}</h4>
+                      <h4 className="font-medium">{income.source}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {formatCurrency(income.amount)} - {income.frequency}
+                        {formatCurrency(income.amount.amount)} - {income.frequency}
                       </p>
                       <p className="text-sm font-medium text-green-600">
                         ~{formatCurrency(monthlyAmount)}/mes

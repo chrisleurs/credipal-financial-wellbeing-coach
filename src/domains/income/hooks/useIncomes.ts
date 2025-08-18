@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Income } from '../types/income.types'
+import { Income, CreateIncomeData } from '../types/income.types'
 
 export const useIncomes = () => {
   const { user } = useAuth()
@@ -33,11 +33,11 @@ export const useIncomes = () => {
       return (data || []).map(dbIncome => ({
         id: dbIncome.id,
         userId: dbIncome.user_id,
-        source: dbIncome.source,
+        source: dbIncome.source_name, // Map source_name to source
         amount: { amount: dbIncome.amount, currency: 'MXN' as const },
         frequency: dbIncome.frequency,
         isActive: dbIncome.is_active,
-        description: dbIncome.description,
+        description: dbIncome.description || '',
         createdAt: dbIncome.created_at,
         updatedAt: dbIncome.updated_at
       })) as Income[]
@@ -47,17 +47,17 @@ export const useIncomes = () => {
 
   // Create income mutation
   const createIncomeMutation = useMutation({
-    mutationFn: async (incomeData: Omit<Income, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    mutationFn: async (incomeData: CreateIncomeData) => {
       if (!user?.id) throw new Error('User not authenticated')
       
       const { data, error } = await supabase
         .from('income_sources')
         .insert({
           user_id: user.id,
-          source: incomeData.source,
+          source_name: incomeData.source, // Map source to source_name
           amount: incomeData.amount.amount,
           frequency: incomeData.frequency,
-          is_active: incomeData.isActive,
+          is_active: incomeData.isActive ?? true,
           description: incomeData.description
         })
         .select()
@@ -85,11 +85,11 @@ export const useIncomes = () => {
 
   // Update income mutation
   const updateIncomeMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Income> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateIncomeData>) => {
       const { data, error } = await supabase
         .from('income_sources')
         .update({
-          source: updates.source,
+          source_name: updates.source,
           amount: updates.amount?.amount,
           frequency: updates.frequency,
           is_active: updates.isActive,

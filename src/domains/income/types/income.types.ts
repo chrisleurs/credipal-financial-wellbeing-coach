@@ -1,17 +1,10 @@
 
-/**
- * Income Domain Types - Tipos para gestión de ingresos
- */
+import { Money, Status, FrequencyType } from '@/shared/types/core.types'
 
-import { Money, FrequencyType, RecurrencePattern } from '../../../shared/types/core.types'
-
-export type IncomeType = 'salary' | 'freelance' | 'business' | 'investment' | 'rental' | 'other'
-
-export interface IncomeSource {
+export interface Income {
   id: string
   userId: string
-  sourceName: string
-  type: IncomeType
+  source: string // Changed from source_name to match domain pattern
   amount: Money
   frequency: FrequencyType
   isActive: boolean
@@ -20,21 +13,14 @@ export interface IncomeSource {
   updatedAt: string
 }
 
-export interface IncomeSummary {
-  totalMonthlyIncome: Money
-  totalAnnualIncome: Money
-  sourceBreakdown: Array<{
-    source: IncomeSource
-    monthlyAmount: Money
-    percentage: number
-  }>
-  stability: {
-    score: number // 0-100, higher is more stable
-    recurringPercentage: number
-    volatility: number
-  }
-  trends: {
-    monthOverMonth: number // percentage change
-    yearOverYear: number // percentage change
-  }
+export interface CreateIncomeData {
+  source: string
+  amount: Money
+  frequency: FrequencyType
+  isActive?: boolean
+  description?: string
+}
+
+export interface UpdateIncomeData extends Partial<CreateIncomeData> {
+  id: string
 }

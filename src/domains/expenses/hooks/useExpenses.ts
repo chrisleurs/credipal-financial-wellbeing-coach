@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Expense } from '../types/expense.types'
+import { Expense, CreateExpenseData } from '../types/expense.types'
 
 export const useExpenses = () => {
   const { user } = useAuth()
@@ -38,7 +38,7 @@ export const useExpenses = () => {
         description: dbExpense.description || '',
         date: dbExpense.date,
         isRecurring: dbExpense.is_recurring || false,
-        tags: dbExpense.tags || [],
+        tags: [], // Empty array since tags column doesn't exist in DB
         createdAt: dbExpense.created_at,
         updatedAt: dbExpense.updated_at
       })) as Expense[]
@@ -48,7 +48,7 @@ export const useExpenses = () => {
 
   // Create expense mutation
   const createExpenseMutation = useMutation({
-    mutationFn: async (expenseData: Omit<Expense, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    mutationFn: async (expenseData: CreateExpenseData) => {
       if (!user?.id) throw new Error('User not authenticated')
       
       const { data, error } = await supabase
@@ -60,8 +60,7 @@ export const useExpenses = () => {
           subcategory: expenseData.subcategory,
           description: expenseData.description,
           date: expenseData.date,
-          is_recurring: expenseData.isRecurring,
-          tags: expenseData.tags
+          is_recurring: expenseData.isRecurring
         })
         .select()
         .single()
@@ -88,7 +87,7 @@ export const useExpenses = () => {
 
   // Update expense mutation
   const updateExpenseMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Expense> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateExpenseData>) => {
       const { data, error } = await supabase
         .from('expenses')
         .update({
@@ -97,8 +96,7 @@ export const useExpenses = () => {
           subcategory: updates.subcategory,
           description: updates.description,
           date: updates.date,
-          is_recurring: updates.isRecurring,
-          tags: updates.tags
+          is_recurring: updates.isRecurring
         })
         .eq('id', id)
         .select()
@@ -164,7 +162,7 @@ export const useExpenses = () => {
     createExpense: createExpenseMutation.mutate,
     updateExpense: updateExpenseMutation.mutate,
     deleteExpense: deleteExpenseMutation.mutate,
-    isCreating: createExpenseMutation.isPending,
+    isCreating: createIncomeMutation.isPending,
     isUpdating: updateExpenseMutation.isPending,
     isDeleting: deleteExpenseMutation.isPending,
   }

@@ -1,21 +1,7 @@
 
-/**
- * Savings Domain Types - Tipos para gestión de ahorros y metas
- */
+import { Money, Status, Priority } from '@/shared/types/core.types'
 
-import { Money, Status, Priority } from '../../../shared/types/core.types'
-
-export interface SavingsAccount {
-  id: string
-  userId: string
-  accountName: string
-  currentBalance: Money
-  targetAmount?: Money
-  accountType: 'emergency' | 'goal' | 'general'
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
+export type SavingsGoalStatus = 'active' | 'completed' | 'paused'
 
 export interface SavingsGoal {
   id: string
@@ -26,7 +12,21 @@ export interface SavingsGoal {
   currentAmount: Money
   targetDate?: string
   priority: Priority
-  status: Status
+  status: SavingsGoalStatus
   createdAt: string
   updatedAt: string
+}
+
+export interface CreateSavingsGoalData {
+  title: string
+  description?: string
+  targetAmount: Money
+  currentAmount?: Money
+  targetDate?: string
+  priority?: Priority
+  status?: SavingsGoalStatus
+}
+
+export interface UpdateSavingsGoalData extends Partial<CreateSavingsGoalData> {
+  id: string
 }

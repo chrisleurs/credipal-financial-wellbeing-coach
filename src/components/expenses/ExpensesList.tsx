@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react'
-import { useExpenses } from '@/hooks/useExpenses'
+import { useExpenses } from '@/domains/expenses/hooks/useExpenses'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, CreditCard, Trash2, Edit } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { ExpenseCategoryType, CreateExpenseData } from '@/domains/expenses/types/expense.types'
 
-const CATEGORIES = [
+const CATEGORIES: ExpenseCategoryType[] = [
   'Food & Dining',
   'Transportation',
   'Housing & Utilities',
@@ -25,34 +26,35 @@ export const ExpensesList = () => {
   const { expenses, isLoading, createExpense, deleteExpense, isCreating } = useExpenses()
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
-    category: '',
+    category: '' as ExpenseCategoryType,
     subcategory: '',
     amount: '',
     date: new Date().toISOString().split('T')[0],
     description: '',
-    is_recurring: false
+    isRecurring: false
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.category || !formData.amount) return
 
-    createExpense({
+    const expenseData: CreateExpenseData = {
       category: formData.category,
       subcategory: formData.subcategory || undefined,
-      amount: parseFloat(formData.amount),
+      amount: { amount: parseFloat(formData.amount), currency: 'MXN' },
       date: formData.date,
-      description: formData.description || undefined,
-      is_recurring: formData.is_recurring
-    })
+      description: formData.description || '',
+      isRecurring: formData.isRecurring
+    }
 
+    createExpense(expenseData)
     setFormData({
-      category: '',
+      category: '' as ExpenseCategoryType,
       subcategory: '',
       amount: '',
       date: new Date().toISOString().split('T')[0],
       description: '',
-      is_recurring: false
+      isRecurring: false
     })
     setShowForm(false)
   }
@@ -87,7 +89,7 @@ export const ExpensesList = () => {
                   </label>
                   <Select 
                     value={formData.category} 
-                    onValueChange={(value) => setFormData({...formData, category: value})}
+                    onValueChange={(value: ExpenseCategoryType) => setFormData({...formData, category: value})}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar categoría" />
@@ -157,8 +159,8 @@ export const ExpensesList = () => {
                 <input
                   type="checkbox"
                   id="recurring"
-                  checked={formData.is_recurring}
-                  onChange={(e) => setFormData({...formData, is_recurring: e.target.checked})}
+                  checked={formData.isRecurring}
+                  onChange={(e) => setFormData({...formData, isRecurring: e.target.checked})}
                 />
                 <label htmlFor="recurring" className="text-sm font-medium">
                   Es un gasto recurrente
@@ -216,7 +218,7 @@ export const ExpensesList = () => {
                         {expense.description}
                       </p>
                     )}
-                    {expense.is_recurring && (
+                    {expense.isRecurring && (
                       <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mt-1">
                         Recurrente
                       </span>
@@ -224,7 +226,7 @@ export const ExpensesList = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-red-600">
-                      -{formatCurrency(expense.amount)}
+                      -{formatCurrency(expense.amount.amount)}
                     </span>
                     <div className="flex gap-1">
                       <Button variant="outline" size="sm">
