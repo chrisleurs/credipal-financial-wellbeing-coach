@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Plus, CreditCard, TrendingDown, AlertCircle, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -155,7 +154,6 @@ const Debts = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -229,7 +227,6 @@ const Debts = () => {
           </Card>
         </div>
 
-        {/* Data Source Indicator */}
         {!hasSpecificDebts && totalDebtBalance > 0 && (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2">
@@ -244,7 +241,6 @@ const Debts = () => {
           </div>
         )}
 
-        {/* Debts List */}
         <div className="bg-white rounded-lg border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-border">
             <h2 className="text-lg font-semibold text-text-primary">
@@ -353,7 +349,6 @@ const Debts = () => {
           )}
         </div>
 
-        {/* Scenario Analysis Button - Only show for specific debts */}
         {displayDebts.length > 0 && hasSpecificDebts && (
           <div className="mt-8">
             <Button
