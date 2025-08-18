@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -6,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, CreditCard, Trash2, AlertTriangle, Calendar, Clock } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
-import type { Debt } from '@/types'
+import type { OnboardingDebt } from '@/types'
 
 interface Step3DebtsProps {
   onNext: () => void
@@ -15,7 +14,7 @@ interface Step3DebtsProps {
 
 const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
   const { financialData, updateFinancialData } = useFinancialStore()
-  const [debts, setDebts] = useState<Debt[]>(financialData.debts || [])
+  const [debts, setDebts] = useState<OnboardingDebt[]>(financialData.debts || [])
   const [newDebt, setNewDebt] = useState({
     type: '',
     name: '',
@@ -49,7 +48,7 @@ const Step3Debts: React.FC<Step3DebtsProps> = ({ onNext, onBack }) => {
       if (amount > 0 && monthlyPayment > 0 && paymentDueDate >= 1 && paymentDueDate <= 31 && termInMonths > 0) {
         const estimatedPayoffDate = calculateEstimatedPayoffDate(monthlyPayment, amount, termInMonths)
         
-        const debt: Debt = {
+        const debt: OnboardingDebt = {
           id: Date.now().toString(),
           name: newDebt.name.trim(),
           amount,

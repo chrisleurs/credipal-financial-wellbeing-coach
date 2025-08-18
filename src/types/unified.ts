@@ -8,7 +8,7 @@ export interface User {
   createdAt: string
 }
 
-// Unified Debt interface combining all variations
+// Database Debt interface (matches Supabase structure)
 export interface Debt {
   id: string
   user_id: string
@@ -29,13 +29,24 @@ export interface Debt {
   updated_at: string
 }
 
+// Onboarding-specific debt interface (for forms and user input)
+export interface OnboardingDebt {
+  id: string
+  name: string
+  amount: number
+  monthlyPayment: number
+  paymentDueDate?: number
+  termInMonths?: number
+  estimatedPayoffDate?: string
+}
+
 // Unified Financial Data interface
 export interface FinancialData {
   monthlyIncome: number
   extraIncome: number
   monthlyExpenses: number
   expenseCategories: Record<string, number>
-  debts: Debt[]
+  debts: OnboardingDebt[] // Use onboarding-specific type here
   currentSavings: number
   monthlySavingsCapacity: number
   financialGoals: string[]
@@ -135,6 +146,42 @@ export interface ActionTask {
   completed: boolean
 }
 
+// AI Generated Plan interface (for openai service)
+export interface AIGeneratedPlan {
+  id: string
+  recommendations: string[]
+  monthlyBalance: number
+  savingsSuggestion: number
+  budgetBreakdown: {
+    fixedExpenses: number
+    variableExpenses: number
+    savings: number
+    emergency: number
+  }
+  timeEstimate: string
+  motivationalMessage: string
+}
+
+// Action Plan interface (for openai service)
+export interface ActionPlan {
+  id: string
+  tasks: ActionTask[]
+  timeframe: string
+  priority: 'high' | 'medium' | 'low'
+}
+
+// Financial Plan interface (for backward compatibility)
+export interface FinancialPlan {
+  id: string
+  user_id: string
+  plan_type: string
+  plan_data: any
+  status: 'draft' | 'active' | 'completed'
+  version: number
+  created_at: string
+  updated_at: string
+}
+
 // Type conversion utilities
 export namespace TypeConverters {
   export function convertDatabaseDebtToUnified(dbDebt: any): Debt {
@@ -156,6 +203,18 @@ export namespace TypeConverters {
       description: dbDebt.description,
       created_at: dbDebt.created_at,
       updated_at: dbDebt.updated_at
+    }
+  }
+
+  export function convertOnboardingDebtToDatabase(onboardingDebt: OnboardingDebt): Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'> {
+    return {
+      creditor: onboardingDebt.name,
+      original_amount: onboardingDebt.amount,
+      current_balance: onboardingDebt.amount,
+      monthly_payment: onboardingDebt.monthlyPayment,
+      interest_rate: 0, // Default value
+      status: 'active',
+      due_date: onboardingDebt.paymentDueDate ? `2024-01-${onboardingDebt.paymentDueDate.toString().padStart(2, '0')}` : undefined
     }
   }
 }

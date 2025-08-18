@@ -2,7 +2,6 @@
 export * from './unified'
 
 // Keep legacy exports for backward compatibility
-export type { FinancialPlan } from './financialPlan'
 export type { 
   Debt as LegacyDebt,
   DebtPayment as LegacyDebtPayment,

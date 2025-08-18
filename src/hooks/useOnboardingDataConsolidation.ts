@@ -2,6 +2,7 @@
 import { useFinancialStore } from '@/store/financialStore'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
+import { TypeConverters } from '@/types/unified'
 
 export const useOnboardingDataConsolidation = () => {
   const { user } = useAuth()
@@ -51,16 +52,11 @@ export const useOnboardingDataConsolidation = () => {
         }
       }
       
-      // 3. Save debts
+      // 3. Save debts using type converter
       if (financialData.debts && financialData.debts.length > 0) {
         const debtsToInsert = financialData.debts.map((debt) => ({
           user_id: user.id,
-          creditor: debt.name,
-          original_amount: debt.amount,
-          current_balance: debt.amount,
-          monthly_payment: debt.monthlyPayment,
-          interest_rate: 0,
-          status: 'active' as const
+          ...TypeConverters.convertOnboardingDebtToDatabase(debt)
         }))
         
         await supabase
