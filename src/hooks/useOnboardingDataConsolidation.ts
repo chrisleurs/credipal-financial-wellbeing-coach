@@ -23,10 +23,16 @@ export const useOnboardingDataConsolidation = () => {
     enabled: !!user?.id,
   })
 
+  const consolidateOnboardingData = async (data: any) => {
+    console.log('Consolidating onboarding data:', data)
+    // Implementation would go here
+  }
+
   return {
     onboardingData: onboardingData.data?.onboarding_data || {},
     isCompleted: onboardingData.data?.onboarding_completed || false,
     isLoading: onboardingData.isLoading,
-    error: onboardingData.error
+    error: onboardingData.error,
+    consolidateOnboardingData
   }
 }

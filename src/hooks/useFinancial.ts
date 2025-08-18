@@ -13,7 +13,7 @@ export const useFinancial = () => {
   
   // Get data from new consolidated sources
   const { financialSummary, isLoading: isLoadingSummary } = useFinancialSummary();
-  const { data: consolidatedData, isLoading: isLoadingConsolidated } = useConsolidatedFinancialData();
+  const { consolidatedData, isLoading: isLoadingConsolidated } = useConsolidatedFinancialData();
 
   // Combine data from new sources
   const data = React.useMemo(() => {

@@ -16,6 +16,15 @@ export interface ConsolidatedFinancialData {
   totalMonthlyDebtPayments: number
   savingsCapacity: number
   hasRealData: boolean
+  expenseCategories: Record<string, number>
+  financialGoals: string[]
+  debts: Array<{
+    id: string
+    creditor: string
+    current_balance: number
+    monthly_payment: number
+    interest_rate: number
+  }>
 }
 
 export const useConsolidatedFinancialData = () => {
@@ -39,6 +48,21 @@ export const useConsolidatedFinancialData = () => {
       // Check if we have real data (not just onboarding estimates)
       const hasRealData = incomes.length > 0 || expenses.length > 0 || debts.length > 0
 
+      // Calculate expense categories
+      const expenseCategories = expenses.reduce((acc: Record<string, number>, expense) => {
+        acc[expense.category] = (acc[expense.category] || 0) + expense.amount
+        return acc
+      }, {})
+
+      // Map debts to required format
+      const mappedDebts = debts.map(debt => ({
+        id: debt.id,
+        creditor: debt.creditor,
+        current_balance: debt.current_balance,
+        monthly_payment: debt.monthly_payment,
+        interest_rate: debt.interest_rate
+      }))
+
       return {
         monthlyIncome: totalMonthlyIncome,
         extraIncome: 0, // Not tracked separately
@@ -48,7 +72,10 @@ export const useConsolidatedFinancialData = () => {
         totalDebtBalance: totalDebt,
         totalMonthlyDebtPayments: totalMonthlyPayments,
         savingsCapacity,
-        hasRealData
+        hasRealData,
+        expenseCategories,
+        financialGoals: goals.map(goal => goal.title),
+        debts: mappedDebts
       }
     },
     enabled: !!user?.id,

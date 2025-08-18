@@ -25,7 +25,7 @@ export interface UserFinancialData {
 export const useUserFinancialData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { data: consolidatedData, isLoading: isConsolidatedLoading } = useConsolidatedFinancialData();
+  const { consolidatedData, isLoading: isConsolidatedLoading } = useConsolidatedFinancialData();
 
   // Convert consolidated data to legacy format for compatibility
   const userFinancialData: UserFinancialData | null = consolidatedData ? {
@@ -33,22 +33,22 @@ export const useUserFinancialData = () => {
     user_id: user?.id || '',
     ingresos: consolidatedData.monthlyIncome,
     ingresos_extras: 0,
-    gastos_categorizados: Object.entries(consolidatedData.expenseCategories).map(([category, amount]) => ({
+    gastos_categorizados: Object.entries(consolidatedData.expenseCategories || {}).map(([category, amount]) => ({
       category,
       amount
     })),
-    deudas: consolidatedData.debts,
+    deudas: consolidatedData.debts || [],
     ahorros: {
       actual: consolidatedData.currentSavings
     },
-    metas: consolidatedData.financialGoals.map(goal => ({ name: goal })),
+    metas: consolidatedData.financialGoals?.map(goal => ({ name: goal })) || [],
     user_data: {},
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     gastos_totales: consolidatedData.monthlyExpenses,
     ahorros_actuales: consolidatedData.currentSavings,
     capacidad_ahorro: consolidatedData.savingsCapacity,
-    metas_financieras: consolidatedData.financialGoals.map(goal => ({ name: goal }))
+    metas_financieras: consolidatedData.financialGoals?.map(goal => ({ name: goal })) || []
   } : null;
 
   const refetch = () => {

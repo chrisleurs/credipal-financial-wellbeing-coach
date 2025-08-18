@@ -1,241 +1,335 @@
 
 import React from 'react'
-import { useFinancialStore } from '@/store/financialStore'
-import { Button } from '@/components/ui/button'
+import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, TrendingUp, Target, PiggyBank, CreditCard, DollarSign } from 'lucide-react'
-import { MetricCard } from '@/components/dashboard/MetricCard'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { 
+  DollarSign, 
+  TrendingUp, 
+  AlertTriangle, 
+  Target,
+  CreditCard,
+  PiggyBank,
+  Calendar,
+  BarChart3,
+  Plus
+} from 'lucide-react'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { FinancialPlanDashboard } from '@/components/dashboard/FinancialPlanDashboard'
 import { ChartSection } from '@/components/dashboard/ChartSection'
-import { AIPanel } from '@/components/dashboard/AIPanel'
-import { useLoans } from '@/hooks/useLoans'
-import { useDashboardNavigation } from '@/hooks/useDashboardNavigation'
+import { formatCurrency } from '@/utils/helpers'
 
-const Dashboard: React.FC = () => {
-  console.log('Dashboard component rendering')
-  
-  const { 
-    financialData, 
-    aiPlan, 
-    isLoading, 
-    generateAIPlan
-  } = useFinancialStore()
-  
-  const { kueskiLoan } = useLoans()
-  const { navigateTo } = useDashboardNavigation()
+export default function Dashboard() {
+  const { consolidatedData, isLoading, error } = useConsolidatedFinancialData()
 
-  const totalIncome = financialData.monthlyIncome + financialData.extraIncome
-  const balance = totalIncome - financialData.monthlyExpenses
-  const totalDebtPayments = financialData.debts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Cargando tu información financiera...</p>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
 
-  console.log('Dashboard state:', { totalIncome, balance, aiPlan })
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="max-w-md">
+            <CardContent className="p-6 text-center">
+              <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Error al cargar datos</h2>
+              <p className="text-muted-foreground mb-4">
+                No se pudieron cargar tus datos financieros.
+              </p>
+              <Button onClick={() => window.location.reload()}>
+                Intentar de nuevo
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  if (!consolidatedData) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="max-w-md">
+            <CardContent className="p-6 text-center">
+              <PiggyBank className="h-12 w-12 text-primary mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">¡Bienvenido a CrediPal!</h2>
+              <p className="text-muted-foreground mb-4">
+                Comienza agregando tu información financiera para ver tu dashboard personalizado.
+              </p>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Configurar Perfil
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  const savingsRate = consolidatedData.monthlyIncome > 0 
+    ? (consolidatedData.savingsCapacity / consolidatedData.monthlyIncome) * 100 
+    : 0
+
+  const debtToIncomeRatio = consolidatedData.monthlyIncome > 0
+    ? (consolidatedData.totalMonthlyDebtPayments / consolidatedData.monthlyIncome) * 100
+    : 0
+
+  const emergencyFundMonths = consolidatedData.monthlyExpenses > 0
+    ? consolidatedData.currentSavings / consolidatedData.monthlyExpenses
+    : 0
+
+  const getHealthScore = () => {
+    let score = 0
+    
+    // Income vs expenses (40 points)
+    if (consolidatedData.savingsCapacity >= 0) score += 40
+    else if (consolidatedData.savingsCapacity >= -500) score += 20
+    
+    // Emergency fund (30 points)
+    if (emergencyFundMonths >= 6) score += 30
+    else if (emergencyFundMonths >= 3) score += 20
+    else if (emergencyFundMonths >= 1) score += 10
+    
+    // Debt management (30 points)
+    if (debtToIncomeRatio === 0) score += 30
+    else if (debtToIncomeRatio <= 20) score += 20
+    else if (debtToIncomeRatio <= 40) score += 10
+    
+    return Math.min(100, score)
+  }
+
+  const healthScore = getHealthScore()
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600'
+    if (score >= 60) return 'text-yellow-600'
+    return 'text-red-600'
+  }
+
+  const getScoreBadge = (score: number) => {
+    if (score >= 80) return { label: 'Excelente', variant: 'default' as const }
+    if (score >= 60) return { label: 'Bueno', variant: 'secondary' as const }
+    return { label: 'Necesita Mejora', variant: 'destructive' as const }
+  }
 
   return (
-    <div className="min-h-screen bg-clean">
-      {/* Clean Header - No blue background */}
-      <div className="bg-white border-b border-gray-100 p-8 shadow-sm">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2 text-slate-900">
-            Dashboard Financiero
-          </h1>
-          <p className="text-slate-600">
-            Resumen completo de tu situación financiera
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Quick Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('/expenses')}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <CreditCard className="h-8 w-8 text-credipal-green" />
-                <div>
-                  <p className="font-semibold">Gastos</p>
-                  <p className="text-sm text-muted-foreground">Gestionar gastos</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('/debts')}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <Target className="h-8 w-8 text-credipal-green" />
-                <div>
-                  <p className="font-semibold">Deudas</p>
-                  <p className="text-sm text-muted-foreground">Control de deudas</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('/plan')}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <Brain className="h-8 w-8 text-credipal-green" />
-                <div>
-                  <p className="font-semibold">Plan AI</p>
-                  <p className="text-sm text-muted-foreground">Plan personalizado</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('/profile')}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <PiggyBank className="h-8 w-8 text-credipal-green" />
-                <div>
-                  <p className="font-semibold">Perfil</p>
-                  <p className="text-sm text-muted-foreground">Configuración</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Metrics Cards - Green themed */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <MetricCard
-            title="Ingresos Totales"
-            value={`$${totalIncome.toLocaleString()}`}
-            icon={TrendingUp}
-            variant="positive"
-            trend={{ direction: 'up', percentage: '+12%' }}
-          />
-          
-          <MetricCard
-            title="Gastos Mensuales"
-            value={`$${financialData.monthlyExpenses.toLocaleString()}`}
-            icon={CreditCard}
-            variant="warning"
-            trend={{ direction: 'down', percentage: '-3%' }}
-          />
-          
-          <MetricCard
-            title="Ahorros Actuales"
-            value={`$${financialData.currentSavings.toLocaleString()}`}
-            icon={PiggyBank}
-            variant="positive"
-            trend={{ direction: 'up', percentage: '+8%' }}
-          />
-          
-          <MetricCard
-            title="Balance Mensual"
-            value={`$${balance.toLocaleString()}`}
-            icon={DollarSign}
-            variant={balance >= 0 ? 'positive' : 'warning'}
-            trend={{ direction: balance >= 0 ? 'up' : 'down', percentage: '5%' }}
-          />
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Chart Section - Takes 2/3 width on large screens */}
-          <div className="lg:col-span-2">
-            <ChartSection />
+    <AppLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard Financiero</h1>
+            <p className="text-muted-foreground">
+              Resumen de tu situación financiera actual
+            </p>
           </div>
-
-          {/* AI Panel - Takes 1/3 width on large screens */}
-          <div className="lg:col-span-1">
-            <AIPanel 
-              totalIncome={totalIncome}
-              totalExpenses={financialData.monthlyExpenses}
-              totalDebts={totalDebtPayments}
-              kueskiLoan={kueskiLoan}
-            />
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Salud Financiera</p>
+              <div className="flex items-center gap-2">
+                <span className={`text-2xl font-bold ${getScoreColor(healthScore)}`}>
+                  {healthScore}
+                </span>
+                <Badge variant={getScoreBadge(healthScore).variant}>
+                  {getScoreBadge(healthScore).label}
+                </Badge>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* AI Generated Plan Section - Green themed */}
-        {aiPlan && (
-          <div className="mt-8 space-y-6">
-            <Card className="shadow-clean border border-gray-100 bg-white">
-              <CardHeader className="bg-credipal-green-bg border-b border-green-100">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Brain className="h-6 w-6 text-credipal-green" />
-                  Tu Plan Financiero Personalizado
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-6">
-                  <div className="bg-credipal-green-bg p-6 rounded-xl border border-green-100">
-                    <p className="text-credipal-green font-medium text-lg">{aiPlan.motivationalMessage}</p>
-                  </div>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Balance Mensual</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${
+                consolidatedData.savingsCapacity >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {formatCurrency(consolidatedData.savingsCapacity)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {savingsRate.toFixed(1)}% de tus ingresos
+              </p>
+            </CardContent>
+          </Card>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white p-6 rounded-xl border border-gray-200">
-                      <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                        <DollarSign className="h-5 w-5 text-credipal-green" />
-                        Balance Mensual
-                      </h4>
-                      <p className={`text-2xl font-bold ${aiPlan.monthlyBalance >= 0 ? 'text-credipal-green' : 'text-amber-500'}`}>
-                        ${aiPlan.monthlyBalance.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="bg-white p-6 rounded-xl border border-gray-200">
-                      <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                        <Target className="h-5 w-5 text-credipal-green" />
-                        Ahorro Sugerido
-                      </h4>
-                      <p className="text-2xl font-bold text-credipal-green">
-                        ${aiPlan.savingsSuggestion.toLocaleString()}
-                      </p>
-                    </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ingresos Mensuales</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(consolidatedData.monthlyIncome)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Base de tu presupuesto
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Gastos Mensuales</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {formatCurrency(consolidatedData.monthlyExpenses)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {((consolidatedData.monthlyExpenses / consolidatedData.monthlyIncome) * 100).toFixed(1)}% de ingresos
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Fondo de Emergencia</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(consolidatedData.currentSavings)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {emergencyFundMonths.toFixed(1)} meses de gastos
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Financial Health Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumen Financiero</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Ingresos</span>
+                  <span className="font-medium text-green-600">
+                    +{formatCurrency(consolidatedData.monthlyIncome)}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between text-sm">
+                  <span>Gastos</span>
+                  <span className="font-medium text-red-600">
+                    -{formatCurrency(consolidatedData.monthlyExpenses)}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between text-sm">
+                  <span>Pagos de Deuda</span>
+                  <span className="font-medium text-orange-600">
+                    -{formatCurrency(consolidatedData.totalMonthlyDebtPayments)}
+                  </span>
+                </div>
+                
+                <div className="border-t pt-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Balance Disponible</span>
+                    <span className={`font-bold ${
+                      consolidatedData.savingsCapacity >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(consolidatedData.savingsCapacity)}
+                    </span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="shadow-clean border border-gray-100 bg-white">
-              <CardHeader>
-                <CardTitle className="text-xl">Recomendaciones Personalizadas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
-                  {aiPlan.recommendations.map((rec, index) => (
-                    <div key={index} className="flex items-start gap-4 p-4 bg-slate-50 rounded-xl hover-clean">
-                      <div className="w-8 h-8 bg-credipal-green-bg rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-credipal-green font-bold text-sm">{index + 1}</span>
+          <Card>
+            <CardHeader>
+              <CardTitle>Progreso de Metas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {consolidatedData.financialGoals && consolidatedData.financialGoals.length > 0 ? (
+                <div className="space-y-4">
+                  {consolidatedData.financialGoals.slice(0, 3).map((goal, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>{goal}</span>
+                        <span>75%</span>
                       </div>
-                      <p className="text-slate-700 font-medium">{rec}</p>
+                      <Progress value={75} className="h-2" />
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Financial Goals - Green themed */}
-        {financialData.financialGoals.length > 0 && (
-          <Card className="mt-8 shadow-clean border border-gray-100 bg-white">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Target className="h-6 w-6 text-credipal-green" />
-                Tus Metas Financieras
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {financialData.financialGoals.map((goal, index) => (
-                  <div key={index} className="bg-credipal-green-bg p-4 rounded-xl border border-green-100 hover-clean">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-                        <Target className="h-5 w-5 text-credipal-green" />
-                      </div>
-                      <p className="text-credipal-green-dark font-semibold">{goal.replace('-', ' ')}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    No tienes metas financieras configuradas
+                  </p>
+                  <Button size="sm" variant="outline">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Agregar Meta
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
-        )}
+        </div>
+
+        {/* Charts and AI Plan */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2">
+            <ChartSection />
+          </div>
+          <div>
+            <FinancialPlanDashboard />
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Acciones Rápidas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Button variant="outline" className="h-auto flex-col p-4">
+                <Plus className="h-6 w-6 mb-2" />
+                <span className="text-sm">Agregar Gasto</span>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col p-4">
+                <TrendingUp className="h-6 w-6 mb-2" />
+                <span className="text-sm">Nuevo Ingreso</span>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col p-4">
+                <Target className="h-6 w-6 mb-2" />
+                <span className="text-sm">Crear Meta</span>
+              </Button>
+              <Button variant="outline" className="h-auto flex-col p-4">
+                <BarChart3 className="h-6 w-6 mb-2" />
+                <span className="text-sm">Ver Reportes</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </AppLayout>
   )
 }
-
-export default Dashboard

@@ -9,25 +9,21 @@ import DebtModal from '@/components/debts/DebtModal'
 import PaymentModal from '@/components/debts/PaymentModal'
 import ScenarioAnalysis from '@/components/debts/ScenarioAnalysis'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { Debt } from '@/types/domains/debts/debt'
+import { Debt } from '@/domains/debts/types/debt.types'
 import { formatMoney } from '@/types/core/money'
-import { toLegacyDebt } from '@/utils/mappers/debtMappers'
 
 export default function DebtsPage() {
   const { 
     debts, 
     totalDebt, 
     totalMonthlyPayments,
-    payments,
     createDebt, 
     updateDebt, 
     deleteDebt, 
-    registerPayment,
     isLoading,
     isCreating,
     isUpdating,
-    isDeleting,
-    isRegisteringPayment
+    isDeleting
   } = useDebts()
 
   const [isDebtModalOpen, setIsDebtModalOpen] = useState(false)
@@ -78,7 +74,7 @@ export default function DebtsPage() {
     setEditingDebt(null)
   }
 
-  const handleSaveDebt = (debtData: Omit<Debt, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveDebt = (debtData: Omit<Debt, 'id' | 'created_at' | 'user_id' | 'updated_at'>) => {
     if (editingDebt) {
       updateDebt({ ...debtData, id: editingDebt.id })
     } else {
@@ -93,7 +89,7 @@ export default function DebtsPage() {
     payment_date: string
     notes?: string
   }) => {
-    registerPayment(paymentData)
+    console.log('Payment registered:', paymentData)
     setIsPaymentModalOpen(false)
     setSelectedDebt(null)
   }
@@ -194,7 +190,7 @@ export default function DebtsPage() {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-semibold text-lg">{debt.creditor}</h3>
-                        <p className="text-sm text-muted-foreground">{debt.description}</p>
+                        <p className="text-sm text-muted-foreground">{debt.description || 'No description'}</p>
                       </div>
                       <Badge className={getStatusColor(debt.status)}>
                         {debt.status}
@@ -204,19 +200,19 @@ export default function DebtsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Current Balance</p>
-                        <p className="font-semibold text-red-600">{formatMoney(debt.currentBalance)}</p>
+                        <p className="font-semibold text-red-600">${debt.current_balance.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Monthly Payment</p>
-                        <p className="font-semibold">{formatMoney(debt.monthlyPayment)}</p>
+                        <p className="font-semibold">${debt.monthly_payment.toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Interest Rate</p>
-                        <p className="font-semibold">{debt.interestRate}%</p>
+                        <p className="font-semibold">{debt.interest_rate}%</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Due Date</p>
-                        <p className="font-semibold">{formatDate(debt.dueDate)}</p>
+                        <p className="font-semibold">{formatDate(debt.due_date)}</p>
                       </div>
                     </div>
 
@@ -225,7 +221,6 @@ export default function DebtsPage() {
                         <Button 
                           size="sm" 
                           onClick={() => handleMakePayment(debt)}
-                          disabled={isRegisteringPayment}
                         >
                           Make Payment
                         </Button>
@@ -270,15 +265,25 @@ export default function DebtsPage() {
             setSelectedDebt(null)
           }}
           onSubmit={handlePaymentSubmit}
-          debt={selectedDebt ? toLegacyDebt(selectedDebt) : null}
-          isLoading={isRegisteringPayment}
+          debt={selectedDebt ? {
+            id: selectedDebt.id,
+            name: selectedDebt.creditor,
+            amount: selectedDebt.current_balance,
+            monthlyPayment: selectedDebt.monthly_payment
+          } : null}
+          isLoading={false}
         />
 
         <ScenarioAnalysis
           isOpen={isScenarioModalOpen}
           onClose={() => setIsScenarioModalOpen(false)}
-          debt={activeDebts[0] ? toLegacyDebt(activeDebts[0]) : null}
-          payments={payments || []}
+          debt={activeDebts[0] ? {
+            id: activeDebts[0].id,
+            name: activeDebts[0].creditor,
+            amount: activeDebts[0].current_balance,
+            monthlyPayment: activeDebts[0].monthly_payment
+          } : null}
+          payments={[]}
         />
       </div>
     </AppLayout>

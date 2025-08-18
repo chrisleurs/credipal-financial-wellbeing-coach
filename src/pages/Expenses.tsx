@@ -1,358 +1,320 @@
 
-import React, { useState } from 'react'
-import { Plus, Calendar, TrendingDown, DollarSign } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ExpenseModal } from '@/components/expenses/ExpenseModal'
-import { ExpenseFilters } from '@/components/expenses/ExpenseFilters'
-import { DeleteExpenseDialog } from '@/components/expenses/DeleteExpenseDialog'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Filter, Download, TrendingUp, Calendar, DollarSign } from 'lucide-react'
 import { useExpenses } from '@/hooks/useExpenses'
-import { useConsolidatedProfile } from '@/hooks/useConsolidatedProfile'
-import { useLanguage } from '@/contexts/LanguageContext'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import type { Expense } from '@/hooks/useExpenses'
+import ExpenseModal from '@/components/expenses/ExpenseModal'
+import ExpenseFilters from '@/components/expenses/ExpenseFilters'
+import CategoryManagement from '@/components/expenses/CategoryManagement'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { Expense, ExpenseCategoryType } from '@/domains/expenses/types/expense.types'
 
-const Expenses = () => {
+export default function ExpensesPage() {
+  const { 
+    expenses, 
+    totalExpenses, 
+    createExpense, 
+    updateExpense, 
+    deleteExpense,
+    isLoading,
+    isCreating,
+    isUpdating,
+    isDeleting 
+  } = useExpenses()
+
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
-  const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null)
-  const [deleteExpenseDescription, setDeleteExpenseDescription] = useState<string>('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
-  const [dateFrom, setDateFrom] = useState<string>('')
-  const [dateTo, setDateTo] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [dateRange, setDateRange] = useState<'week' | 'month' | 'year'>('month')
 
-  const { expenses, isLoading: isLoadingExpenses, createExpense, updateExpense, deleteExpense } = useExpenses()
-  const { consolidatedProfile, isLoading: isLoadingProfile } = useConsolidatedProfile()
-  const { t } = useLanguage()
+  const filteredExpenses = useMemo(() => {
+    let filtered = expenses
 
-  console.log('📱 Expenses page - consolidated profile:', consolidatedProfile)
-  console.log('📱 Expenses page - specific expenses:', expenses)
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(expense => expense.category === selectedCategory)
+    }
 
-  // Use consolidated data when no specific expenses are recorded
-  const hasSpecificExpenses = expenses.length > 0
-  const totalExpenses = hasSpecificExpenses 
-    ? expenses.reduce((sum, expense) => sum + Number(expense.amount), 0)
-    : consolidatedProfile?.monthlyExpenses || 0
+    // Filter by date range
+    const now = new Date()
+    const startDate = new Date()
+    
+    switch (dateRange) {
+      case 'week':
+        startDate.setDate(now.getDate() - 7)
+        break
+      case 'month':
+        startDate.setMonth(now.getMonth() - 1)
+        break
+      case 'year':
+        startDate.setFullYear(now.getFullYear() - 1)
+        break
+    }
 
-  // Get expense categories from consolidated data when no specific expenses
-  const expensesByCategory = hasSpecificExpenses
-    ? expenses.reduce((acc, expense) => {
-        const category = expense.category
-        if (!acc[category]) acc[category] = []
-        acc[category].push(expense)
-        return acc
-      }, {} as Record<string, Expense[]>)
-    : Object.entries(consolidatedProfile?.expenseCategories || {}).reduce((acc, [category, amount]) => {
-        // Create mock expenses for display from consolidated data
-        acc[category] = [{
-          id: `consolidated-${category}`,
-          user_id: consolidatedProfile?.userId || '',
-          amount: amount,
-          category: category,
-          description: `Gastos de ${category}`,
-          date: new Date().toISOString().split('T')[0],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          subcategory: null,
-          is_recurring: false,
-        }] as Expense[]
-        return acc
-      }, {} as Record<string, Expense[]>)
+    filtered = filtered.filter(expense => new Date(expense.date) >= startDate)
 
-  const categories = Object.keys(expensesByCategory)
-  const averageExpense = hasSpecificExpenses && expenses.length > 0 
-    ? totalExpenses / expenses.length 
-    : totalExpenses / Math.max(categories.length, 1)
+    return filtered
+  }, [expenses, selectedCategory, dateRange])
 
-  // Filter expenses
-  const filteredExpenses = hasSpecificExpenses ? expenses.filter(expense => {
-    const matchesCategory = !selectedCategory || expense.category === selectedCategory
-    const matchesDateFrom = !dateFrom || expense.date >= dateFrom
-    const matchesDateTo = !dateTo || expense.date <= dateTo
-    return matchesCategory && matchesDateFrom && matchesDateTo
-  }) : Object.values(expensesByCategory).flat()
+  const expensesByCategory = useMemo(() => {
+    const categories: Record<string, { total: number; count: number }> = {}
+    
+    filteredExpenses.forEach(expense => {
+      if (!categories[expense.category]) {
+        categories[expense.category] = { total: 0, count: 0 }
+      }
+      categories[expense.category].total += expense.amount
+      categories[expense.category].count += 1
+    })
+
+    return Object.entries(categories)
+      .map(([category, data]) => ({
+        category,
+        ...data,
+        percentage: (data.total / totalExpenses) * 100
+      }))
+      .sort((a, b) => b.total - a.total)
+  }, [filteredExpenses, totalExpenses])
+
+  const handleCreateExpense = () => {
+    setEditingExpense(null)
+    setIsModalOpen(true)
+  }
 
   const handleEditExpense = (expense: Expense) => {
-    if (!hasSpecificExpenses) {
-      // Convert consolidated data to editable expense
-      setIsModalOpen(true)
-      return
-    }
     setEditingExpense(expense)
     setIsModalOpen(true)
   }
 
+  const handleSaveExpense = (expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+    // Ensure category is valid ExpenseCategoryType
+    const validCategories = ['food', 'transport', 'housing', 'utilities', 'entertainment', 'healthcare', 'education', 'shopping', 'bills', 'other'] as const
+    const category = validCategories.includes(expenseData.category as ExpenseCategoryType) 
+      ? expenseData.category as ExpenseCategoryType 
+      : 'other'
+
+    if (editingExpense) {
+      updateExpense({ 
+        ...expenseData, 
+        id: editingExpense.id,
+        category 
+      })
+    } else {
+      createExpense({ 
+        ...expenseData, 
+        category 
+      })
+    }
+    setIsModalOpen(false)
+  }
+
   const handleDeleteExpense = (expense: Expense) => {
-    if (!hasSpecificExpenses) return // Can't delete consolidated data
-    setDeleteExpenseId(expense.id)
-    setDeleteExpenseDescription(expense.description || '')
-  }
-
-  const handleModalSubmit = async (expenseData: {
-    amount: number
-    category: string
-    description: string
-    date: string
-  }) => {
-    try {
-      if (editingExpense) {
-        await updateExpense({ 
-          id: editingExpense.id, 
-          ...expenseData,
-          is_recurring: editingExpense.is_recurring
-        })
-        setIsModalOpen(false)
-        setEditingExpense(null)
-        return { success: true }
-      } else {
-        await createExpense({
-          ...expenseData,
-          is_recurring: false
-        })
-        setIsModalOpen(false)
-        return { success: true }
-      }
-    } catch (error) {
-      return { success: false, error }
+    if (window.confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
+      deleteExpense(expense.id)
     }
   }
 
-  const handleDeleteConfirm = async () => {
-    if (deleteExpenseId) {
-      await deleteExpense(deleteExpenseId)
-      setDeleteExpenseId(null)
-      setDeleteExpenseDescription('')
-    }
+  const exportExpenses = () => {
+    const csvContent = [
+      ['Fecha', 'Descripción', 'Categoría', 'Monto'],
+      ...filteredExpenses.map(expense => [
+        expense.date,
+        expense.description,
+        expense.category,
+        expense.amount.toString()
+      ])
+    ].map(row => row.join(',')).join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'gastos.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
   }
 
-  if (isLoadingExpenses || isLoadingProfile) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text={t('loading_expenses')} />
-      </div>
+      <AppLayout>
+        <div className="p-6">
+          <div className="text-center">Cargando gastos...</div>
+        </div>
+      </AppLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="bg-white border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-text-primary">
-                {t('expenses')}
-              </h1>
-              <p className="text-text-secondary">
-                {hasSpecificExpenses 
-                  ? t('manage_expenses_desc') 
-                  : 'Datos del onboarding - Agrega gastos específicos para mayor detalle'
-                }
-              </p>
-            </div>
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              {t('add_expense')}
+    <AppLayout>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Gestión de Gastos</h1>
+            <p className="text-muted-foreground">Controla y categoriza tus gastos</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsCategoryModalOpen(true)}>
+              <Filter className="mr-2 h-4 w-4" />
+              Categorías
+            </Button>
+            <Button variant="outline" onClick={exportExpenses}>
+              <Download className="mr-2 h-4 w-4" />
+              Exportar
+            </Button>
+            <Button onClick={handleCreateExpense} disabled={isCreating}>
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar Gasto
             </Button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('total_expenses')}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Total Gastos</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                ${totalExpenses.toLocaleString()}
+                ${filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {hasSpecificExpenses ? `${expenses.length} gastos` : 'Del onboarding'}
-              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('average_expense')}
-              </CardTitle>
-              <TrendingDown className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                ${averageExpense.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {hasSpecificExpenses ? 'Por gasto' : 'Promedio estimado'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t('this_month')}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Promedio Diario</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${totalExpenses.toLocaleString()}
+                ${Math.round(filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0) / 30).toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Transacciones</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{filteredExpenses.length}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Categoría Principal</CardTitle>
+              <Filter className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm font-bold">
+                {expensesByCategory[0]?.category || 'N/A'}
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters - Only show for specific expenses */}
-        {hasSpecificExpenses && (
-          <ExpenseFilters
-            filters={{
-              category: selectedCategory,
-              dateFrom: dateFrom,
-              dateTo: dateTo
-            }}
-            onFiltersChange={(filters) => {
-              setSelectedCategory(filters.category)
-              setDateFrom(filters.dateFrom)
-              setDateTo(filters.dateTo)
-            }}
-          />
-        )}
-
-        {/* Data Source Indicator */}
-        {!hasSpecificExpenses && totalExpenses > 0 && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
-              <p className="text-blue-800 font-medium">
-                Mostrando datos del onboarding
-              </p>
-            </div>
-            <p className="text-blue-700 text-sm mt-1">
-              Agrega gastos específicos para obtener análisis más detallados y personalizados.
-            </p>
-          </div>
-        )}
+        {/* Filters */}
+        <ExpenseFilters
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+        />
 
         {/* Expenses List */}
-        <div className="bg-white rounded-lg border border-border overflow-hidden">
-          <div className="px-6 py-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-text-primary">
-              {t('recent_expenses')}
-            </h2>
-          </div>
-          
-          {filteredExpenses.length === 0 ? (
-            <div className="p-8 text-center">
-              <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-text-primary mb-2">
-                {totalExpenses > 0 ? 'Agrega gastos específicos' : t('no_expenses')}
-              </h3>
-              <p className="text-text-secondary mb-4">
-                {totalExpenses > 0 
-                  ? 'Tus datos del onboarding muestran gastos, pero agrega gastos específicos para mayor detalle'
-                  : t('no_expenses_desc')
-                }
-              </p>
-              <Button onClick={() => setIsModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t('add_first_expense')}
-              </Button>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {filteredExpenses.map((expense) => (
-                <div key={expense.id} className="p-4 hover:bg-muted/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-medium text-text-primary">
-                          {expense.description}
-                        </span>
-                        <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+        <Card>
+          <CardHeader>
+            <CardTitle>Historial de Gastos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {filteredExpenses.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  {expenses.length === 0 
+                    ? 'No has registrado gastos aún.' 
+                    : 'No hay gastos que coincidan con los filtros seleccionados.'
+                  }
+                </p>
+                <Button onClick={handleCreateExpense}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Agregar Primer Gasto
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredExpenses.map((expense) => (
+                  <div key={expense.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold">{expense.description}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(expense.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-red-600">
+                          ${expense.amount.toLocaleString()}
+                        </p>
+                        <Badge variant="secondary">
                           {expense.category}
-                        </span>
-                        {!hasSpecificExpenses && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                            Onboarding
-                          </span>
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-4">
+                      <div className="flex items-center gap-2">
+                        {expense.is_recurring && (
+                          <Badge variant="outline">Recurrente</Badge>
                         )}
                       </div>
-                      <p className="text-sm text-text-secondary">
-                        {new Date(expense.date).toLocaleDateString('es-ES', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-semibold text-red-600">
-                        -${Number(expense.amount).toLocaleString()}
-                      </span>
-                      {hasSpecificExpenses && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditExpense(expense)}
-                          >
-                            {t('edit')}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteExpense(expense)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            {t('delete')}
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleEditExpense(expense)}
+                          disabled={isUpdating}
+                        >
+                          Editar
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => handleDeleteExpense(expense)}
+                          disabled={isDeleting}
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Modals */}
+        <ExpenseModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveExpense}
+          expense={editingExpense}
+          isLoading={isCreating || isUpdating}
+        />
+
+        <CategoryManagement
+          isOpen={isCategoryModalOpen}
+          onClose={() => setIsCategoryModalOpen(false)}
+        />
       </div>
-
-      <ExpenseModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditingExpense(null)
-        }}
-        onSubmit={handleModalSubmit}
-        expense={editingExpense}
-        title={editingExpense ? t('edit_expense') : t('add_expense')}
-      />
-
-      <DeleteExpenseDialog
-        isOpen={!!deleteExpenseId}
-        onClose={() => {
-          setDeleteExpenseId(null)
-          setDeleteExpenseDescription('')
-        }}
-        onConfirm={handleDeleteConfirm}
-        expenseDescription={deleteExpenseDescription}
-      />
-    </div>
+    </AppLayout>
   )
 }
-
-export default Expenses

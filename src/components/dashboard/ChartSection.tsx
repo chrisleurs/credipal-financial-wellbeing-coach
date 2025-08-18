@@ -9,17 +9,17 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export const ChartSection = () => {
   const { expenses } = useExpenses();
-  const { data: financialData } = useConsolidatedFinancialData();
+  const { consolidatedData } = useConsolidatedFinancialData();
 
   // Process expense data for charts
   const expensesByCategory = React.useMemo(() => {
-    if (!financialData?.expenseCategories) return [];
+    if (!consolidatedData?.expenseCategories) return [];
     
-    return Object.entries(financialData.expenseCategories).map(([category, amount]) => ({
+    return Object.entries(consolidatedData.expenseCategories).map(([category, amount]) => ({
       name: category,
       value: amount,
     }));
-  }, [financialData?.expenseCategories]);
+  }, [consolidatedData?.expenseCategories]);
 
   // Get monthly trend data from actual expenses
   const monthlyTrend = React.useMemo(() => {

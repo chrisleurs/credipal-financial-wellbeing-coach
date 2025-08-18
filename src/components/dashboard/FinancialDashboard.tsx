@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 
 export const FinancialDashboard = () => {
-  const { data: financialData, isLoading, error } = useConsolidatedFinancialData()
+  const { consolidatedData, isLoading, error } = useConsolidatedFinancialData()
   const [activeSection, setActiveSection] = useState<'overview' | 'income' | 'expenses' | 'debts' | 'goals'>('overview')
 
   if (isLoading) {
@@ -50,7 +50,7 @@ export const FinancialDashboard = () => {
     )
   }
 
-  if (!financialData?.hasRealData) {
+  if (!consolidatedData?.hasRealData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-2xl mx-auto">
@@ -92,28 +92,28 @@ export const FinancialDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <MetricCard
                 title="Ingresos Mensuales"
-                value={formatCurrency(financialData.monthlyIncome)}
+                value={formatCurrency(consolidatedData.monthlyIncome)}
                 icon={DollarSign}
                 trendValue={{ direction: 'up', percentage: '12%' }}
                 className="bg-green-50 border-green-200"
               />
               <MetricCard
                 title="Gastos Mensuales"
-                value={formatCurrency(financialData.monthlyExpenses)}
+                value={formatCurrency(consolidatedData.monthlyExpenses)}
                 icon={CreditCard}
                 trendValue={{ direction: 'down', percentage: '3%' }}
                 className="bg-red-50 border-red-200"
               />
               <MetricCard
                 title="Capacidad de Ahorro"
-                value={formatCurrency(financialData.savingsCapacity)}
+                value={formatCurrency(consolidatedData.savingsCapacity)}
                 icon={TrendingUp}
                 trendValue={{ direction: 'up', percentage: '8%' }}
                 className="bg-blue-50 border-blue-200"
               />
               <MetricCard
                 title="Total de Deudas"
-                value={formatCurrency(financialData.totalDebts)}
+                value={formatCurrency(consolidatedData.totalDebtBalance)}
                 icon={Target}
                 trendValue={{ direction: 'down', percentage: '15%' }}
                 className="bg-orange-50 border-orange-200"
@@ -130,28 +130,28 @@ export const FinancialDashboard = () => {
                   <div className="flex justify-between items-center">
                     <span>Ingresos totales</span>
                     <span className="font-semibold text-green-600">
-                      +{formatCurrency(financialData.monthlyIncome)}
+                      +{formatCurrency(consolidatedData.monthlyIncome)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Gastos totales</span>
                     <span className="font-semibold text-red-600">
-                      -{formatCurrency(financialData.monthlyExpenses)}
+                      -{formatCurrency(consolidatedData.monthlyExpenses)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Pagos de deudas</span>
                     <span className="font-semibold text-orange-600">
-                      -{formatCurrency(financialData.monthlyDebtPayments)}
+                      -{formatCurrency(consolidatedData.totalMonthlyDebtPayments)}
                     </span>
                   </div>
                   <div className="border-t pt-4">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Balance mensual</span>
                       <span className={`font-bold ${
-                        financialData.savingsCapacity >= 0 ? 'text-green-600' : 'text-red-600'
+                        consolidatedData.savingsCapacity >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {formatCurrency(financialData.savingsCapacity)}
+                        {formatCurrency(consolidatedData.savingsCapacity)}
                       </span>
                     </div>
                   </div>
