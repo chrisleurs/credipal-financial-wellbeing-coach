@@ -1,65 +1,74 @@
 
 /**
- * Expense Domain Types - Unified expense management
+ * Expense Domain Types - Expense tracking and budgeting
  */
 
-import { Money } from '../../core'
+import { Money, Currency } from '../../core/money'
+import { DateRange, RecurrencePattern } from '../../core/dates'
 
 export type ExpenseCategory = 
-  | 'housing'
-  | 'food'
+  | 'housing' 
+  | 'food' 
   | 'transportation' 
   | 'utilities'
-  | 'healthcare'
-  | 'entertainment'
+  | 'healthcare' 
+  | 'entertainment' 
+  | 'shopping' 
   | 'education'
-  | 'personal'
-  | 'debt'
+  | 'personal_care' 
+  | 'travel' 
+  | 'debt_payments' 
   | 'savings'
+  | 'insurance' 
+  | 'taxes' 
   | 'other'
 
 export interface Expense {
   id: string
   userId: string
   category: ExpenseCategory
-  subcategory?: string
   amount: Money
-  date: string
-  description?: string
+  description: string
+  date: string // ISO date string
   isRecurring: boolean
+  recurrence?: RecurrencePattern
   tags?: string[]
   createdAt: string
   updatedAt: string
 }
 
 export interface ExpensesByCategory {
-  [key in ExpenseCategory]?: Money
-}
-
-export interface ExpenseSummary {
-  totalMonthly: Money
-  byCategory: ExpensesByCategory
-  recurringExpenses: Expense[]
-  averageDaily: Money
+  [K in ExpenseCategory]: Money
 }
 
 export interface Budget {
   id: string
   userId: string
   category: ExpenseCategory
-  budgetAmount: Money
+  budgetedAmount: Money
   spentAmount: Money
-  remainingAmount: Money
-  period: 'monthly' | 'weekly'
-  isExceeded: boolean
+  period: DateRange
+  alertThreshold?: number // percentage (e.g., 80 for 80%)
   createdAt: string
   updatedAt: string
 }
 
-// Utility types for onboarding
-export interface OnboardingExpense {
-  category: ExpenseCategory
-  amount: number
-  description?: string
-  isRecurring?: boolean
+export interface ExpenseSummary {
+  totalMonthlyExpenses: Money
+  byCategory: ExpensesByCategory
+  budgetStatus: {
+    totalBudget: Money
+    totalSpent: Money
+    remainingBudget: Money
+    categoriesOverBudget: ExpenseCategory[]
+  }
+  trends: {
+    monthOverMonth: number // percentage change
+    yearOverYear: number // percentage change
+    topCategories: Array<{
+      category: ExpenseCategory
+      amount: Money
+      percentage: number
+    }>
+  }
 }

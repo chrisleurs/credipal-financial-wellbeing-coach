@@ -3,12 +3,12 @@
  * Consolidated Financial Data - Single source of truth
  */
 
-import { Money } from '../../core'
-import { IncomeSource, IncomeSummary } from '../income'
-import { Expense, ExpensesByCategory, ExpenseSummary } from '../expenses'
-import { Debt, DebtSummary } from '../debts'
-import { FinancialGoal, GoalsSummary } from '../goals'
-import { AIFinancialPlan } from '../plans'
+import { Money } from '../../core/money'
+import { IncomeSource, IncomeSummary } from '../income/income'
+import { Expense, ExpensesByCategory, ExpenseSummary } from '../expenses/expense'
+import { Debt, DebtSummary } from '../debts/debt'
+import { FinancialGoal, GoalsSummary } from '../goals/goal'
+import { AIFinancialPlan } from '../plans/plan'
 
 export interface ConsolidatedFinancialData {
   // Core financial data

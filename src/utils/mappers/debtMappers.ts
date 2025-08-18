@@ -3,8 +3,8 @@
  * Debt Mappers - Bidirectional conversion between domain and database types
  */
 
-import { Debt, OnboardingDebt } from '../../types/domains/debts'
-import { createMoney } from '../../types/core'
+import { Debt, OnboardingDebt } from '../../types/domains/debts/debt'
+import { createMoney } from '../../types/core/money'
 
 // Database type (from Supabase)
 type DatabaseDebt = {

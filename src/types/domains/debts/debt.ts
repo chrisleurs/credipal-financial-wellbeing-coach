@@ -3,11 +3,12 @@
  * Debt Domain Types - Unified debt management (FINAL VERSION)
  */
 
-import { Money } from '../../core'
+import { Money } from '../../core/money'
+import { DateRange, RecurrencePattern } from '../../core/dates'
 
-export type DebtStatus = 'active' | 'paid' | 'delinquent' | 'paused'
+export type DebtStatus = 'active' | 'paid' | 'delinquent'
 export type DebtPriority = 'high' | 'medium' | 'low'
-export type DebtStrategy = 'snowball' | 'avalanche' | 'minimum'
+export type DebtStrategyType = 'snowball' | 'avalanche' | 'minimum'
 
 export interface Debt {
   id: string
@@ -55,7 +56,7 @@ export interface DebtSummary {
 export interface DebtStrategy {
   id: string
   userId: string
-  strategyType: DebtStrategy
+  strategyType: DebtStrategyType
   prioritizedDebts: string[] // Array of debt IDs in order
   projectedPayoffDate: string
   totalInterestSaved: Money

@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Debt, DebtPayment, TypeConverters } from '@/types/unified'
+import { Debt, DebtPayment } from '@/types/domains/debts/debt'
+import { fromDatabaseDebt, toDatabaseDebt } from '@/utils/mappers/debtMappers'
 
 export const useDebts = () => {
   const { user } = useAuth()
@@ -29,7 +30,7 @@ export const useDebts = () => {
       if (error) throw error
       
       // Convert to unified type
-      return (data || []).map(TypeConverters.convertDatabaseDebtToUnified)
+      return (data || []).map(fromDatabaseDebt)
     },
     enabled: !!user?.id,
   })
@@ -38,26 +39,25 @@ export const useDebts = () => {
 
   // Create debt mutation
   const createDebtMutation = useMutation({
-    mutationFn: async (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (debtData: Omit<Debt, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
       if (!user?.id) throw new Error('User not authenticated')
+      
+      const dbData = toDatabaseDebt({
+        ...debtData,
+        userId: user.id,
+        id: '',
+        createdAt: '',
+        updatedAt: ''
+      })
       
       const { data, error } = await supabase
         .from('debts')
-        .insert({
-          user_id: user.id,
-          creditor: debtData.creditor,
-          original_amount: debtData.original_amount,
-          current_balance: debtData.current_balance,
-          monthly_payment: debtData.monthly_payment,
-          interest_rate: debtData.interest_rate,
-          due_date: debtData.due_date,
-          status: debtData.status || 'active'
-        })
+        .insert(dbData)
         .select()
         .single()
       
       if (error) throw error
-      return TypeConverters.convertDatabaseDebtToUnified(data)
+      return fromDatabaseDebt(data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
@@ -79,23 +79,30 @@ export const useDebts = () => {
   // Update debt mutation
   const updateDebtMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Debt> & { id: string }) => {
+      const dbUpdates = toDatabaseDebt({
+        id,
+        userId: user?.id || '',
+        creditor: updates.creditor || '',
+        originalAmount: updates.originalAmount || { amount: 0, currency: 'MXN' },
+        currentBalance: updates.currentBalance || { amount: 0, currency: 'MXN' },
+        monthlyPayment: updates.monthlyPayment || { amount: 0, currency: 'MXN' },
+        interestRate: updates.interestRate || 0,
+        dueDate: updates.dueDate || '',
+        status: updates.status || 'active',
+        priority: updates.priority || 'medium',
+        createdAt: '',
+        updatedAt: ''
+      })
+
       const { data, error } = await supabase
         .from('debts')
-        .update({
-          creditor: updates.creditor,
-          original_amount: updates.original_amount,
-          current_balance: updates.current_balance,
-          monthly_payment: updates.monthly_payment,
-          interest_rate: updates.interest_rate,
-          due_date: updates.due_date,
-          status: updates.status
-        })
+        .update(dbUpdates)
         .eq('id', id)
         .select()
         .single()
       
       if (error) throw error
-      return TypeConverters.convertDatabaseDebtToUnified(data)
+      return fromDatabaseDebt(data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
@@ -152,7 +159,7 @@ export const useDebts = () => {
       const debt = debts.find(d => d.id === paymentData.debt_id)
       if (!debt) throw new Error('Debt not found')
       
-      const newBalance = Math.max(0, debt.current_balance - paymentData.amount)
+      const newBalance = Math.max(0, debt.currentBalance.amount - paymentData.amount)
       
       const { data, error } = await supabase
         .from('debts')
@@ -162,7 +169,7 @@ export const useDebts = () => {
         .single()
       
       if (error) throw error
-      return TypeConverters.convertDatabaseDebtToUnified(data)
+      return fromDatabaseDebt(data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
@@ -182,8 +189,8 @@ export const useDebts = () => {
   })
 
   const activeDebts = debts.filter(debt => debt.status === 'active')
-  const totalDebt = activeDebts.reduce((sum, debt) => sum + debt.current_balance, 0)
-  const totalMonthlyPayments = activeDebts.reduce((sum, debt) => sum + debt.monthly_payment, 0)
+  const totalDebt = activeDebts.reduce((sum, debt) => sum + debt.currentBalance.amount, 0)
+  const totalMonthlyPayments = activeDebts.reduce((sum, debt) => sum + debt.monthlyPayment.amount, 0)
 
   return {
     debts,

@@ -1,13 +1,14 @@
 
 /**
- * Goals Domain Types - Financial goals and targets
+ * Goals Domain Types - Financial goals and milestones
  */
 
-import { Money } from '../../core'
+import { Money } from '../../core/money'
+import { DateRange } from '../../core/dates'
 
-export type GoalPriority = 'high' | 'medium' | 'low'
-export type GoalStatus = 'active' | 'completed' | 'paused' | 'cancelled'
 export type GoalType = 'savings' | 'debt_payoff' | 'investment' | 'purchase' | 'emergency_fund'
+export type GoalStatus = 'active' | 'completed' | 'paused' | 'cancelled'
+export type GoalPriority = 'high' | 'medium' | 'low'
 
 export interface FinancialGoal {
   id: string
@@ -17,10 +18,9 @@ export interface FinancialGoal {
   type: GoalType
   targetAmount: Money
   currentAmount: Money
-  deadline?: string
-  priority: GoalPriority
+  targetDate: string
   status: GoalStatus
-  monthlyContribution?: Money
+  priority: GoalPriority
   createdAt: string
   updatedAt: string
 }
@@ -33,21 +33,26 @@ export interface GoalMilestone {
   targetDate: string
   isCompleted: boolean
   completedAt?: string
+  createdAt: string
 }
 
-export interface GoalProjection {
+export interface GoalProgress {
   goal: FinancialGoal
-  monthsToComplete: number
-  monthlyContributionNeeded: Money
+  progressPercentage: number
+  remainingAmount: Money
+  timeRemaining: number // days
+  onTrack: boolean
   projectedCompletionDate: string
-  probabilityOfSuccess: number
+  requiredMonthlySavings: Money
 }
 
 export interface GoalsSummary {
-  activeGoals: FinancialGoal[]
-  completedGoals: FinancialGoal[]
   totalTargetAmount: Money
   totalCurrentAmount: Money
-  monthlyContributionsNeeded: Money
-  projections: GoalProjection[]
+  overallProgress: number
+  activeGoals: number
+  completedGoals: number
+  onTrackGoals: number
+  behindScheduleGoals: number
+  nextMilestones: GoalMilestone[]
 }
