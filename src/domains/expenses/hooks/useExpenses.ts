@@ -31,16 +31,16 @@ export const useExpenses = () => {
       // Convert to domain type
       return (data || []).map(dbExpense => ({
         id: dbExpense.id,
-        userId: dbExpense.user_id,
-        amount: { amount: dbExpense.amount, currency: 'MXN' as const },
+        user_id: dbExpense.user_id,
+        amount: dbExpense.amount,
         category: dbExpense.category,
         subcategory: dbExpense.subcategory,
         description: dbExpense.description || '',
         date: dbExpense.date,
-        isRecurring: dbExpense.is_recurring || false,
+        is_recurring: dbExpense.is_recurring || false,
         tags: [], // Empty array since tags column doesn't exist in DB
-        createdAt: dbExpense.created_at,
-        updatedAt: dbExpense.updated_at
+        created_at: dbExpense.created_at,
+        updated_at: dbExpense.updated_at
       })) as Expense[]
     },
     enabled: !!user?.id,
@@ -55,12 +55,12 @@ export const useExpenses = () => {
         .from('expenses')
         .insert({
           user_id: user.id,
-          amount: expenseData.amount.amount,
+          amount: expenseData.amount,
           category: expenseData.category,
           subcategory: expenseData.subcategory,
           description: expenseData.description,
           date: expenseData.date,
-          is_recurring: expenseData.isRecurring
+          is_recurring: expenseData.is_recurring
         })
         .select()
         .single()
@@ -91,12 +91,12 @@ export const useExpenses = () => {
       const { data, error } = await supabase
         .from('expenses')
         .update({
-          amount: updates.amount?.amount,
+          amount: updates.amount,
           category: updates.category,
           subcategory: updates.subcategory,
           description: updates.description,
           date: updates.date,
-          is_recurring: updates.isRecurring
+          is_recurring: updates.is_recurring
         })
         .eq('id', id)
         .select()
@@ -150,8 +150,8 @@ export const useExpenses = () => {
   })
 
   // Calculate totals
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount.amount, 0)
-  const recurringExpenses = expenses.filter(expense => expense.isRecurring)
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const recurringExpenses = expenses.filter(expense => expense.is_recurring)
 
   return {
     expenses,

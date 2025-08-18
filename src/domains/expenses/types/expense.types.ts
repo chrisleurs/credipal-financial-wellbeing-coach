@@ -14,25 +14,25 @@ export type ExpenseCategoryType =
 
 export interface Expense {
   id: string
-  userId: string
-  amount: Money
+  user_id: string
+  amount: number
   category: ExpenseCategoryType
   subcategory?: string
   description: string
   date: string
-  isRecurring: boolean
+  is_recurring: boolean
   tags?: string[]
-  createdAt: string
-  updatedAt: string
+  created_at: string
+  updated_at: string
 }
 
 export interface CreateExpenseData {
-  amount: Money
+  amount: number
   category: ExpenseCategoryType
   subcategory?: string
   description?: string
   date: string
-  isRecurring?: boolean
+  is_recurring?: boolean
   tags?: string[]
 }
 

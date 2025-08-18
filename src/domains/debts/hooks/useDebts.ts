@@ -4,16 +4,15 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { Debt, DebtPayment } from '../types/debt.types'
-import { fromDatabaseDebt, toDatabaseDebt } from '../mappers/debt.mappers'
 
 export const useDebts = () => {
   const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // Fetch debts with unified type conversion
+  // Fetch debts
   const {
-    data: rawDebts = [],
+    data: debts = [],
     isLoading,
     error
   } = useQuery({
@@ -29,42 +28,83 @@ export const useDebts = () => {
       
       if (error) throw error
       
-      // Convert to unified type
-      return (data || []).map(fromDatabaseDebt)
+      return (data || []).map(dbDebt => ({
+        id: dbDebt.id,
+        user_id: dbDebt.user_id,
+        creditor: dbDebt.creditor,
+        original_amount: dbDebt.original_amount,
+        current_balance: dbDebt.current_balance,
+        monthly_payment: dbDebt.monthly_payment,
+        interest_rate: dbDebt.interest_rate,
+        due_date: dbDebt.due_date,
+        status: dbDebt.status,
+        priority: 'medium',
+        description: dbDebt.description,
+        created_at: dbDebt.created_at,
+        updated_at: dbDebt.updated_at
+      })) as Debt[]
     },
     enabled: !!user?.id,
   })
 
-  const debts: Debt[] = rawDebts
+  // Fetch payments
+  const {
+    data: payments = [],
+  } = useQuery({
+    queryKey: ['debt-payments', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated')
+      
+      const { data, error } = await supabase
+        .from('debt_payments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('payment_date', { ascending: false })
+      
+      if (error) throw error
+      
+      return (data || []).map(payment => ({
+        id: payment.id,
+        debt_id: payment.debt_id,
+        user_id: payment.user_id,
+        amount: payment.amount,
+        payment_date: payment.payment_date,
+        notes: payment.notes,
+        created_at: payment.created_at
+      })) as DebtPayment[]
+    },
+    enabled: !!user?.id,
+  })
 
   // Create debt mutation
   const createDebtMutation = useMutation({
-    mutationFn: async (debtData: Omit<Debt, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    mutationFn: async (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
       if (!user?.id) throw new Error('User not authenticated')
-      
-      const dbData = toDatabaseDebt({
-        ...debtData,
-        userId: user.id,
-        id: '',
-        createdAt: '',
-        updatedAt: ''
-      })
       
       const { data, error } = await supabase
         .from('debts')
-        .insert(dbData)
+        .insert({
+          user_id: user.id,
+          creditor: debtData.creditor,
+          original_amount: debtData.original_amount,
+          current_balance: debtData.current_balance,
+          monthly_payment: debtData.monthly_payment,
+          interest_rate: debtData.interest_rate,
+          due_date: debtData.due_date,
+          status: debtData.status,
+          description: debtData.description
+        })
         .select()
         .single()
       
       if (error) throw error
-      return fromDatabaseDebt(data)
+      return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Deuda agregada",
-        description: "La deuda se ha registrado exitosamente.",
+        description: "La deuda se ha agregado exitosamente.",
       })
     },
     onError: () => {
@@ -78,35 +118,28 @@ export const useDebts = () => {
 
   // Update debt mutation
   const updateDebtMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Debt> & { id: string }) => {
-      const dbUpdates = toDatabaseDebt({
-        id,
-        userId: user?.id || '',
-        creditor: updates.creditor || '',
-        originalAmount: updates.originalAmount || { amount: 0, currency: 'MXN' },
-        currentBalance: updates.currentBalance || { amount: 0, currency: 'MXN' },
-        monthlyPayment: updates.monthlyPayment || { amount: 0, currency: 'MXN' },
-        interestRate: updates.interestRate || 0,
-        dueDate: updates.dueDate || '',
-        status: updates.status || 'active',
-        priority: updates.priority || 'medium',
-        createdAt: '',
-        updatedAt: ''
-      })
-
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
       const { data, error } = await supabase
         .from('debts')
-        .update(dbUpdates)
+        .update({
+          creditor: updates.creditor,
+          original_amount: updates.original_amount,
+          current_balance: updates.current_balance,
+          monthly_payment: updates.monthly_payment,
+          interest_rate: updates.interest_rate,
+          due_date: updates.due_date,
+          status: updates.status,
+          description: updates.description
+        })
         .eq('id', id)
         .select()
         .single()
       
       if (error) throw error
-      return fromDatabaseDebt(data)
+      return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Deuda actualizada",
         description: "Los cambios se han guardado exitosamente.",
@@ -133,7 +166,6 @@ export const useDebts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Deuda eliminada",
         description: "La deuda se ha eliminado exitosamente.",
@@ -156,24 +188,26 @@ export const useDebts = () => {
       payment_date: string
       notes?: string
     }) => {
-      const debt = debts.find(d => d.id === paymentData.debt_id)
-      if (!debt) throw new Error('Debt not found')
-      
-      const newBalance = Math.max(0, debt.currentBalance.amount - paymentData.amount)
+      if (!user?.id) throw new Error('User not authenticated')
       
       const { data, error } = await supabase
-        .from('debts')
-        .update({ current_balance: newBalance })
-        .eq('id', paymentData.debt_id)
+        .from('debt_payments')
+        .insert({
+          user_id: user.id,
+          debt_id: paymentData.debt_id,
+          amount: paymentData.amount,
+          payment_date: paymentData.payment_date,
+          notes: paymentData.notes
+        })
         .select()
         .single()
       
       if (error) throw error
-      return fromDatabaseDebt(data)
+      return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['debt-payments'] })
       toast({
         title: "Pago registrado",
         description: "El pago se ha registrado exitosamente.",
@@ -188,18 +222,16 @@ export const useDebts = () => {
     },
   })
 
-  const activeDebts = debts.filter(debt => debt.status === 'active')
-  const totalDebt = activeDebts.reduce((sum, debt) => sum + debt.currentBalance.amount, 0)
-  const totalMonthlyPayments = activeDebts.reduce((sum, debt) => sum + debt.monthlyPayment.amount, 0)
+  // Calculate totals
+  const totalDebt = debts.reduce((sum, debt) => sum + debt.current_balance, 0)
+  const totalMonthlyPayments = debts.reduce((sum, debt) => sum + debt.monthly_payment, 0)
 
   return {
     debts,
-    activeDebts,
+    payments,
     totalDebt,
     totalMonthlyPayments,
-    payments: [] as DebtPayment[], // Mock empty payments array with proper type
     isLoading,
-    isLoadingDebts: isLoading,
     error,
     createDebt: createDebtMutation.mutate,
     updateDebt: updateDebtMutation.mutate,

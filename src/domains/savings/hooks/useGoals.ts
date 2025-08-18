@@ -31,16 +31,16 @@ export const useGoals = () => {
       // Convert to domain type
       return (data || []).map(dbGoal => ({
         id: dbGoal.id,
-        userId: dbGoal.user_id,
+        user_id: dbGoal.user_id,
         title: dbGoal.title,
         description: dbGoal.description,
-        targetAmount: { amount: dbGoal.target_amount || 0, currency: 'MXN' as const },
-        currentAmount: { amount: dbGoal.current_amount || 0, currency: 'MXN' as const },
-        targetDate: dbGoal.deadline, // Map deadline to targetDate
+        target_amount: dbGoal.target_amount || 0,
+        current_amount: dbGoal.current_amount || 0,
+        deadline: dbGoal.deadline,
         priority: (dbGoal.priority || 'medium') as 'high' | 'medium' | 'low',
         status: dbGoal.status as SavingsGoalStatus,
-        createdAt: dbGoal.created_at,
-        updatedAt: dbGoal.updated_at
+        created_at: dbGoal.created_at,
+        updated_at: dbGoal.updated_at
       })) as SavingsGoal[]
     },
     enabled: !!user?.id,
@@ -57,9 +57,9 @@ export const useGoals = () => {
           user_id: user.id,
           title: goalData.title,
           description: goalData.description,
-          target_amount: goalData.targetAmount.amount,
-          current_amount: goalData.currentAmount?.amount || 0,
-          deadline: goalData.targetDate, // Map targetDate to deadline
+          target_amount: goalData.target_amount,
+          current_amount: goalData.current_amount || 0,
+          deadline: goalData.deadline,
           priority: goalData.priority || 'medium',
           status: goalData.status || 'active'
         })
@@ -93,9 +93,9 @@ export const useGoals = () => {
         .update({
           title: updates.title,
           description: updates.description,
-          target_amount: updates.targetAmount?.amount,
-          current_amount: updates.currentAmount?.amount,
-          deadline: updates.targetDate,
+          target_amount: updates.target_amount,
+          current_amount: updates.current_amount,
+          deadline: updates.deadline,
           priority: updates.priority,
           status: updates.status
         })

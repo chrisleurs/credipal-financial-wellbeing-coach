@@ -22,16 +22,16 @@ export const useConsolidatedProfile = () => {
       // Calculate expense categories
       const expenseCategories: Record<string, number> = {}
       expenses.forEach(expense => {
-        expenseCategories[expense.category] = (expenseCategories[expense.category] || 0) + expense.amount.amount
+        expenseCategories[expense.category] = (expenseCategories[expense.category] || 0) + expense.amount
       })
 
       // Map debts to legacy format
       const legacyDebts = debts.map(debt => ({
         id: debt.id,
         creditor: debt.creditor,
-        current_balance: debt.currentBalance.amount,
-        monthly_payment: debt.monthlyPayment.amount,
-        annual_interest_rate: debt.interestRate
+        current_balance: debt.current_balance,
+        monthly_payment: debt.monthly_payment,
+        annual_interest_rate: debt.interest_rate
       }))
 
       // Calculate financial goals

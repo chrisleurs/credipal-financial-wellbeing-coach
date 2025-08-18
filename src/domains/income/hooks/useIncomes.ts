@@ -31,14 +31,14 @@ export const useIncomes = () => {
       // Convert to domain type
       return (data || []).map(dbIncome => ({
         id: dbIncome.id,
-        userId: dbIncome.user_id,
+        user_id: dbIncome.user_id,
         source: dbIncome.source,
-        amount: { amount: dbIncome.amount, currency: 'MXN' as const },
+        amount: dbIncome.amount,
         frequency: dbIncome.frequency as 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly',
-        isActive: dbIncome.is_active,
+        is_active: dbIncome.is_active,
         description: dbIncome.description || '',
-        createdAt: dbIncome.created_at,
-        updatedAt: dbIncome.updated_at
+        created_at: dbIncome.created_at,
+        updated_at: dbIncome.updated_at
       })) as Income[]
     },
     enabled: !!user?.id,
@@ -54,9 +54,10 @@ export const useIncomes = () => {
         .insert({
           user_id: user.id,
           source: incomeData.source,
-          amount: incomeData.amount.amount,
+          amount: incomeData.amount,
           frequency: incomeData.frequency,
-          is_active: incomeData.isActive ?? true
+          is_active: incomeData.is_active ?? true,
+          description: incomeData.description
         })
         .select()
         .single()
@@ -88,9 +89,10 @@ export const useIncomes = () => {
         .from('incomes')
         .update({
           source: updates.source,
-          amount: updates.amount?.amount,
+          amount: updates.amount,
           frequency: updates.frequency,
-          is_active: updates.isActive
+          is_active: updates.is_active,
+          description: updates.description
         })
         .eq('id', id)
         .select()
@@ -145,9 +147,9 @@ export const useIncomes = () => {
 
   // Calculate totals
   const totalMonthlyIncome = incomes.reduce((sum, income) => {
-    if (!income.isActive) return sum
+    if (!income.is_active) return sum
     
-    const amount = income.amount.amount
+    const amount = income.amount
     switch (income.frequency) {
       case 'daily':
         return sum + (amount * 30)

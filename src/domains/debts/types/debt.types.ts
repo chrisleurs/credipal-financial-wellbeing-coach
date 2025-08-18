@@ -10,21 +10,21 @@ export type DebtStatus = 'active' | 'paid' | 'delinquent'
 export type DebtPriority = 'high' | 'medium' | 'low'
 export type DebtStrategyType = 'snowball' | 'avalanche' | 'minimum'
 
-// Unified domain type
+// Unified domain type (using snake_case to match components)
 export interface Debt {
   id: string
-  userId: string
+  user_id: string
   creditor: string
-  originalAmount: Money
-  currentBalance: Money
-  monthlyPayment: Money
-  interestRate: number // Annual percentage rate
-  dueDate: string // ISO date string
+  original_amount: number
+  current_balance: number
+  monthly_payment: number
+  interest_rate: number // Annual percentage rate
+  due_date?: string // ISO date string
   status: DebtStatus
-  priority: DebtPriority
+  priority?: DebtPriority
   description?: string
-  createdAt: string
-  updatedAt: string
+  created_at: string
+  updated_at: string
 }
 
 // Database type (snake_case)
@@ -40,18 +40,18 @@ export interface DatabaseDebt extends UserScopedRecord {
 
 export interface DebtPayment {
   id: string
-  debtId: string
-  userId: string
-  amount: Money
-  paymentDate: string
+  debt_id: string
+  user_id: string
+  amount: number
+  payment_date: string
   notes?: string
-  createdAt: string
+  created_at: string
 }
 
 export interface DebtSummary {
-  totalDebt: Money
-  monthlyPayments: Money
-  totalInterestPaid: Money
+  totalDebt: number
+  monthlyPayments: number
+  totalInterestPaid: number
   averageInterestRate: number
   payoffProjection: Date
   debts: Debt[]

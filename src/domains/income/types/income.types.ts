@@ -3,21 +3,21 @@ import { Money, Status, FrequencyType } from '@/shared/types/core.types'
 
 export interface Income {
   id: string
-  userId: string
-  source: string // Changed from source_name to match domain pattern
-  amount: Money
+  user_id: string
+  source: string
+  amount: number
   frequency: FrequencyType
-  isActive: boolean
+  is_active: boolean
   description?: string
-  createdAt: string
-  updatedAt: string
+  created_at: string
+  updated_at: string
 }
 
 export interface CreateIncomeData {
   source: string
-  amount: Money
+  amount: number
   frequency: FrequencyType
-  isActive?: boolean
+  is_active?: boolean
   description?: string
 }
 
