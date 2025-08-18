@@ -116,7 +116,7 @@ export default function MigrationManager() {
     try {
       // Use raw SQL query since the table may not be in types
       const { data, error } = await supabase
-        .from('migration_status')
+        .from('migration_status' as any)
         .select('*')
         .order('created_at', { ascending: false })
       

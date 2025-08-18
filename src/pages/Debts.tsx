@@ -80,6 +80,21 @@ export default function Debts() {
     setIsPaymentModalOpen(true)
   }
 
+  // Convert database Debt to the expected debt type for PaymentModal and ScenarioAnalysis
+  const convertToDebtType = (debt: Debt) => ({
+    id: debt.id,
+    user_id: debt.user_id,
+    creditor_name: debt.creditor,
+    total_amount: debt.original_amount,
+    current_balance: debt.current_balance,
+    annual_interest_rate: debt.interest_rate,
+    minimum_payment: debt.monthly_payment,
+    due_day: debt.due_date ? new Date(debt.due_date).getDate() : 1,
+    description: '',
+    created_at: debt.created_at,
+    updated_at: debt.updated_at
+  })
+
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white">
@@ -372,13 +387,13 @@ export default function Debts() {
           setIsPaymentModalOpen(false)
           setSelectedDebt(null)
         }}
-        debt={selectedDebt}
+        debt={selectedDebt ? convertToDebtType(selectedDebt) : null}
       />
 
       <ScenarioAnalysis
         isOpen={isScenarioModalOpen}
         onClose={() => setIsScenarioModalOpen(false)}
-        debt={activeDebts[0] || null}
+        debt={activeDebts[0] ? convertToDebtType(activeDebts[0]) : null}
       />
     </div>
   )
