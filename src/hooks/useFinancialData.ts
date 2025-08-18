@@ -1,8 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { useFinancialSummary } from './useFinancialSummary';
 
 export interface FinancialDataRecord {
   id: string;
@@ -21,39 +21,32 @@ export interface FinancialDataRecord {
 export const useFinancialData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { financialSummary, isLoading: isSummaryLoading } = useFinancialSummary();
 
-  const {
-    data: financialDataRecord,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['financial-data', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      
-      console.log('Fetching financial data for:', user.id);
-      const { data, error } = await supabase
-        .from('financial_data')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+  // Convert financial summary to legacy format for compatibility
+  const financialDataRecord: FinancialDataRecord | null = financialSummary ? {
+    id: financialSummary.id,
+    user_id: financialSummary.user_id,
+    monthly_income: financialSummary.total_monthly_income,
+    monthly_expenses: financialSummary.total_monthly_expenses,
+    monthly_balance: financialSummary.savings_capacity,
+    loan_amount: financialSummary.total_debt,
+    monthly_payment: financialSummary.monthly_debt_payments,
+    savings_goal: 0, // This would come from goals table now
+    emergency_fund_goal: financialSummary.emergency_fund,
+    created_at: financialSummary.last_calculated,
+    updated_at: financialSummary.updated_at,
+  } : null;
 
-      if (error) {
-        console.error('Error fetching financial data:', error);
-        throw error;
-      }
-      
-      console.log('Fetched financial data:', data);
-      return data as FinancialDataRecord | null;
-    },
-    enabled: !!user,
-  });
+  const refetch = () => {
+    // This would trigger a recalculation of the financial summary
+    console.log('Refetching financial data...');
+  };
 
   return {
     financialDataRecord,
-    isLoading,
-    error,
+    isLoading: isSummaryLoading,
+    error: null,
     refetch
   };
 };

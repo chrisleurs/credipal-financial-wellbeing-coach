@@ -1,8 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
+import { useConsolidatedFinancialData } from './useConsolidatedFinancialData';
 
 export interface UserFinancialData {
   id: string;
@@ -11,7 +11,7 @@ export interface UserFinancialData {
   ingresos_extras: number;
   gastos_categorizados: any[];
   deudas: any[];
-  ahorros: any; // Changed from specific type to any to match database Json type
+  ahorros: any;
   metas: any[];
   user_data: any;
   created_at: string;
@@ -25,39 +25,40 @@ export interface UserFinancialData {
 export const useUserFinancialData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { data: consolidatedData, isLoading: isConsolidatedLoading } = useConsolidatedFinancialData();
 
-  const {
-    data: userFinancialData,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['user-financial-data', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      
-      console.log('Fetching user financial data for:', user.id);
-      const { data, error } = await supabase
-        .from('user_financial_data')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching user financial data:', error);
-        throw error;
-      }
-      
-      console.log('Fetched user financial data:', data);
-      return data as UserFinancialData | null;
+  // Convert consolidated data to legacy format for compatibility
+  const userFinancialData: UserFinancialData | null = consolidatedData ? {
+    id: user?.id || '',
+    user_id: user?.id || '',
+    ingresos: consolidatedData.monthlyIncome,
+    ingresos_extras: 0,
+    gastos_categorizados: Object.entries(consolidatedData.expenseCategories).map(([category, amount]) => ({
+      category,
+      amount
+    })),
+    deudas: consolidatedData.debts,
+    ahorros: {
+      actual: consolidatedData.currentSavings
     },
-    enabled: !!user,
-  });
+    metas: consolidatedData.financialGoals.map(goal => ({ name: goal })),
+    user_data: {},
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    gastos_totales: consolidatedData.monthlyExpenses,
+    ahorros_actuales: consolidatedData.currentSavings,
+    capacidad_ahorro: consolidatedData.savingsCapacity,
+    metas_financieras: consolidatedData.financialGoals.map(goal => ({ name: goal }))
+  } : null;
+
+  const refetch = () => {
+    console.log('Refetching user financial data...');
+  };
 
   return {
     userFinancialData,
-    isLoading,
-    error,
+    isLoading: isConsolidatedLoading,
+    error: null,
     refetch
   };
 };

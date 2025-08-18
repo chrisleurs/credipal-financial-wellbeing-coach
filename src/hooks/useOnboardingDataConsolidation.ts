@@ -19,108 +19,73 @@ export const useOnboardingDataConsolidation = () => {
       console.log('📊 Consolidating data for user:', user.id)
       console.log('💾 Financial data to save:', financialData)
       
-      // 1. Guardar en user_financial_data
-      const consolidatedData = {
-        user_id: user.id,
-        ingresos: financialData.monthlyIncome || 0,
-        ingresos_extras: financialData.extraIncome || 0,
-        gastos_totales: financialData.monthlyExpenses || 0,
-        gastos_categorizados: Object.entries(financialData.expenseCategories || {}).map(([category, amount]) => ({
+      // 1. Save income sources
+      if (financialData.monthlyIncome > 0) {
+        await supabase
+          .from('income_sources')
+          .insert({
+            user_id: user.id,
+            source_name: 'Ingresos principales',
+            amount: financialData.monthlyIncome,
+            frequency: 'monthly',
+            is_active: true
+          })
+      }
+
+      // 2. Save expenses
+      if (financialData.expenseCategories) {
+        const expensesToInsert = Object.entries(financialData.expenseCategories).map(([category, amount]) => ({
+          user_id: user.id,
           category: category,
           subcategory: category,
-          amount: amount
-        })) as any, // Convert to Json type
-        deudas: (financialData.debts || []).map(debt => ({
-          id: debt.id,
-          name: debt.name,
-          amount: debt.amount,
-          monthlyPayment: debt.monthlyPayment,
-          paymentDueDate: debt.paymentDueDate,
-          termInMonths: debt.termInMonths,
-          estimatedPayoffDate: debt.estimatedPayoffDate
-        })) as any, // Convert to Json type
-        ahorros_actuales: financialData.currentSavings || 0,
-        capacidad_ahorro: financialData.monthlySavingsCapacity || 0,
-        metas_financieras: financialData.financialGoals || [] as any // Convert to Json type
+          amount: amount as number,
+          date: new Date().toISOString().split('T')[0],
+          description: `Onboarding expense for ${category}`,
+          is_recurring: true
+        }))
+        
+        if (expensesToInsert.length > 0) {
+          await supabase
+            .from('expenses')
+            .insert(expensesToInsert)
+        }
       }
       
-      const { error: dataError } = await supabase
-        .from('user_financial_data')
-        .upsert(consolidatedData, { onConflict: 'user_id' })
-      
-      if (dataError) {
-        console.error('Error saving user_financial_data:', dataError)
-        throw dataError
-      }
-      
-      // 2. Guardar deudas en tabla debts
+      // 3. Save debts
       if (financialData.debts && financialData.debts.length > 0) {
         const debtsToInsert = financialData.debts.map((debt) => ({
           user_id: user.id,
-          creditor_name: debt.name,
-          total_amount: debt.amount,
+          creditor: debt.name,
+          original_amount: debt.amount,
           current_balance: debt.amount,
-          minimum_payment: debt.monthlyPayment,
-          due_day: debt.paymentDueDate || 1,
-          annual_interest_rate: 0,
-          description: `Term: ${debt.termInMonths || 0} months`
+          monthly_payment: debt.monthlyPayment,
+          interest_rate: 0,
+          status: 'active' as const
         }))
         
-        const { error: debtsError } = await supabase
+        await supabase
           .from('debts')
           .insert(debtsToInsert)
-        
-        if (debtsError && !debtsError.message.includes('duplicate')) {
-          console.error('Error saving debts:', debtsError)
-        }
       }
       
-      // 3. Guardar goals en tabla goals
+      // 4. Save goals
       if (financialData.financialGoals && financialData.financialGoals.length > 0) {
         const goalsToInsert = financialData.financialGoals.map((goal) => ({
           user_id: user.id,
-          goal_name: goal,
-          goal_type: 'financial', // Add required field
-          target_amount: 0,
+          title: goal,
+          description: `Meta financiera: ${goal}`,
+          target_amount: 0, // Would need more data from onboarding
           current_amount: 0,
-          status: 'active',
-          priority: 'medium'
+          priority: 'medium' as const,
+          status: 'active' as const
         }))
         
-        const { error: goalsError } = await supabase
+        await supabase
           .from('goals')
           .insert(goalsToInsert)
-        
-        if (goalsError && !goalsError.message.includes('duplicate')) {
-          console.error('Error saving goals:', goalsError)
-        }
       }
       
-      // 4. Migrar gastos de onboarding_expenses a expenses
-      const { data: onboardingExpenses } = await supabase
-        .from('onboarding_expenses')
-        .select('*')
-        .eq('user_id', user.id)
-      
-      if (onboardingExpenses && onboardingExpenses.length > 0) {
-        const expensesToInsert = onboardingExpenses.map((exp) => ({
-          user_id: user.id,
-          amount: exp.amount || 0,
-          category: exp.category || 'Other',
-          description: exp.subcategory || '',
-          expense_date: new Date().toISOString().split('T')[0] // Use correct field name and format
-        }))
-        
-        const { error: expensesError } = await supabase
-          .from('expenses')
-          .insert(expensesToInsert)
-        
-        if (expensesError && !expensesError.message.includes('duplicate')) {
-          console.error('Error migrating expenses:', expensesError)
-        }
-      }
-      
-      // 5. Marcar onboarding como completado
+      // 5. Mark onboarding as completed
       await supabase
         .from('profiles')
         .update({ onboarding_completed: true })

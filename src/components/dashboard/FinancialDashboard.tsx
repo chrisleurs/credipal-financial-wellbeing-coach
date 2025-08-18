@@ -93,28 +93,28 @@ export const FinancialDashboard = () => {
               <MetricCard
                 title="Ingresos Mensuales"
                 value={formatCurrency(financialData.monthlyIncome)}
-                icon={<DollarSign className="h-4 w-4" />}
+                icon={DollarSign}
                 trendValue={{ direction: 'up', percentage: '12%' }}
                 className="bg-green-50 border-green-200"
               />
               <MetricCard
                 title="Gastos Mensuales"
                 value={formatCurrency(financialData.monthlyExpenses)}
-                icon={<CreditCard className="h-4 w-4" />}
+                icon={CreditCard}
                 trendValue={{ direction: 'down', percentage: '3%' }}
                 className="bg-red-50 border-red-200"
               />
               <MetricCard
                 title="Capacidad de Ahorro"
                 value={formatCurrency(financialData.savingsCapacity)}
-                icon={<TrendingUp className="h-4 w-4" />}
+                icon={TrendingUp}
                 trendValue={{ direction: 'up', percentage: '8%' }}
                 className="bg-blue-50 border-blue-200"
               />
               <MetricCard
                 title="Total de Deudas"
                 value={formatCurrency(financialData.totalDebts)}
-                icon={<Target className="h-4 w-4" />}
+                icon={Target}
                 trendValue={{ direction: 'down', percentage: '15%' }}
                 className="bg-orange-50 border-orange-200"
               />

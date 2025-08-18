@@ -5,6 +5,9 @@ import { useAuth } from './useAuth'
 import { useToast } from '@/hooks/use-toast'
 import type { Expense } from '@/types/database'
 
+// Export the Expense type so other components can use it
+export type { Expense }
+
 export const useExpenses = () => {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -51,10 +54,10 @@ export const useExpenses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Gasto agregado",
-        description: "El gasto se ha registrado exitosamente.",
+        description: "El gasto se ha agregado exitosamente.",
       })
     },
     onError: () => {
@@ -81,7 +84,7 @@ export const useExpenses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Gasto actualizado",
         description: "Los cambios se han guardado exitosamente.",
@@ -108,7 +111,7 @@ export const useExpenses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
-      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
       toast({
         title: "Gasto eliminado",
         description: "El gasto se ha eliminado exitosamente.",
@@ -123,8 +126,14 @@ export const useExpenses = () => {
     },
   })
 
+  // Calculate totals
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const recurringExpenses = expenses.filter(expense => expense.is_recurring)
+
   return {
     expenses,
+    totalExpenses,
+    recurringExpenses,
     isLoading,
     error,
     createExpense: createExpenseMutation.mutate,

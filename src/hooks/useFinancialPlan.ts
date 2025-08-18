@@ -22,9 +22,9 @@ export const useFinancialPlan = () => {
     setIsLoading(true)
     
     try {
-      // Check if user has an active plan
+      // Check if user has an active plan - use the new financial_plans table
       const { data: planData } = await supabase
-        .from('user_financial_plans')
+        .from('financial_plans')
         .select('plan_data')
         .eq('user_id', user.id)
         .single()

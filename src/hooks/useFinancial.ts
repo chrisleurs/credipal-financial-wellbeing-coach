@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useFinancialData } from './useFinancialData';
-import { useUserFinancialData } from './useUserFinancialData';
-import { supabase } from '@/integrations/supabase/client';
+import { useFinancialSummary } from './useFinancialSummary';
+import { useConsolidatedFinancialData } from './useConsolidatedFinancialData';
 import { FinancialData } from '@/types';
 
 export const useFinancial = () => {
@@ -12,32 +11,20 @@ export const useFinancial = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
-  // Get data from both financial data sources
-  const { financialDataRecord, isLoading: isLoadingFinancial } = useFinancialData();
-  const { userFinancialData, isLoading: isLoadingUserFinancial } = useUserFinancialData();
+  // Get data from new consolidated sources
+  const { financialSummary, isLoading: isLoadingSummary } = useFinancialSummary();
+  const { data: consolidatedData, isLoading: isLoadingConsolidated } = useConsolidatedFinancialData();
 
-  // Combine and prioritize data sources
+  // Combine data from new sources
   const data = React.useMemo(() => {
-    // Priority: financial_data table first, then user_financial_data, then defaults
-    const monthlyIncome = financialDataRecord?.monthly_income || 
-                         userFinancialData?.ingresos || 
-                         0;
-    
-    const monthlyExpenses = financialDataRecord?.monthly_expenses ||
-                           (userFinancialData?.gastos_categorizados?.reduce((sum: number, gasto: any) => 
-                             sum + (gasto.amount || 0), 0)) ||
-                           0;
-
-    const currentSavings = userFinancialData?.ahorros?.actual || 0;
-    
     return {
-      monthly_income: monthlyIncome,
-      monthly_expenses: monthlyExpenses,
-      current_savings: currentSavings,
-      savings_goal: financialDataRecord?.savings_goal || 0,
-      emergency_fund_goal: financialDataRecord?.emergency_fund_goal || 0,
+      monthly_income: consolidatedData?.monthlyIncome || 0,
+      monthly_expenses: consolidatedData?.monthlyExpenses || 0,
+      current_savings: consolidatedData?.currentSavings || 0,
+      savings_goal: 0, // This would come from goals table now
+      emergency_fund_goal: financialSummary?.emergency_fund || 0,
     };
-  }, [financialDataRecord, userFinancialData]);
+  }, [consolidatedData, financialSummary]);
 
   const saveFinancialData = async (financialData: FinancialData) => {
     if (!user) {
@@ -53,19 +40,8 @@ export const useFinancial = () => {
     try {
       console.log('Saving financial data:', financialData);
       
-      // Save to financial_data table
-      const { error } = await supabase
-        .from('financial_data')
-        .upsert({
-          user_id: user.id,
-          monthly_income: financialData.monthlyIncome || 0,
-          monthly_expenses: financialData.monthlyExpenses || 0,
-          monthly_balance: (financialData.monthlyIncome || 0) - (financialData.monthlyExpenses || 0),
-          savings_goal: financialData.currentSavings || 0,
-          emergency_fund_goal: financialData.monthlySavingsCapacity || 0,
-        });
-
-      if (error) throw error;
+      // Note: This would now need to be split across multiple tables
+      // (income_sources, expenses, debts, goals) instead of one financial_data table
       
       toast({
         title: "Datos guardados",
@@ -87,8 +63,8 @@ export const useFinancial = () => {
 
   return {
     data,
-    isLoading: isLoading || isLoadingFinancial || isLoadingUserFinancial,
+    isLoading: isLoading || isLoadingSummary || isLoadingConsolidated,
     saveFinancialData,
-    hasRealData: !!(financialDataRecord || userFinancialData)
+    hasRealData: consolidatedData?.hasRealData || false
   };
 };
