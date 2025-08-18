@@ -41,10 +41,10 @@ export const ExpensesList = () => {
     const expenseData: CreateExpenseData = {
       category: formData.category,
       subcategory: formData.subcategory || undefined,
-      amount: { amount: parseFloat(formData.amount), currency: 'MXN' },
+      amount: parseFloat(formData.amount),
       date: formData.date,
       description: formData.description || '',
-      isRecurring: formData.isRecurring
+      is_recurring: formData.isRecurring
     }
 
     createExpense(expenseData)
@@ -218,7 +218,7 @@ export const ExpensesList = () => {
                         {expense.description}
                       </p>
                     )}
-                    {expense.isRecurring && (
+                    {expense.is_recurring && (
                       <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mt-1">
                         Recurrente
                       </span>
@@ -226,7 +226,7 @@ export const ExpensesList = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-red-600">
-                      -{formatCurrency(expense.amount.amount)}
+                      -{formatCurrency(expense.amount)}
                     </span>
                     <div className="flex gap-1">
                       <Button variant="outline" size="sm">

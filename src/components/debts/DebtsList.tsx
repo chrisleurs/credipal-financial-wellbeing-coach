@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, CreditCard, Trash2, Edit } from 'lucide-react'
-import { formatMoney } from '@/types/core/money'
+import { formatCurrency } from '@/utils/helpers'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export const DebtsList = () => {
@@ -28,11 +28,11 @@ export const DebtsList = () => {
 
     createDebt({
       creditor: formData.creditor,
-      originalAmount: { amount: parseFloat(formData.originalAmount), currency: 'MXN' },
-      currentBalance: { amount: parseFloat(formData.currentBalance), currency: 'MXN' },
-      monthlyPayment: { amount: parseFloat(formData.monthlyPayment) || 0, currency: 'MXN' },
-      interestRate: parseFloat(formData.interestRate) || 0,
-      dueDate: formData.dueDate || new Date().toISOString().split('T')[0],
+      original_amount: parseFloat(formData.originalAmount),
+      current_balance: parseFloat(formData.currentBalance),
+      monthly_payment: parseFloat(formData.monthlyPayment) || 0,
+      interest_rate: parseFloat(formData.interestRate) || 0,
+      due_date: formData.dueDate || new Date().toISOString().split('T')[0],
       status: formData.status,
       priority: 'medium'
     })
@@ -73,7 +73,7 @@ export const DebtsList = () => {
               <div>
                 <p className="text-sm text-red-600 font-medium">Total de Deudas</p>
                 <p className="text-2xl font-bold text-red-800">
-                  ${totalDebt.toLocaleString()}
+                  {formatCurrency(totalDebt)}
                 </p>
               </div>
             </div>
@@ -87,7 +87,7 @@ export const DebtsList = () => {
               <div>
                 <p className="text-sm text-orange-600 font-medium">Pagos Mensuales</p>
                 <p className="text-2xl font-bold text-orange-800">
-                  ${totalMonthlyPayments.toLocaleString()}
+                  {formatCurrency(totalMonthlyPayments)}
                 </p>
               </div>
             </div>
@@ -236,8 +236,8 @@ export const DebtsList = () => {
           </Card>
         ) : (
           debts.map((debt) => {
-            const progress = debt.originalAmount.amount > 0 
-              ? ((debt.originalAmount.amount - debt.currentBalance.amount) / debt.originalAmount.amount) * 100 
+            const progress = debt.original_amount > 0 
+              ? ((debt.original_amount - debt.current_balance) / debt.original_amount) * 100 
               : 0
 
             return (
@@ -247,16 +247,16 @@ export const DebtsList = () => {
                     <div>
                       <h4 className="font-medium">{debt.creditor}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Balance: {formatMoney(debt.currentBalance)} de {formatMoney(debt.originalAmount)}
+                        Balance: {formatCurrency(debt.current_balance)} de {formatCurrency(debt.original_amount)}
                       </p>
-                      {debt.monthlyPayment.amount > 0 && (
+                      {debt.monthly_payment > 0 && (
                         <p className="text-sm text-muted-foreground">
-                          Pago mensual: {formatMoney(debt.monthlyPayment)}
+                          Pago mensual: {formatCurrency(debt.monthly_payment)}
                         </p>
                       )}
-                      {debt.dueDate && (
+                      {debt.due_date && (
                         <p className="text-sm text-muted-foreground">
-                          Vence: {new Date(debt.dueDate).toLocaleDateString('es-ES')}
+                          Vence: {new Date(debt.due_date).toLocaleDateString('es-ES')}
                         </p>
                       )}
                     </div>

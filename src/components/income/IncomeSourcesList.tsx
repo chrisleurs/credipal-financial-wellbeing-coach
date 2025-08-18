@@ -25,9 +25,9 @@ export const IncomeSourcesList = () => {
 
     const incomeData: CreateIncomeData = {
       source: formData.source,
-      amount: { amount: parseFloat(formData.amount), currency: 'MXN' },
+      amount: parseFloat(formData.amount),
       frequency: formData.frequency,
-      isActive: true
+      is_active: true
     }
 
     createIncome(incomeData)
@@ -150,10 +150,10 @@ export const IncomeSourcesList = () => {
           </Card>
         ) : (
           incomes.map((income) => {
-            const monthlyAmount = income.frequency === 'weekly' ? income.amount.amount * 4 :
-                                 income.frequency === 'biweekly' ? income.amount.amount * 2 :
-                                 income.frequency === 'yearly' ? income.amount.amount / 12 :
-                                 income.amount.amount
+            const monthlyAmount = income.frequency === 'weekly' ? income.amount * 4 :
+                                 income.frequency === 'biweekly' ? income.amount * 2 :
+                                 income.frequency === 'yearly' ? income.amount / 12 :
+                                 income.amount
 
             return (
               <Card key={income.id}>
@@ -162,7 +162,7 @@ export const IncomeSourcesList = () => {
                     <div>
                       <h4 className="font-medium">{income.source}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {formatCurrency(income.amount.amount)} - {income.frequency}
+                        {formatCurrency(income.amount)} - {income.frequency}
                       </p>
                       <p className="text-sm font-medium text-green-600">
                         ~{formatCurrency(monthlyAmount)}/mes

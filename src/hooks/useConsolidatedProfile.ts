@@ -70,6 +70,7 @@ export const useConsolidatedProfile = () => {
   return {
     consolidatedProfile: consolidatedProfile.data,
     hasCompleteData: (consolidatedProfile.data?.dataCompleteness || 0) >= 80,
-    isLoading: consolidatedProfile.isLoading
+    isLoading: consolidatedProfile.isLoading,
+    error: consolidatedProfile.error
   }
 }

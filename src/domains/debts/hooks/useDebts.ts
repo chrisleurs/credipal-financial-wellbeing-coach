@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { Debt, DebtPayment } from '../types/debt.types'
+import { Debt } from '../types/debt.types'
 
 export const useDebts = () => {
   const { user } = useAuth()
@@ -39,39 +39,10 @@ export const useDebts = () => {
         due_date: dbDebt.due_date,
         status: dbDebt.status,
         priority: 'medium',
-        description: dbDebt.description,
+        description: dbDebt.description || '',
         created_at: dbDebt.created_at,
         updated_at: dbDebt.updated_at
       })) as Debt[]
-    },
-    enabled: !!user?.id,
-  })
-
-  // Fetch payments
-  const {
-    data: payments = [],
-  } = useQuery({
-    queryKey: ['debt-payments', user?.id],
-    queryFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated')
-      
-      const { data, error } = await supabase
-        .from('debt_payments')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('payment_date', { ascending: false })
-      
-      if (error) throw error
-      
-      return (data || []).map(payment => ({
-        id: payment.id,
-        debt_id: payment.debt_id,
-        user_id: payment.user_id,
-        amount: payment.amount,
-        payment_date: payment.payment_date,
-        notes: payment.notes,
-        created_at: payment.created_at
-      })) as DebtPayment[]
     },
     enabled: !!user?.id,
   })
@@ -180,55 +151,12 @@ export const useDebts = () => {
     },
   })
 
-  // Register payment mutation
-  const registerPaymentMutation = useMutation({
-    mutationFn: async (paymentData: {
-      debt_id: string
-      amount: number
-      payment_date: string
-      notes?: string
-    }) => {
-      if (!user?.id) throw new Error('User not authenticated')
-      
-      const { data, error } = await supabase
-        .from('debt_payments')
-        .insert({
-          user_id: user.id,
-          debt_id: paymentData.debt_id,
-          amount: paymentData.amount,
-          payment_date: paymentData.payment_date,
-          notes: paymentData.notes
-        })
-        .select()
-        .single()
-      
-      if (error) throw error
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['debt-payments'] })
-      toast({
-        title: "Pago registrado",
-        description: "El pago se ha registrado exitosamente.",
-      })
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "No se pudo registrar el pago.",
-        variant: "destructive",
-      })
-    },
-  })
-
   // Calculate totals
   const totalDebt = debts.reduce((sum, debt) => sum + debt.current_balance, 0)
   const totalMonthlyPayments = debts.reduce((sum, debt) => sum + debt.monthly_payment, 0)
 
   return {
     debts,
-    payments,
     totalDebt,
     totalMonthlyPayments,
     isLoading,
@@ -236,10 +164,8 @@ export const useDebts = () => {
     createDebt: createDebtMutation.mutate,
     updateDebt: updateDebtMutation.mutate,
     deleteDebt: deleteDebtMutation.mutate,
-    registerPayment: registerPaymentMutation.mutate,
     isCreating: createDebtMutation.isPending,
     isUpdating: updateDebtMutation.isPending,
     isDeleting: deleteDebtMutation.isPending,
-    isRegisteringPayment: registerPaymentMutation.isPending,
   }
 }
