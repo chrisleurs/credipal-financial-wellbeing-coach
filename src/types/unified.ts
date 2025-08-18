@@ -55,6 +55,7 @@ export interface ConsolidatedProfile {
   totalMonthlyDebtPayments: number
   savingsCapacity: number
   financialGoals: string[]
+  expenseCategories: Record<string, number>
   debts: Array<{
     id: string
     creditor: string
@@ -64,6 +65,30 @@ export interface ConsolidatedProfile {
   }>
   dataCompleteness: number
 }
+
+// AI-related types for compatibility
+export interface AIGeneratedPlan {
+  id: string
+  recommendations: string[]
+  projectedSavings: number
+  timeline: string
+}
+
+export interface ActionPlan {
+  id: string
+  tasks: ActionTask[]
+  timeline: string
+}
+
+export interface ActionTask {
+  id: string
+  title: string
+  description: string
+  status: ActionStatus
+  dueDate: string
+}
+
+export type ActionStatus = 'pending' | 'in_progress' | 'completed'
 
 // Type converters for compatibility
 export class TypeConverters {

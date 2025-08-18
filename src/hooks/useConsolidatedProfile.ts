@@ -32,6 +32,7 @@ export const useConsolidatedProfile = () => {
       totalMonthlyDebtPayments,
       savingsCapacity: financialData.monthlySavingsCapacity,
       financialGoals: financialData.financialGoals,
+      expenseCategories: financialData.expenseCategories,
       debts: formattedDebts,
       dataCompleteness: isOnboardingComplete ? 1 : 0.7
     }

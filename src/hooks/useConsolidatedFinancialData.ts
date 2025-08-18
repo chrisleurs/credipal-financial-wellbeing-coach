@@ -1,9 +1,9 @@
 
 import { useQuery } from '@tanstack/react-query'
-import { useIncomes } from './useIncomes'
-import { useExpenses } from './useExpenses'
-import { useDebts } from './useDebts'
-import { useGoals } from './useGoals'
+import { useIncomes } from '@/domains/income/hooks/useIncomes'
+import { useExpenses } from '@/domains/expenses/hooks/useExpenses'
+import { useDebts } from '@/domains/debts/hooks/useDebts'
+import { useGoals } from '@/domains/savings/hooks/useGoals'
 import { useFinancialSummary } from './useFinancialSummary'
 import { useAuth } from './useAuth'
 import { ConsolidatedFinancialData } from '@/types/unified'
@@ -26,7 +26,7 @@ export const useConsolidatedFinancialData = () => {
       // Calculate expense categories
       const expenseCategories: Record<string, number> = {}
       expenses.forEach(expense => {
-        expenseCategories[expense.category] = (expenseCategories[expense.category] || 0) + expense.amount
+        expenseCategories[expense.category] = (expenseCategories[expense.category] || 0) + expense.amount.amount
       })
 
       // Calculate monthly expenses from actual expenses (last 3 months average)
@@ -38,7 +38,7 @@ export const useConsolidatedFinancialData = () => {
       )
       
       const monthlyExpenses = recentExpenses.length > 0 
-        ? recentExpenses.reduce((sum, expense) => sum + expense.amount, 0) / 3
+        ? recentExpenses.reduce((sum, expense) => sum + expense.amount.amount, 0) / 3
         : 0
 
       // Convert debts to onboarding format
