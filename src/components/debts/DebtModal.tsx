@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -6,24 +7,25 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Calculator, DollarSign, Percent, Calendar, Building } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import type { Debt } from '@/types/database'
+import type { Debt } from '@/types/unified'
 
 interface DebtModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (debt: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => void
-  debt?: Debt
+  onSave: (debt: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => void
+  debt?: Debt | null
   isLoading?: boolean
 }
 
-export default function DebtModal({ isOpen, onClose, onSubmit, debt, isLoading = false }: DebtModalProps) {
+export default function DebtModal({ isOpen, onClose, onSave, debt, isLoading = false }: DebtModalProps) {
   const [formData, setFormData] = useState({
     creditor: '',
     original_amount: '',
     interest_rate: '',
     monthly_payment: '',
     due_date: '',
-    status: 'active' as 'active' | 'paid' | 'delinquent'
+    status: 'active' as 'active' | 'paid' | 'delinquent',
+    description: ''
   })
 
   const [calculations, setCalculations] = useState({
@@ -40,7 +42,8 @@ export default function DebtModal({ isOpen, onClose, onSubmit, debt, isLoading =
         interest_rate: debt.interest_rate.toString(),
         monthly_payment: debt.monthly_payment.toString(),
         due_date: debt.due_date || '',
-        status: debt.status
+        status: debt.status,
+        description: debt.description || ''
       })
     } else {
       setFormData({
@@ -49,7 +52,8 @@ export default function DebtModal({ isOpen, onClose, onSubmit, debt, isLoading =
         interest_rate: '',
         monthly_payment: '',
         due_date: '',
-        status: 'active'
+        status: 'active',
+        description: ''
       })
     }
   }, [debt, isOpen])
@@ -119,11 +123,12 @@ export default function DebtModal({ isOpen, onClose, onSubmit, debt, isLoading =
       current_balance: debt ? debt.current_balance : parseFloat(formData.original_amount),
       interest_rate: parseFloat(formData.interest_rate) || 0,
       monthly_payment: parseFloat(formData.monthly_payment),
-      due_date: formData.due_date || null,
-      status: formData.status
+      due_date: formData.due_date || undefined,
+      status: formData.status,
+      description: formData.description || undefined
     }
 
-    onSubmit(debtData)
+    onSave(debtData)
   }
 
   const handleChange = (field: string, value: string) => {
@@ -213,6 +218,16 @@ export default function DebtModal({ isOpen, onClose, onSubmit, debt, isLoading =
                   onChange={(e) => handleChange('due_date', e.target.value)}
                 />
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                placeholder="Descripción opcional..."
+                value={formData.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+              />
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 
 import { StateCreator } from 'zustand'
 import { supabase } from '@/integrations/supabase/client'
-import type { FinancialData, Debt } from '@/types'
+import type { FinancialData, OnboardingDebt } from '@/types/unified'
 
 export interface OnboardingSlice {
   // State
@@ -14,7 +14,7 @@ export interface OnboardingSlice {
   updateFinancialData: (data: Partial<FinancialData>) => void
   updateIncome: (monthly: number, extra: number) => void
   updateExpenses: (categories: Record<string, number>, total: number) => void
-  updateDebts: (debts: Debt[]) => void
+  updateDebts: (debts: OnboardingDebt[]) => void
   updateSavings: (current: number, monthly: number) => void
   updateGoals: (goals: string[]) => void
   setWhatsAppOptIn: (optin: boolean) => void

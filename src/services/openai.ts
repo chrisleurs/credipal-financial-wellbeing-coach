@@ -1,82 +1,65 @@
 
-import type { FinancialData, AIGeneratedPlan, ActionPlan } from '@/types'
+import { AIGeneratedPlan, ActionPlan, ActionTask } from '@/types/unified'
 
-// Mock OpenAI service for demonstration
-export async function generateFinancialPlan(data: FinancialData): Promise<AIGeneratedPlan> {
-  // Simulate API delay
+export const generateFinancialPlan = async (userData: any): Promise<AIGeneratedPlan> => {
+  // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 2000))
-  
-  const monthlyBalance = data.monthlyIncome + data.extraIncome - data.monthlyExpenses
-  
+
   return {
+    id: `plan_${Date.now()}`,
     recommendations: [
-      'Crea un presupuesto 50/30/20: 50% gastos esenciales, 30% gastos personales, 20% ahorros',
-      'Establece un fondo de emergencia equivalente a 3-6 meses de gastos',
-      'Paga primero las deudas con mayor tasa de interés',
-      'Automatiza tus ahorros para que se transfieran automáticamente',
-      'Utiliza el chat AI para monitorear tus gastos diarios y recibir alertas proactivas'
+      "Focus on paying off high-interest debt first",
+      "Build an emergency fund of 3-6 months expenses",
+      "Automate your savings to reach your goals faster"
     ],
-    monthlyBalance,
-    savingsSuggestion: Math.max(monthlyBalance * 0.2, 0),
+    monthlyBalance: userData.monthlyIncome - userData.monthlyExpenses,
+    savingsSuggestion: Math.max(0, (userData.monthlyIncome - userData.monthlyExpenses) * 0.2),
     budgetBreakdown: {
-      fixedExpenses: data.monthlyExpenses * 0.6,
-      variableExpenses: data.monthlyExpenses * 0.4,
-      savings: Math.max(monthlyBalance * 0.2, 0),
-      emergency: Math.max(monthlyBalance * 0.1, 0)
+      fixedExpenses: userData.monthlyExpenses * 0.6,
+      variableExpenses: userData.monthlyExpenses * 0.3,
+      savings: userData.monthlyExpenses * 0.1,
+      emergency: userData.monthlyExpenses * 0.05
     },
-    timeEstimate: '6-12 meses para ver resultados significativos',
-    motivationalMessage: '¡Estás en el camino correcto! Con disciplina y estos ajustes, mejorarás tu situación financiera. Usa el chat AI para mantener el seguimiento.'
+    timeEstimate: "6-12 months to see significant progress",
+    motivationalMessage: "You're taking the right steps towards financial freedom!"
   }
 }
 
-export async function generateActionPlan(data: FinancialData): Promise<ActionPlan> {
-  // Simulate API delay
+export const generateActionPlan = async (financialData: any): Promise<ActionPlan> => {
+  // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 1500))
-  
+
+  const tasks: ActionTask[] = [
+    {
+      id: `task_${Date.now()}_1`,
+      title: "Set up automatic savings transfer",
+      description: "Automate $200 monthly transfer to savings account",
+      priority: 'high',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      completed: false
+    },
+    {
+      id: `task_${Date.now()}_2`,
+      title: "Review and optimize subscriptions",
+      description: "Cancel unused subscriptions to save $50/month",
+      priority: 'medium',
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      completed: false
+    },
+    {
+      id: `task_${Date.now()}_3`,
+      title: "Research high-yield savings accounts",
+      description: "Find better interest rates for emergency fund",
+      priority: 'low',
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      completed: false
+    }
+  ]
+
   return {
-    tasks: [
-      {
-        id: '1',
-        title: 'Registrar gastos diarios',
-        description: 'Anota todos tus gastos durante una semana usando el chat AI',
-        priority: 'high',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        completed: false
-      },
-      {
-        id: '2',
-        title: 'Abrir cuenta de ahorros',
-        description: 'Separa tus ahorros en una cuenta dedicada',
-        priority: 'medium',
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        completed: false
-      },
-      {
-        id: '3',
-        title: 'Configurar alertas inteligentes',
-        description: 'Permite que el AI te notifique sobre patrones de gasto inusuales',
-        priority: 'medium',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        completed: false
-      }
-    ],
-    nextReviewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    whatsappReminders: data.whatsappOptin
+    id: `action_plan_${Date.now()}`,
+    tasks,
+    timeframe: "30 days",
+    priority: 'high'
   }
-}
-
-// New AI-powered functions for real-time assistance
-export interface ChatAIResponse {
-  message: string;
-  functionExecuted?: string;
-  functionResult?: any;
-  suggestions?: string[];
-}
-
-export interface FinancialInsight {
-  type: 'alert' | 'celebration' | 'suggestion' | 'trend';
-  title: string;
-  message: string;
-  priority: 'high' | 'medium' | 'low';
-  actionable: boolean;
 }
