@@ -3,16 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
 import { useToast } from '@/hooks/use-toast'
-import type { Debt } from '@/types/database'
+import { Debt, DebtPayment, TypeConverters } from '@/types/unified'
 
 export const useDebts = () => {
   const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // Fetch debts
+  // Fetch debts with unified type conversion
   const {
-    data: debts = [],
+    data: rawDebts = [],
     isLoading,
     error
   } = useQuery({
@@ -27,10 +27,14 @@ export const useDebts = () => {
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      return (data || []) as Debt[]
+      
+      // Convert to unified type
+      return (data || []).map(TypeConverters.convertDatabaseDebtToUnified)
     },
     enabled: !!user?.id,
   })
+
+  const debts: Debt[] = rawDebts
 
   // Create debt mutation
   const createDebtMutation = useMutation({
@@ -53,7 +57,7 @@ export const useDebts = () => {
         .single()
       
       if (error) throw error
-      return data
+      return TypeConverters.convertDatabaseDebtToUnified(data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
@@ -77,13 +81,21 @@ export const useDebts = () => {
     mutationFn: async ({ id, ...updates }: Partial<Debt> & { id: string }) => {
       const { data, error } = await supabase
         .from('debts')
-        .update(updates)
+        .update({
+          creditor: updates.creditor,
+          original_amount: updates.original_amount,
+          current_balance: updates.current_balance,
+          monthly_payment: updates.monthly_payment,
+          interest_rate: updates.interest_rate,
+          due_date: updates.due_date,
+          status: updates.status
+        })
         .eq('id', id)
         .select()
         .single()
       
       if (error) throw error
-      return data
+      return TypeConverters.convertDatabaseDebtToUnified(data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
@@ -129,7 +141,7 @@ export const useDebts = () => {
     },
   })
 
-  // Mock payment registration (since we don't have payments table yet)
+  // Register payment mutation
   const registerPaymentMutation = useMutation({
     mutationFn: async (paymentData: {
       debt_id: string
@@ -137,7 +149,6 @@ export const useDebts = () => {
       payment_date: string
       notes?: string
     }) => {
-      // For now, just update the debt balance
       const debt = debts.find(d => d.id === paymentData.debt_id)
       if (!debt) throw new Error('Debt not found')
       
@@ -151,7 +162,7 @@ export const useDebts = () => {
         .single()
       
       if (error) throw error
-      return data
+      return TypeConverters.convertDatabaseDebtToUnified(data)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
@@ -179,7 +190,7 @@ export const useDebts = () => {
     activeDebts,
     totalDebt,
     totalMonthlyPayments,
-    payments: [], // Mock empty payments array
+    payments: [] as DebtPayment[], // Mock empty payments array with proper type
     isLoading,
     isLoadingDebts: isLoading,
     error,
