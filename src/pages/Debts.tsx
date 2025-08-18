@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Plus, CreditCard, TrendingDown, AlertCircle, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -355,7 +354,6 @@ export default function Debts() {
           setEditingDebt(null)
         }}
         debt={editingDebt}
-        isSubmitting={isCreating || isUpdating}
       />
 
       <PaymentModal
@@ -375,13 +373,12 @@ export default function Debts() {
           setSelectedDebt(null)
         }}
         debt={selectedDebt}
-        isSubmitting={isRegisteringPayment}
       />
 
       <ScenarioAnalysis
         isOpen={isScenarioModalOpen}
         onClose={() => setIsScenarioModalOpen(false)}
-        debts={activeDebts}
+        debt={activeDebts[0] || null}
       />
     </div>
   )

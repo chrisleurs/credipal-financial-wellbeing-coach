@@ -114,18 +114,35 @@ export default function MigrationManager() {
 
   const fetchMigrationStatus = async () => {
     try {
-      // Query migration status directly from the table
+      // Use raw SQL query since the table may not be in types
       const { data, error } = await supabase
-        .from('migration_status' as any)
+        .from('migration_status')
         .select('*')
         .order('created_at', { ascending: false })
       
-      if (error) throw error
+      if (error) {
+        console.error('Migration status query error:', error)
+        // If table doesn't exist, just set empty array
+        setMigrationStatus([])
+        return
+      }
       
-      setMigrationStatus(data || [])
+      // Safely cast the data to our interface
+      const statusData: MigrationStatus[] = (data || []).map((item: any) => ({
+        migration_name: item.migration_name || '',
+        status: item.status || 'unknown',
+        total_records: item.total_records || 0,
+        migrated_records: item.migrated_records || 0,
+        failed_records: item.failed_records || 0,
+        started_at: item.started_at || null,
+        completed_at: item.completed_at || null
+      }))
+      
+      setMigrationStatus(statusData)
       
     } catch (error) {
       console.error('Failed to fetch migration status:', error)
+      setMigrationStatus([])
     }
   }
 
