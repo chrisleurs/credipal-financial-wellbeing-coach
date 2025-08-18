@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
 import { useToast } from '@/hooks/use-toast'
-import type { Debt, DebtPayment, DebtReminder } from '@/types/debt'
+import type { Debt } from '@/types/database'
 
 export const useDebts = () => {
   const { user } = useAuth()
@@ -13,8 +13,8 @@ export const useDebts = () => {
   // Fetch debts
   const {
     data: debts = [],
-    isLoading: isLoadingDebts,
-    error: debtsError
+    isLoading,
+    error
   } = useQuery({
     queryKey: ['debts', user?.id],
     queryFn: async () => {
@@ -32,27 +32,6 @@ export const useDebts = () => {
     enabled: !!user?.id,
   })
 
-  // Fetch debt payments
-  const {
-    data: payments = [],
-    isLoading: isLoadingPayments
-  } = useQuery({
-    queryKey: ['debt-payments', user?.id],
-    queryFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated')
-      
-      const { data, error } = await supabase
-        .from('debt_payments')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('payment_date', { ascending: false })
-      
-      if (error) throw error
-      return data as DebtPayment[]
-    },
-    enabled: !!user?.id,
-  })
-
   // Create debt mutation
   const createDebtMutation = useMutation({
     mutationFn: async (debtData: Omit<Debt, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
@@ -62,8 +41,7 @@ export const useDebts = () => {
         .from('debts')
         .insert({
           ...debtData,
-          user_id: user.id,
-          current_balance: debtData.total_amount // Initialize balance to total amount
+          user_id: user.id
         })
         .select()
         .single()
@@ -73,18 +51,18 @@ export const useDebts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Deuda agregada",
         description: "La deuda se ha registrado exitosamente.",
       })
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo agregar la deuda. Intenta de nuevo.",
+        description: "No se pudo agregar la deuda.",
         variant: "destructive",
       })
-      console.error('Error creating debt:', error)
     },
   })
 
@@ -103,6 +81,7 @@ export const useDebts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Deuda actualizada",
         description: "Los cambios se han guardado exitosamente.",
@@ -129,7 +108,7 @@ export const useDebts = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['debt-payments'] })
+      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Deuda eliminada",
         description: "La deuda se ha eliminado exitosamente.",
@@ -144,53 +123,22 @@ export const useDebts = () => {
     },
   })
 
-  // Register payment mutation
-  const registerPaymentMutation = useMutation({
-    mutationFn: async (paymentData: Omit<DebtPayment, 'id' | 'user_id' | 'created_at'>) => {
-      if (!user?.id) throw new Error('User not authenticated')
-      
-      const { data, error } = await supabase
-        .from('debt_payments')
-        .insert({
-          ...paymentData,
-          user_id: user.id
-        })
-        .select()
-        .single()
-      
-      if (error) throw error
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['debt-payments'] })
-      toast({
-        title: "¡Pago registrado!",
-        description: "¡Excelente trabajo! Cada pago te acerca más a tu libertad financiera.",
-      })
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "No se pudo registrar el pago.",
-        variant: "destructive",
-      })
-    },
-  })
+  const activeDebts = debts.filter(debt => debt.status === 'active')
+  const totalDebt = activeDebts.reduce((sum, debt) => sum + debt.current_balance, 0)
+  const totalMonthlyPayments = activeDebts.reduce((sum, debt) => sum + debt.monthly_payment, 0)
 
   return {
     debts,
-    payments,
-    isLoadingDebts,
-    isLoadingPayments,
-    debtsError,
+    activeDebts,
+    totalDebt,
+    totalMonthlyPayments,
+    isLoading,
+    error,
     createDebt: createDebtMutation.mutate,
     updateDebt: updateDebtMutation.mutate,
     deleteDebt: deleteDebtMutation.mutate,
-    registerPayment: registerPaymentMutation.mutate,
     isCreating: createDebtMutation.isPending,
     isUpdating: updateDebtMutation.isPending,
     isDeleting: deleteDebtMutation.isPending,
-    isRegisteringPayment: registerPaymentMutation.isPending,
   }
 }

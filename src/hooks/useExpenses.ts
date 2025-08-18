@@ -1,76 +1,42 @@
 
-import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
-import { useToast } from '@/hooks/use-toast';
-
-export interface Expense {
-  id: string;
-  user_id: string;
-  amount: number;
-  category: string;
-  description: string;
-  expense_date: string;
-  created_at: string;
-  updated_at: string;
-}
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from './useAuth'
+import { useToast } from '@/hooks/use-toast'
+import type { Expense } from '@/types/database'
 
 export const useExpenses = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
 
-  // Use React Query to fetch expenses
+  // Fetch expenses
   const {
     data: expenses = [],
     isLoading,
-    error,
-    refetch
+    error
   } = useQuery({
     queryKey: ['expenses', user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user?.id) throw new Error('User not authenticated')
       
-      console.log('Fetching expenses for user:', user.id);
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
         .eq('user_id', user.id)
-        .order('expense_date', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching expenses:', error);
-        throw error;
-      }
+        .order('date', { ascending: false })
       
-      console.log('Fetched expenses:', data?.length || 0);
-      return data || [];
+      if (error) throw error
+      return data as Expense[]
     },
-    enabled: !!user,
-  });
+    enabled: !!user?.id,
+  })
 
-  // Handle query errors
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los gastos",
-        variant: "destructive"
-      });
-    }
-  }, [error, toast]);
-
-  const addExpense = async (expenseData: {
-    amount: number;
-    category: string;
-    description: string;
-    expense_date: string;
-  }) => {
-    if (!user) return { success: false };
-
-    try {
-      console.log('Adding expense:', expenseData);
+  // Create expense mutation
+  const createExpenseMutation = useMutation({
+    mutationFn: async (expenseData: Omit<Expense, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      if (!user?.id) throw new Error('User not authenticated')
+      
       const { data, error } = await supabase
         .from('expenses')
         .insert({
@@ -78,103 +44,94 @@ export const useExpenses = () => {
           user_id: user.id
         })
         .select()
-        .single();
-
-      if (error) throw error;
-
-      // Invalidate the expenses query to trigger refetch
-      await queryClient.invalidateQueries({ queryKey: ['expenses', user.id] });
+        .single()
       
-      console.log('Expense added successfully:', data);
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Gasto agregado",
-        description: `Se agregó el gasto "${expenseData.description}" por $${expenseData.amount.toLocaleString()}`
-      });
-      return { success: true, data };
-    } catch (error: any) {
-      console.error('Error adding expense:', error);
+        description: "El gasto se ha registrado exitosamente.",
+      })
+    },
+    onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo agregar el gasto",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-  };
+        description: "No se pudo agregar el gasto.",
+        variant: "destructive",
+      })
+    },
+  })
 
-  const updateExpense = async (id: string, expenseData: {
-    amount: number;
-    category: string;
-    description: string;
-    expense_date: string;
-  }) => {
-    try {
-      console.log('Updating expense:', id, expenseData);
+  // Update expense mutation
+  const updateExpenseMutation = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Expense> & { id: string }) => {
       const { data, error } = await supabase
         .from('expenses')
-        .update(expenseData)
+        .update(updates)
         .eq('id', id)
         .select()
-        .single();
-
-      if (error) throw error;
-
-      // Invalidate the expenses query to trigger refetch
-      await queryClient.invalidateQueries({ queryKey: ['expenses', user?.id] });
+        .single()
       
-      console.log('Expense updated successfully:', data);
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Gasto actualizado",
-        description: "El gasto se actualizó correctamente"
-      });
-      return { success: true, data };
-    } catch (error: any) {
-      console.error('Error updating expense:', error);
+        description: "Los cambios se han guardado exitosamente.",
+      })
+    },
+    onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo actualizar el gasto",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-  };
+        description: "No se pudo actualizar el gasto.",
+        variant: "destructive",
+      })
+    },
+  })
 
-  const deleteExpense = async (id: string) => {
-    try {
-      console.log('Deleting expense:', id);
+  // Delete expense mutation
+  const deleteExpenseMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('expenses')
         .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // Invalidate the expenses query to trigger refetch
-      await queryClient.invalidateQueries({ queryKey: ['expenses', user?.id] });
+        .eq('id', id)
       
-      console.log('Expense deleted successfully');
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] })
+      queryClient.invalidateQueries({ queryKey: ['financial-summary'] })
       toast({
         title: "Gasto eliminado",
-        description: "El gasto se eliminó correctamente"
-      });
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error deleting expense:', error);
+        description: "El gasto se ha eliminado exitosamente.",
+      })
+    },
+    onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo eliminar el gasto",
-        variant: "destructive"
-      });
-      return { success: false };
-    }
-  };
+        description: "No se pudo eliminar el gasto.",
+        variant: "destructive",
+      })
+    },
+  })
 
   return {
     expenses,
     isLoading,
-    addExpense,
-    updateExpense,
-    deleteExpense,
-    refetch
-  };
-};
+    error,
+    createExpense: createExpenseMutation.mutate,
+    updateExpense: updateExpenseMutation.mutate,
+    deleteExpense: deleteExpenseMutation.mutate,
+    isCreating: createExpenseMutation.isPending,
+    isUpdating: updateExpenseMutation.isPending,
+    isDeleting: deleteExpenseMutation.isPending,
+  }
+}

@@ -1,159 +1,207 @@
 
-import React, { useState } from 'react';
-import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData';
-import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
-import { useAuth } from '@/hooks/useAuth';
-import { MetricCard } from './MetricCard';
-import { ChartSection } from './ChartSection';
-import { GoalCard } from './GoalCard';
-import { LoanCard } from './LoanCard';
-import { CrediAssistant } from './CrediAssistant';
-import { DataSourceIndicator } from './DataSourceIndicator';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { DollarSign, TrendingUp, Target, CreditCard, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react'
+import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { IncomeSourcesList } from '@/components/income/IncomeSourcesList'
+import { ExpensesList } from '@/components/expenses/ExpensesList'
+import { DebtsList } from '@/components/debts/DebtsList'
+import { GoalsList } from '@/components/goals/GoalsList'
+import { MetricCard } from './MetricCard'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { formatCurrency } from '@/utils/helpers'
+import { 
+  DollarSign, 
+  CreditCard, 
+  TrendingUp, 
+  Target,
+  Plus,
+  RefreshCw
+} from 'lucide-react'
 
 export const FinancialDashboard = () => {
-  const { user } = useAuth();
-  const { onboardingCompleted, isLoading: onboardingLoading } = useOnboardingStatus();
-  const { data: financialData, isLoading: dataLoading, error } = useConsolidatedFinancialData();
-  const [timeFilter, setTimeFilter] = useState('month');
-  const navigate = useNavigate();
+  const { data: financialData, isLoading, error } = useConsolidatedFinancialData()
+  const [activeSection, setActiveSection] = useState<'overview' | 'income' | 'expenses' | 'debts' | 'goals'>('overview')
 
-  console.log('FinancialDashboard - User:', user?.email, 'Onboarding completed:', onboardingCompleted, 'Financial data:', financialData);
-
-  if (onboardingLoading || dataLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" text="Cargando tu información financiera..." />
       </div>
-    );
+    )
   }
 
   if (error) {
-    console.error('Error loading financial data:', error);
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Alert className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Error al cargar los datos financieros. Por favor, intenta recargar la página.
-          </AlertDescription>
-        </Alert>
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-semibold mb-2">Error al cargar datos</h2>
+            <p className="text-muted-foreground mb-4">
+              No se pudieron cargar tus datos financieros.
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Intentar de nuevo
+            </Button>
+          </CardContent>
+        </Card>
       </div>
-    );
+    )
   }
 
-  // Si el onboarding no está completado, mostrar mensaje de bienvenida
-  if (onboardingCompleted === false) {
+  if (!financialData?.hasRealData) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-bold text-foreground">¡Bienvenido a CrediPal!</h1>
-          <p className="text-muted-foreground">
-            Para comenzar a usar tu dashboard financiero, necesitas completar el proceso de configuración inicial.
-          </p>
-          <Button 
-            onClick={() => navigate('/onboarding')}
-            className="w-full"
-          >
-            Completar configuración inicial
-          </Button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-2xl mx-auto">
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold mb-4">¡Bienvenido a CrediPal!</h1>
+            <p className="text-muted-foreground mb-6">
+              Para comenzar, agrega tu primera fuente de ingresos, gastos o metas financieras.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <Button onClick={() => setActiveSection('income')} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Agregar Ingresos
+              </Button>
+              <Button onClick={() => setActiveSection('expenses')} variant="outline" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Agregar Gastos
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    );
+    )
   }
 
-  // Usar datos por defecto si no hay información
-  const safeData = financialData || {
-    monthlyIncome: 0,
-    monthlyExpenses: 0,
-    currentSavings: 0,
-    totalDebts: 0,
-    monthlyDebtPayments: 0,
-    financialGoals: [],
-    expenseCategories: {},
-    debts: []
-  };
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'income':
+        return <IncomeSourcesList />
+      case 'expenses':
+        return <ExpensesList />
+      case 'debts':
+        return <DebtsList />
+      case 'goals':
+        return <GoalsList />
+      default:
+        return (
+          <div className="space-y-6">
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <MetricCard
+                title="Ingresos Mensuales"
+                value={formatCurrency(financialData.monthlyIncome)}
+                icon={<DollarSign className="h-4 w-4" />}
+                trendValue={{ direction: 'up', percentage: '12%' }}
+                className="bg-green-50 border-green-200"
+              />
+              <MetricCard
+                title="Gastos Mensuales"
+                value={formatCurrency(financialData.monthlyExpenses)}
+                icon={<CreditCard className="h-4 w-4" />}
+                trendValue={{ direction: 'down', percentage: '3%' }}
+                className="bg-red-50 border-red-200"
+              />
+              <MetricCard
+                title="Capacidad de Ahorro"
+                value={formatCurrency(financialData.savingsCapacity)}
+                icon={<TrendingUp className="h-4 w-4" />}
+                trendValue={{ direction: 'up', percentage: '8%' }}
+                className="bg-blue-50 border-blue-200"
+              />
+              <MetricCard
+                title="Total de Deudas"
+                value={formatCurrency(financialData.totalDebts)}
+                icon={<Target className="h-4 w-4" />}
+                trendValue={{ direction: 'down', percentage: '15%' }}
+                className="bg-orange-50 border-orange-200"
+              />
+            </div>
 
-  const monthlyBalance = safeData.monthlyIncome - safeData.monthlyExpenses - safeData.monthlyDebtPayments;
-  const hasRealData = safeData.monthlyIncome > 0 || safeData.monthlyExpenses > 0 || safeData.totalDebts > 0;
-  const dataSource: 'database' | 'onboarding' | 'mock' = hasRealData ? 'database' : 'mock';
-  
+            {/* Balance Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Resumen Financiero</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span>Ingresos totales</span>
+                    <span className="font-semibold text-green-600">
+                      +{formatCurrency(financialData.monthlyIncome)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Gastos totales</span>
+                    <span className="font-semibold text-red-600">
+                      -{formatCurrency(financialData.monthlyExpenses)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Pagos de deudas</span>
+                    <span className="font-semibold text-orange-600">
+                      -{formatCurrency(financialData.monthlyDebtPayments)}
+                    </span>
+                  </div>
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">Balance mensual</span>
+                      <span className={`font-bold ${
+                        financialData.savingsCapacity >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {formatCurrency(financialData.savingsCapacity)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
+    }
+  }
+
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard Financiero</h1>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Dashboard Financiero
+          </h1>
           <p className="text-muted-foreground">
-            Resumen de tu situación financiera actual
+            Monitorea y gestiona tus finanzas personales
           </p>
         </div>
-        <DataSourceIndicator dataSource={dataSource} hasRealData={hasRealData} />
+
+        {/* Navigation */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: 'overview', label: 'Resumen', icon: TrendingUp },
+              { key: 'income', label: 'Ingresos', icon: DollarSign },
+              { key: 'expenses', label: 'Gastos', icon: CreditCard },
+              { key: 'debts', label: 'Deudas', icon: CreditCard },
+              { key: 'goals', label: 'Metas', icon: Target },
+            ].map(({ key, label, icon: Icon }) => (
+              <Button
+                key={key}
+                variant={activeSection === key ? 'default' : 'outline'}
+                onClick={() => setActiveSection(key as any)}
+                className="flex items-center gap-2"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        {renderContent()}
       </div>
-
-      {/* Mostrar mensaje si no hay datos */}
-      {safeData.monthlyIncome === 0 && safeData.monthlyExpenses === 0 && safeData.totalDebts === 0 && (
-        <Alert className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Parece que aún no tienes datos financieros registrados. 
-            <Button 
-              variant="link" 
-              className="p-0 h-auto font-normal"
-              onClick={() => navigate('/onboarding')}
-            >
-              Completa tu perfil financiero
-            </Button> para ver tu dashboard completo.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Métricas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Ingresos Mensuales"
-          value={`$${safeData.monthlyIncome.toLocaleString()}`}
-          icon={DollarSign}
-          trend={safeData.monthlyIncome > 0 ? "up" : "neutral"}
-          trendValue={{ direction: "up", percentage: "0%" }}
-        />
-        <MetricCard
-          title="Balance Mensual"
-          value={`$${monthlyBalance.toLocaleString()}`}
-          icon={TrendingUp}
-          trend={monthlyBalance > 0 ? "up" : monthlyBalance < 0 ? "down" : "neutral"}
-          trendValue={{ direction: monthlyBalance >= 0 ? "up" : "down", percentage: "0%" }}
-        />
-        <MetricCard
-          title="Ahorros Actuales"
-          value={`$${safeData.currentSavings.toLocaleString()}`}
-          icon={Target}
-          trend={safeData.currentSavings > 0 ? "up" : "neutral"}
-          trendValue={{ direction: "up", percentage: "0%" }}
-        />
-        <MetricCard
-          title="Deudas Totales"
-          value={`$${safeData.totalDebts.toLocaleString()}`}
-          icon={CreditCard}
-          trend={safeData.totalDebts > 0 ? "down" : "neutral"}
-          trendValue={{ direction: "down", percentage: "0%" }}
-        />
-      </div>
-
-      {/* Sección de gráficos */}
-      <ChartSection />
-
-      {/* Metas y préstamos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GoalCard />
-        <LoanCard />
-      </div>
-
-      {/* Asistente de CrediPal */}
-      <CrediAssistant />
     </div>
-  );
-};
+  )
+}

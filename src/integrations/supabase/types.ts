@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -86,122 +86,43 @@ export type Database = {
         }
         Relationships: []
       }
-      debt_payments: {
-        Row: {
-          amount: number
-          created_at: string
-          debt_id: string
-          id: string
-          notes: string | null
-          payment_date: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          debt_id: string
-          id?: string
-          notes?: string | null
-          payment_date?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          debt_id?: string
-          id?: string
-          notes?: string | null
-          payment_date?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "debt_payments_debt_id_fkey"
-            columns: ["debt_id"]
-            isOneToOne: false
-            referencedRelation: "debts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      debt_reminders: {
-        Row: {
-          created_at: string
-          days_before: number
-          debt_id: string
-          id: string
-          is_active: boolean
-          reminder_type: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          days_before: number
-          debt_id: string
-          id?: string
-          is_active?: boolean
-          reminder_type?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          days_before?: number
-          debt_id?: string
-          id?: string
-          is_active?: boolean
-          reminder_type?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "debt_reminders_debt_id_fkey"
-            columns: ["debt_id"]
-            isOneToOne: false
-            referencedRelation: "debts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       debts: {
         Row: {
-          annual_interest_rate: number
           created_at: string
-          creditor_name: string
+          creditor: string
           current_balance: number
-          description: string | null
-          due_day: number
+          due_date: string | null
           id: string
-          minimum_payment: number
-          total_amount: number
+          interest_rate: number
+          monthly_payment: number
+          original_amount: number
+          status: Database["public"]["Enums"]["debt_status"]
           updated_at: string
           user_id: string
         }
         Insert: {
-          annual_interest_rate?: number
           created_at?: string
-          creditor_name: string
-          current_balance: number
-          description?: string | null
-          due_day: number
+          creditor: string
+          current_balance?: number
+          due_date?: string | null
           id?: string
-          minimum_payment: number
-          total_amount: number
+          interest_rate?: number
+          monthly_payment?: number
+          original_amount?: number
+          status?: Database["public"]["Enums"]["debt_status"]
           updated_at?: string
           user_id: string
         }
         Update: {
-          annual_interest_rate?: number
           created_at?: string
-          creditor_name?: string
+          creditor?: string
           current_balance?: number
-          description?: string | null
-          due_day?: number
+          due_date?: string | null
           id?: string
-          minimum_payment?: number
-          total_amount?: number
+          interest_rate?: number
+          monthly_payment?: number
+          original_amount?: number
+          status?: Database["public"]["Enums"]["debt_status"]
           updated_at?: string
           user_id?: string
         }
@@ -212,19 +133,23 @@ export type Database = {
           amount: number
           category: string
           created_at: string
-          description: string
-          expense_date: string
+          date: string
+          description: string | null
           id: string
+          is_recurring: boolean
+          subcategory: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          amount: number
+          amount?: number
           category: string
           created_at?: string
-          description: string
-          expense_date?: string
+          date?: string
+          description?: string | null
           id?: string
+          is_recurring?: boolean
+          subcategory?: string | null
           updated_at?: string
           user_id: string
         }
@@ -232,51 +157,11 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string
-          description?: string
-          expense_date?: string
+          date?: string
+          description?: string | null
           id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      financial_data: {
-        Row: {
-          created_at: string
-          emergency_fund_goal: number
-          id: string
-          loan_amount: number
-          monthly_balance: number
-          monthly_expenses: number
-          monthly_income: number
-          monthly_payment: number
-          savings_goal: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          emergency_fund_goal?: number
-          id?: string
-          loan_amount?: number
-          monthly_balance?: number
-          monthly_expenses?: number
-          monthly_income?: number
-          monthly_payment?: number
-          savings_goal?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          emergency_fund_goal?: number
-          id?: string
-          loan_amount?: number
-          monthly_balance?: number
-          monthly_expenses?: number
-          monthly_income?: number
-          monthly_payment?: number
-          savings_goal?: number
+          is_recurring?: boolean
+          subcategory?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -285,40 +170,70 @@ export type Database = {
       financial_plans: {
         Row: {
           created_at: string
-          goals: Json
           id: string
-          monthly_balance: number
           plan_data: Json
           plan_type: string
-          recommendations: Json
-          savings_suggestion: number
-          status: string
+          status: Database["public"]["Enums"]["plan_status"]
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_data?: Json
+          plan_type?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_data?: Json
+          plan_type?: string
+          status?: Database["public"]["Enums"]["plan_status"]
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      financial_summary: {
+        Row: {
+          emergency_fund: number
+          id: string
+          last_calculated: string
+          monthly_debt_payments: number
+          savings_capacity: number
+          total_debt: number
+          total_monthly_expenses: number
+          total_monthly_income: number
           updated_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string
-          goals?: Json
+          emergency_fund?: number
           id?: string
-          monthly_balance?: number
-          plan_data?: Json
-          plan_type?: string
-          recommendations?: Json
-          savings_suggestion?: number
-          status?: string
+          last_calculated?: string
+          monthly_debt_payments?: number
+          savings_capacity?: number
+          total_debt?: number
+          total_monthly_expenses?: number
+          total_monthly_income?: number
           updated_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string
-          goals?: Json
+          emergency_fund?: number
           id?: string
-          monthly_balance?: number
-          plan_data?: Json
-          plan_type?: string
-          recommendations?: Json
-          savings_suggestion?: number
-          status?: string
+          last_calculated?: string
+          monthly_debt_payments?: number
+          savings_capacity?: number
+          total_debt?: number
+          total_monthly_expenses?: number
+          total_monthly_income?: number
           updated_at?: string
           user_id?: string
         }
@@ -328,39 +243,72 @@ export type Database = {
         Row: {
           created_at: string
           current_amount: number
-          goal_name: string
-          goal_type: string
+          deadline: string | null
+          description: string | null
           id: string
-          priority: string
-          status: string
+          priority: Database["public"]["Enums"]["goal_priority"]
+          status: Database["public"]["Enums"]["goal_status"]
           target_amount: number
-          target_date: string | null
+          title: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           current_amount?: number
-          goal_name: string
-          goal_type: string
+          deadline?: string | null
+          description?: string | null
           id?: string
-          priority?: string
-          status?: string
+          priority?: Database["public"]["Enums"]["goal_priority"]
+          status?: Database["public"]["Enums"]["goal_status"]
           target_amount?: number
-          target_date?: string | null
+          title: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           current_amount?: number
-          goal_name?: string
-          goal_type?: string
+          deadline?: string | null
+          description?: string | null
           id?: string
-          priority?: string
-          status?: string
+          priority?: Database["public"]["Enums"]["goal_priority"]
+          status?: Database["public"]["Enums"]["goal_status"]
           target_amount?: number
-          target_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      income_sources: {
+        Row: {
+          amount: number
+          created_at: string
+          frequency: Database["public"]["Enums"]["frequency_type"]
+          id: string
+          is_active: boolean
+          source_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          frequency?: Database["public"]["Enums"]["frequency_type"]
+          id?: string
+          is_active?: boolean
+          source_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          frequency?: Database["public"]["Enums"]["frequency_type"]
+          id?: string
+          is_active?: boolean
+          source_name?: string
           updated_at?: string
           user_id?: string
         }
@@ -445,36 +393,6 @@ export type Database = {
           remaining_payments?: number
           status?: string
           total_payments?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      onboarding_expenses: {
-        Row: {
-          amount: number
-          category: string
-          created_at: string
-          id: string
-          subcategory: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          category: string
-          created_at?: string
-          id?: string
-          subcategory: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          category?: string
-          created_at?: string
-          id?: string
-          subcategory?: string
           updated_at?: string
           user_id?: string
         }
@@ -586,15 +504,7 @@ export type Database = {
           user_id?: string
           whatsapp_reminders?: boolean
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_action_plans_financial_plan_id_fkey"
-            columns: ["financial_plan_id"]
-            isOneToOne: false
-            referencedRelation: "user_financial_plans"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_categories: {
         Row: {
@@ -620,129 +530,6 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      user_financial_data: {
-        Row: {
-          ahorros: Json
-          ahorros_actuales: number | null
-          capacidad_ahorro: number | null
-          created_at: string
-          deudas: Json
-          gastos_categorizados: Json
-          gastos_totales: number | null
-          id: string
-          ingresos: number
-          ingresos_extras: number
-          metas: Json
-          metas_financieras: Json | null
-          updated_at: string
-          user_data: Json
-          user_id: string
-        }
-        Insert: {
-          ahorros?: Json
-          ahorros_actuales?: number | null
-          capacidad_ahorro?: number | null
-          created_at?: string
-          deudas?: Json
-          gastos_categorizados?: Json
-          gastos_totales?: number | null
-          id?: string
-          ingresos?: number
-          ingresos_extras?: number
-          metas?: Json
-          metas_financieras?: Json | null
-          updated_at?: string
-          user_data?: Json
-          user_id: string
-        }
-        Update: {
-          ahorros?: Json
-          ahorros_actuales?: number | null
-          capacidad_ahorro?: number | null
-          created_at?: string
-          deudas?: Json
-          gastos_categorizados?: Json
-          gastos_totales?: number | null
-          id?: string
-          ingresos?: number
-          ingresos_extras?: number
-          metas?: Json
-          metas_financieras?: Json | null
-          updated_at?: string
-          user_data?: Json
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_financial_plans: {
-        Row: {
-          created_at: string
-          id: string
-          plan_data: Json
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          plan_data: Json
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          plan_data?: Json
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_loans: {
-        Row: {
-          created_at: string
-          id: string
-          loan_amount: number
-          loan_interest_estimate: number
-          loan_origin: string
-          loan_payment_per_term: number
-          loan_start_date: string
-          loan_status: Database["public"]["Enums"]["loan_status"]
-          loan_term_quincenas: number
-          loan_total_payment: number
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          loan_amount: number
-          loan_interest_estimate: number
-          loan_origin: string
-          loan_payment_per_term: number
-          loan_start_date?: string
-          loan_status?: Database["public"]["Enums"]["loan_status"]
-          loan_term_quincenas: number
-          loan_total_payment: number
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          loan_amount?: number
-          loan_interest_estimate?: number
-          loan_origin?: string
-          loan_payment_per_term?: number
-          loan_start_date?: string
-          loan_status?: Database["public"]["Enums"]["loan_status"]
-          loan_term_quincenas?: number
-          loan_total_payment?: number
-          updated_at?: string
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -787,10 +574,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_financial_summary: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
+      debt_status: "active" | "paid" | "delinquent"
+      frequency_type: "monthly" | "biweekly" | "weekly" | "yearly"
+      goal_priority: "high" | "medium" | "low"
+      goal_status: "active" | "completed" | "paused"
       loan_status: "pending_plan" | "active" | "completed"
+      plan_status: "draft" | "active" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -918,7 +713,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      debt_status: ["active", "paid", "delinquent"],
+      frequency_type: ["monthly", "biweekly", "weekly", "yearly"],
+      goal_priority: ["high", "medium", "low"],
+      goal_status: ["active", "completed", "paused"],
       loan_status: ["pending_plan", "active", "completed"],
+      plan_status: ["draft", "active", "completed"],
     },
   },
 } as const
