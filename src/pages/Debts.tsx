@@ -262,7 +262,17 @@ export default function DebtsPage() {
           isOpen={isDebtModalOpen}
           onClose={handleCloseModal}
           onSave={handleSaveDebt}
-          debt={editingDebt}
+          debt={editingDebt ? {
+            id: editingDebt.id,
+            creditor: editingDebt.creditor,
+            original_amount: editingDebt.original_amount,
+            current_balance: editingDebt.current_balance,
+            monthly_payment: editingDebt.monthly_payment,
+            interest_rate: editingDebt.interest_rate,
+            due_date: editingDebt.due_date,
+            status: editingDebt.status,
+            description: editingDebt.description
+          } : null}
           isLoading={isCreating || isUpdating}
         />
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -101,7 +100,7 @@ export default function ExpensesPage() {
       'Otros': 'Other'
     }
 
-    const category = categoryMap[expenseData.category] || 'Other'
+    const category = categoryMap[expenseData.category] || 'Other' as ExpenseCategoryType
 
     if (editingExpense) {
       updateExpense({ 
