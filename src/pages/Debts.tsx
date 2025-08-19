@@ -1,9 +1,6 @@
-
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Plus, TrendingUp, Calendar, DollarSign, AlertTriangle } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useDebts } from '@/hooks/useDebts'
 import DebtModal from '@/components/debts/DebtModal'
 import PaymentModal from '@/components/debts/PaymentModal'
@@ -32,7 +29,7 @@ export default function DebtsPage() {
   const debtModal = useModal()
   const paymentModal = useModal()
   const scenarioModal = useModal()
-  const { showConfirmDialog } = useConfirmDialog()
+  const { confirm } = useConfirmDialog()
   
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null)
@@ -45,11 +42,12 @@ export default function DebtsPage() {
   }
 
   const handleDeleteDebt = async (debt: Debt) => {
-    const confirmed = await showConfirmDialog({
+    const confirmed = await confirm({
       title: 'Eliminar Deuda',
-      description: `¿Estás seguro de que deseas eliminar la deuda con ${debt.creditor}?`,
+      message: `¿Estás seguro de que deseas eliminar la deuda con ${debt.creditor}?`,
       confirmText: 'Eliminar',
-      cancelText: 'Cancelar'
+      cancelText: 'Cancelar',
+      variant: 'destructive'
     })
     
     if (confirmed) {
