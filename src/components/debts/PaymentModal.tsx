@@ -8,13 +8,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { DollarSign, Calendar, CreditCard } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/utils/helpers'
-import type { Debt } from '@/types/debt'
+import type { Debt } from '@/domains/debts/types/debt.types'
 
 interface PaymentModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (payment: { debt_id: string; amount: number; payment_date: string; notes?: string }) => void
-  debt: Debt
+  debt: Debt | null
   isLoading?: boolean
 }
 
@@ -38,15 +38,17 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
   }, [formData.amount])
 
   const calculatePaymentImpact = () => {
+    if (!debt) return
+    
     const paymentAmount = parseFloat(formData.amount) || 0
     if (paymentAmount <= 0) return
 
     const newBalance = Math.max(0, debt.current_balance - paymentAmount)
-    const progressPercentage = Math.round(((debt.total_amount - newBalance) / debt.total_amount) * 100)
+    const progressPercentage = Math.round(((debt.original_amount - newBalance) / debt.original_amount) * 100)
     
     // Calculate months reduced (simplified calculation)
-    const currentMonths = Math.ceil(debt.current_balance / debt.minimum_payment)
-    const newMonths = Math.ceil(newBalance / debt.minimum_payment)
+    const currentMonths = Math.ceil(debt.current_balance / debt.monthly_payment)
+    const newMonths = Math.ceil(newBalance / debt.monthly_payment)
     const monthsReduced = Math.max(0, currentMonths - newMonths)
 
     setPaymentImpact({
@@ -59,7 +61,7 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+    if (!debt || !formData.amount || parseFloat(formData.amount) <= 0) {
       return
     }
 
@@ -86,13 +88,15 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
     setFormData(prev => ({ ...prev, amount: amount.toString() }))
   }
 
+  if (!debt) return null
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-success" />
-            Registrar Pago - {debt.creditor_name}
+            Registrar Pago - {debt.creditor}
           </DialogTitle>
         </DialogHeader>
 
@@ -106,7 +110,7 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
                   {formatCurrency(debt.current_balance)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  de {formatCurrency(debt.total_amount)} total
+                  de {formatCurrency(debt.original_amount)} total
                 </p>
               </div>
             </CardContent>
@@ -120,21 +124,21 @@ export default function PaymentModal({ isOpen, onClose, onSubmit, debt, isLoadin
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setQuickAmount(debt.minimum_payment)}
+                onClick={() => setQuickAmount(debt.monthly_payment)}
               >
                 Mínimo
                 <br />
-                <span className="text-xs">{formatCurrency(debt.minimum_payment)}</span>
+                <span className="text-xs">{formatCurrency(debt.monthly_payment)}</span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setQuickAmount(debt.minimum_payment * 2)}
+                onClick={() => setQuickAmount(debt.monthly_payment * 2)}
               >
                 Doble
                 <br />
-                <span className="text-xs">{formatCurrency(debt.minimum_payment * 2)}</span>
+                <span className="text-xs">{formatCurrency(debt.monthly_payment * 2)}</span>
               </Button>
               <Button
                 type="button"

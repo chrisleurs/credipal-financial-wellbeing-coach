@@ -8,12 +8,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TrendingUp, TrendingDown, Target, Calculator, DollarSign, AlertTriangle, CheckCircle } from 'lucide-react'
 import { AIMotivationalService } from '@/services/aiMotivationalService'
-import type { Debt, DebtPayment } from '@/types/debt'
+import type { Debt } from '@/domains/debts/types/debt.types'
+
+interface DebtPayment {
+  id: string
+  debt_id: string
+  user_id: string
+  amount: number
+  payment_date: string
+  notes?: string
+  created_at: string
+}
 
 interface ScenarioAnalysisProps {
   isOpen: boolean
   onClose: () => void
-  debt: Debt
+  debt: Debt | null
   payments: DebtPayment[]
 }
 
@@ -25,20 +35,43 @@ export default function ScenarioAnalysis({ isOpen, onClose, debt, payments }: Sc
     pessimistic: { months: 0, totalInterest: 0, totalPayment: 0, cost: 0 }
   })
 
-  const aiMessages = {
-    positive: AIMotivationalService.generateMotivationalMessage(debt, payments, 'positive'),
-    negative: AIMotivationalService.generateMotivationalMessage(debt, payments, 'negative'),
-    progress: AIMotivationalService.generateMotivationalMessage(debt, payments, 'progress')
+  // Convert domain debt to legacy format for AI service compatibility
+  const legacyDebt = debt ? {
+    id: debt.id,
+    user_id: debt.user_id,
+    creditor_name: debt.creditor,
+    total_amount: debt.original_amount,
+    current_balance: debt.current_balance,
+    annual_interest_rate: debt.interest_rate,
+    minimum_payment: debt.monthly_payment,
+    due_day: 1, // Default value
+    description: debt.description,
+    created_at: debt.created_at,
+    updated_at: debt.updated_at
+  } : null
+
+  const aiMessages = legacyDebt ? {
+    positive: AIMotivationalService.generateMotivationalMessage(legacyDebt, payments, 'positive'),
+    negative: AIMotivationalService.generateMotivationalMessage(legacyDebt, payments, 'negative'),
+    progress: AIMotivationalService.generateMotivationalMessage(legacyDebt, payments, 'progress')
+  } : {
+    positive: { message: 'No debt data available', actionSuggestion: '' },
+    negative: { message: 'No debt data available', actionSuggestion: '' },
+    progress: { message: 'No debt data available', actionSuggestion: '' }
   }
 
   useEffect(() => {
-    calculateScenarios()
+    if (debt) {
+      calculateScenarios()
+    }
   }, [debt, extraPayment])
 
   const calculateScenarios = () => {
+    if (!debt) return
+
     const balance = debt.current_balance
-    const monthlyPayment = debt.minimum_payment
-    const annualRate = debt.annual_interest_rate
+    const monthlyPayment = debt.monthly_payment
+    const annualRate = debt.interest_rate
     const monthlyRate = annualRate / 100 / 12
     const extraAmount = parseFloat(extraPayment) || 0
 
@@ -110,13 +143,15 @@ export default function ScenarioAnalysis({ isOpen, onClose, debt, payments }: Sc
     return `${months}m`
   }
 
+  if (!debt) return null
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5 text-primary" />
-            Análisis de Escenarios - {debt.creditor_name}
+            Análisis de Escenarios - {debt.creditor}
           </DialogTitle>
         </DialogHeader>
 
@@ -137,19 +172,19 @@ export default function ScenarioAnalysis({ isOpen, onClose, debt, payments }: Sc
                 <div>
                   <p className="text-sm text-muted-foreground">Pago Mínimo</p>
                   <p className="text-xl font-bold text-warning">
-                    ${debt.minimum_payment.toLocaleString()}
+                    ${debt.monthly_payment.toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Tasa Anual</p>
                   <p className="text-xl font-bold text-primary">
-                    {debt.annual_interest_rate}%
+                    {debt.interest_rate}%
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Progreso</p>
                   <p className="text-xl font-bold text-success">
-                    {Math.round(((debt.total_amount - debt.current_balance) / debt.total_amount) * 100)}%
+                    {Math.round(((debt.original_amount - debt.current_balance) / debt.original_amount) * 100)}%
                   </p>
                 </div>
               </div>
@@ -347,13 +382,13 @@ export default function ScenarioAnalysis({ isOpen, onClose, debt, payments }: Sc
                     <div>
                       <p className="text-sm text-muted-foreground">Interés Adicional</p>
                       <p className="text-xl font-bold text-destructive">
-                        ${(debt.current_balance * (debt.annual_interest_rate / 100 / 12)).toLocaleString()}
+                        ${(debt.current_balance * (debt.interest_rate / 100 / 12)).toLocaleString()}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Posibles Recargos</p>
                       <p className="text-xl font-bold text-destructive">
-                        ${(debt.minimum_payment * 0.05).toLocaleString()}
+                        ${(debt.monthly_payment * 0.05).toLocaleString()}
                       </p>
                     </div>
                   </div>
