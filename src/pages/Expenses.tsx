@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,7 +7,6 @@ import { Plus, Filter, Download, TrendingUp, Calendar, DollarSign } from 'lucide
 import { useExpenses } from '@/hooks/useExpenses'
 import { ExpenseModal } from '@/components/expenses/ExpenseModal'
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters'
-import { CategoryManagement } from '@/components/expenses/CategoryManagement'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Expense, ExpenseCategoryType } from '@/domains/expenses/types/expense.types'
 
@@ -24,7 +24,6 @@ export default function ExpensesPage() {
   } = useExpenses()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [filters, setFilters] = useState({
     category: 'all',
@@ -100,7 +99,7 @@ export default function ExpensesPage() {
       'Otros': 'Other'
     }
 
-    const category = categoryMap[expenseData.category] || 'Other' as ExpenseCategoryType
+    const category = (categoryMap[expenseData.category] || 'Other') as ExpenseCategoryType
 
     if (editingExpense) {
       updateExpense({ 
@@ -166,10 +165,6 @@ export default function ExpensesPage() {
             <p className="text-muted-foreground">Controla y categoriza tus gastos</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsCategoryModalOpen(true)}>
-              <Filter className="mr-2 h-4 w-4" />
-              Categorías
-            </Button>
             <Button variant="outline" onClick={exportExpenses}>
               <Download className="mr-2 h-4 w-4" />
               Exportar
@@ -308,18 +303,13 @@ export default function ExpensesPage() {
           </CardContent>
         </Card>
 
-        {/* Modals */}
+        {/* Modal */}
         <ExpenseModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSubmit={handleSaveExpense}
           expense={editingExpense}
           title={editingExpense ? 'Editar Gasto' : 'Agregar Gasto'}
-        />
-
-        <CategoryManagement
-          isOpen={isCategoryModalOpen}
-          onClose={() => setIsCategoryModalOpen(false)}
         />
       </div>
     </AppLayout>

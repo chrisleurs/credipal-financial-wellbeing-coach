@@ -264,6 +264,7 @@ export default function DebtsPage() {
           onSave={handleSaveDebt}
           debt={editingDebt ? {
             id: editingDebt.id,
+            user_id: editingDebt.user_id,
             creditor: editingDebt.creditor,
             original_amount: editingDebt.original_amount,
             current_balance: editingDebt.current_balance,
@@ -271,7 +272,9 @@ export default function DebtsPage() {
             interest_rate: editingDebt.interest_rate,
             due_date: editingDebt.due_date,
             status: editingDebt.status,
-            description: editingDebt.description
+            description: editingDebt.description,
+            created_at: editingDebt.created_at,
+            updated_at: editingDebt.updated_at
           } : null}
           isLoading={isCreating || isUpdating}
         />
