@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -157,24 +156,14 @@ export default function DebtsPage() {
             setSelectedDebt(null)
           }}
           onSubmit={handlePaymentSubmit}
-          debt={selectedDebt ? {
-            id: selectedDebt.id,
-            creditor_name: selectedDebt.creditor,
-            current_balance: selectedDebt.current_balance,
-            minimum_payment: selectedDebt.monthly_payment
-          } : null}
+          debt={selectedDebt}
           isLoading={false}
         />
 
         <ScenarioAnalysis
           isOpen={scenarioModal.isOpen}
           onClose={scenarioModal.close}
-          debt={activeDebts[0] ? {
-            id: activeDebts[0].id,
-            creditor_name: activeDebts[0].creditor,
-            current_balance: activeDebts[0].current_balance,
-            minimum_payment: activeDebts[0].monthly_payment
-          } : null}
+          debt={activeDebts[0] || null}
           payments={[]}
         />
       </div>
