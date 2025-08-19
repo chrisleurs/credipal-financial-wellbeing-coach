@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,6 +9,7 @@ import { GoalsList } from '@/components/goals/GoalsList'
 import { MetricCard } from './MetricCard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { formatCurrency } from '@/utils/helpers'
+import { useDebts } from '@/hooks/useDebts'
 import { 
   DollarSign, 
   CreditCard, 
@@ -21,7 +21,32 @@ import {
 
 export const FinancialDashboard = () => {
   const { consolidatedData, isLoading, error } = useConsolidatedFinancialData()
+  const { 
+    debts, 
+    updateDebt, 
+    deleteDebt, 
+    isUpdating, 
+    isDeleting 
+  } = useDebts()
   const [activeSection, setActiveSection] = useState<'overview' | 'income' | 'expenses' | 'debts' | 'goals'>('overview')
+
+  const handleEditDebt = (debt: any) => {
+    console.log('Edit debt:', debt)
+  }
+
+  const handleDeleteDebt = (debt: any) => {
+    if (window.confirm(`Are you sure you want to delete the debt to ${debt.creditor}?`)) {
+      deleteDebt(debt.id)
+    }
+  }
+
+  const handleMakePayment = (debt: any) => {
+    console.log('Make payment for:', debt)
+  }
+
+  const handleCreateDebt = () => {
+    console.log('Create new debt')
+  }
 
   if (isLoading) {
     return (
@@ -82,7 +107,17 @@ export const FinancialDashboard = () => {
       case 'expenses':
         return <ExpensesList />
       case 'debts':
-        return <DebtsList />
+        return (
+          <DebtsList 
+            debts={debts}
+            onEdit={handleEditDebt}
+            onDelete={handleDeleteDebt}
+            onMakePayment={handleMakePayment}
+            onCreate={handleCreateDebt}
+            isUpdating={isUpdating}
+            isDeleting={isDeleting}
+          />
+        )
       case 'goals':
         return <GoalsList />
       default:

@@ -12,6 +12,8 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { Debt } from '@/domains/debts/types/debt.types'
 import { DebtSummaryCards } from '@/components/debts/DebtSummaryCards'
 import { DebtsList } from '@/components/debts/DebtsList'
+import { useModal } from '@/shared/hooks/useModal'
+import { useConfirmDialog } from '@/shared/hooks/useConfirmDialog'
 
 export default function DebtsPage() {
   const { 
@@ -27,9 +29,11 @@ export default function DebtsPage() {
     isDeleting
   } = useDebts()
 
-  const [isDebtModalOpen, setIsDebtModalOpen] = useState(false)
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-  const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false)
+  const debtModal = useModal()
+  const paymentModal = useModal()
+  const scenarioModal = useModal()
+  const { showConfirmDialog } = useConfirmDialog()
+  
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null)
 
@@ -37,28 +41,30 @@ export default function DebtsPage() {
 
   const handleEditDebt = (debt: Debt) => {
     setEditingDebt(debt)
-    setIsDebtModalOpen(true)
+    debtModal.open()
   }
 
-  const handleDeleteDebt = (debt: Debt) => {
-    if (window.confirm(`Are you sure you want to delete the debt to ${debt.creditor}?`)) {
+  const handleDeleteDebt = async (debt: Debt) => {
+    const confirmed = await showConfirmDialog({
+      title: 'Eliminar Deuda',
+      description: `¿Estás seguro de que deseas eliminar la deuda con ${debt.creditor}?`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    })
+    
+    if (confirmed) {
       deleteDebt(debt.id)
     }
   }
 
   const handleMakePayment = (debt: Debt) => {
     setSelectedDebt(debt)
-    setIsPaymentModalOpen(true)
+    paymentModal.open()
   }
 
   const handleCreateDebt = () => {
     setEditingDebt(null)
-    setIsDebtModalOpen(true)
-  }
-
-  const handleCloseModal = () => {
-    setIsDebtModalOpen(false)
-    setEditingDebt(null)
+    debtModal.open()
   }
 
   const handleSaveDebt = (debtData: {
@@ -76,7 +82,8 @@ export default function DebtsPage() {
     } else {
       createDebt(debtData)
     }
-    handleCloseModal()
+    debtModal.close()
+    setEditingDebt(null)
   }
 
   const handlePaymentSubmit = (paymentData: {
@@ -86,7 +93,7 @@ export default function DebtsPage() {
     notes?: string
   }) => {
     console.log('Payment registered:', paymentData)
-    setIsPaymentModalOpen(false)
+    paymentModal.close()
     setSelectedDebt(null)
   }
 
@@ -120,7 +127,7 @@ export default function DebtsPage() {
           totalDebt={totalDebt}
           totalMonthlyPayments={totalMonthlyPayments}
           activeDebtsCount={activeDebts.length}
-          onAnalyzeClick={() => setIsScenarioModalOpen(true)}
+          onAnalyzeClick={scenarioModal.open}
           canAnalyze={activeDebts.length > 0}
         />
 
@@ -137,17 +144,17 @@ export default function DebtsPage() {
 
         {/* Modals */}
         <DebtModal
-          isOpen={isDebtModalOpen}
-          onClose={handleCloseModal}
+          isOpen={debtModal.isOpen}
+          onClose={debtModal.close}
           onSave={handleSaveDebt}
           debt={editingDebt}
           isLoading={isCreating || isUpdating}
         />
 
         <PaymentModal
-          isOpen={isPaymentModalOpen}
+          isOpen={paymentModal.isOpen}
           onClose={() => {
-            setIsPaymentModalOpen(false)
+            paymentModal.close()
             setSelectedDebt(null)
           }}
           onSubmit={handlePaymentSubmit}
@@ -161,8 +168,8 @@ export default function DebtsPage() {
         />
 
         <ScenarioAnalysis
-          isOpen={isScenarioModalOpen}
-          onClose={() => setIsScenarioModalOpen(false)}
+          isOpen={scenarioModal.isOpen}
+          onClose={scenarioModal.close}
           debt={activeDebts[0] ? {
             id: activeDebts[0].id,
             creditor: activeDebts[0].creditor,
