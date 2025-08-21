@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react'
 import { Target, Plus, Check } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
@@ -93,8 +92,8 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
       subtitle="Define objetivos claros para mantener tu motivación y medir tu progreso 🎯"
       onNext={handleNext}
       onBack={onBack}
+      canProceed={true}
       nextButtonText="Completar Configuración"
-      showProgress
     >
       <div className="space-y-6">
         {/* Add Custom Goal */}
