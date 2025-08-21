@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react'
 import { Home, Car, Utensils, CreditCard, MoreHorizontal, Calculator } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
@@ -103,7 +102,7 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
     return (
       <OnboardingStep
         currentStep={1}
-        totalSteps={6}
+        totalSteps={5}
         title="Loading your expenses..."
         subtitle="Please wait while we load your data"
         onNext={handleNext}
@@ -120,7 +119,7 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
   return (
     <OnboardingStep
       currentStep={1}
-      totalSteps={6}
+      totalSteps={5}
       title="What are your individual monthly expenses?"
       subtitle="Add specific expenses in each category. Break down your spending so we can give you better insights! 😊"
       onNext={handleNext}

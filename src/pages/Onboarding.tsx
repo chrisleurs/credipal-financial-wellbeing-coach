@@ -1,12 +1,13 @@
+
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinancialStore } from '@/store/financialStore'
 import { useAuth } from '@/hooks/useAuth'
 import Step1Income from '@/components/onboarding/Step1Income'
+import Step2Expenses from '@/components/onboarding/Step2Expenses'
 import Step3Debts from '@/components/onboarding/Step3Debts'
 import Step4Savings from '@/components/onboarding/Step4Savings'
 import Step5Goals from '@/components/onboarding/Step5Goals'
-import Step6WhatsApp from '@/components/onboarding/Step6WhatsApp'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { RotateCcw } from 'lucide-react'
@@ -55,9 +56,11 @@ const Onboarding: React.FC = () => {
 
   const handleNext = () => {
     console.log('handleNext called, currentStep:', currentStep)
-    // New flow: Income (0) → Debts (2) → Savings (3) → Goals (4) → Dashboard
+    // New flow: Income (0) → Expenses (1) → Debts (2) → Savings (3) → Goals (4) → Dashboard
     if (currentStep === 0) {
-      setCurrentStep(2) // Skip to debts (was step 3, now step 2)
+      setCurrentStep(1) // Go to expenses
+    } else if (currentStep === 1) {
+      setCurrentStep(2) // Go to debts
     } else if (currentStep === 2) {
       setCurrentStep(3) // Go to savings
     } else if (currentStep === 3) {
@@ -70,9 +73,11 @@ const Onboarding: React.FC = () => {
 
   const handleBack = () => {
     console.log('handleBack called, currentStep:', currentStep)
-    // Handle back navigation with skipped step
-    if (currentStep === 2) {
-      setCurrentStep(0) // Go back to income from debts
+    // Handle back navigation
+    if (currentStep === 1) {
+      setCurrentStep(0) // Go back to income from expenses
+    } else if (currentStep === 2) {
+      setCurrentStep(1) // Go back to expenses from debts
     } else if (currentStep === 3) {
       setCurrentStep(2) // Go back to debts from savings
     } else if (currentStep === 4) {
@@ -107,11 +112,7 @@ const Onboarding: React.FC = () => {
   if (hasExistingProgress) {
     // Convert internal step to display step for user
     const getDisplayStep = (internalStep: number) => {
-      if (internalStep === 0) return 1 // Income
-      if (internalStep === 2) return 2 // Debts 
-      if (internalStep === 3) return 3 // Savings
-      if (internalStep === 4) return 4 // Goals
-      return internalStep
+      return internalStep + 1 // Simple 1-based indexing now
     }
     
     const displayStep = getDisplayStep(currentStep)
@@ -127,7 +128,7 @@ const Onboarding: React.FC = () => {
               Let's pick up where you left off!
             </h1>
             <p className="text-gray-600">
-              We found that you had progressed to step {displayStep} of 4. 
+              We found that you had progressed to step {displayStep} of 5. 
               Would you like to continue from there or start over?
             </p>
           </div>
@@ -158,11 +159,13 @@ const Onboarding: React.FC = () => {
     switch (currentStep) {
       case 0:
         return <Step1Income onNext={handleNext} onBack={handleBack} />
-      case 2: // Debts (was step 3, now step 2)
+      case 1:
+        return <Step2Expenses onNext={handleNext} onBack={handleBack} />
+      case 2:
         return <Step3Debts onNext={handleNext} onBack={handleBack} />
-      case 3: // Savings (was step 4, now step 3)
+      case 3:
         return <Step4Savings onNext={handleNext} onBack={handleBack} />
-      case 4: // Goals (was step 5, now step 4 - final step)
+      case 4:
         return <Step5Goals onNext={handleNext} onBack={handleBack} />
       default:
         return <LoadingSpinner />
