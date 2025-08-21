@@ -1,16 +1,22 @@
 
 import React from 'react'
 import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
-import { useFinancialPlan } from '@/hooks/useFinancialPlan'
+import { useFinancialPlanGenerator } from '@/hooks/useFinancialPlanGenerator'
 import { CrediPalDashboard } from '@/components/dashboard/CrediPalDashboard'
+import { PlanGenerationScreen } from '@/components/dashboard/PlanGenerationScreen'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function Dashboard() {
   const { consolidatedData, isLoading: isDataLoading } = useConsolidatedFinancialData()
-  const { hasActivePlan, isLoading: isPlanLoading } = useFinancialPlan()
+  const { 
+    generatedPlan, 
+    hasPlan, 
+    isGenerating, 
+    generatePlan 
+  } = useFinancialPlanGenerator()
 
-  if (isDataLoading || isPlanLoading) {
+  if (isDataLoading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -22,7 +28,15 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <CrediPalDashboard />
+      {hasPlan && generatedPlan ? (
+        <CrediPalDashboard />
+      ) : (
+        <PlanGenerationScreen 
+          consolidatedData={consolidatedData}
+          isGenerating={isGenerating}
+          onGeneratePlan={generatePlan}
+        />
+      )}
     </AppLayout>
   )
 }

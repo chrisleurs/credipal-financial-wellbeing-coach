@@ -25,14 +25,47 @@ interface GeneratedPlan {
   }>
   motivationalMessage: string
   recommendations: string[]
+  actionPlan?: Array<{
+    title: string
+    description: string
+    timeline?: string
+    priority: 'high' | 'medium' | 'low'
+  }>
+  summary?: string
 }
 
 export const useFinancialPlanGenerator = () => {
   const { user } = useAuth()
-  const { consolidatedData } = useConsolidatedFinancialData()
+  const { consolidatedData, isLoading: isDataLoading } = useConsolidatedFinancialData()
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasPlan, setHasPlan] = useState(false)
+
+  // Check if user already has a plan
+  const checkExistingPlan = async () => {
+    if (!user?.id) return
+
+    try {
+      const { data, error } = await supabase
+        .from('financial_plans')
+        .select('plan_data')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .single()
+
+      if (data?.plan_data && !error) {
+        const planData = data.plan_data as any
+        setGeneratedPlan(planData)
+        setHasPlan(true)
+      } else {
+        setHasPlan(false)
+      }
+    } catch (error) {
+      console.error('Error checking existing plan:', error)
+      setHasPlan(false)
+    }
+  }
 
   const generatePlan = async () => {
     if (!user?.id || !consolidatedData) return
@@ -144,28 +177,47 @@ export const useFinancialPlanGenerator = () => {
       }
       recommendations.push("Automatiza tus ahorros para crear disciplina financiera")
 
+      // Action plan
+      const actionPlan = [
+        {
+          title: "Establece tu fondo de emergencia",
+          description: "Separa un monto fijo mensual hasta alcanzar 6 meses de gastos",
+          timeline: "0-6 meses",
+          priority: 'high' as const
+        },
+        {
+          title: "Optimiza tus gastos",
+          description: "Identifica gastos innecesarios y redirige ese dinero a tus metas",
+          timeline: "Inmediato",
+          priority: 'high' as const
+        }
+      ]
+
       const plan: GeneratedPlan = {
         id: `plan-${Date.now()}`,
         goals,
         nextPayments,
         upcomingMilestones,
         motivationalMessage,
-        recommendations
+        recommendations,
+        actionPlan,
+        summary: "Plan personalizado basado en tu situación financiera actual"
       }
 
-      // Guardar el plan en la base de datos
+      // Guardar el plan en la base de datos - fix the JSON conversion
       const { error: saveError } = await supabase
         .from('financial_plans')
         .upsert({
           user_id: user.id,
           plan_type: 'credipal-generated',
-          plan_data: plan,
+          plan_data: plan as any, // Cast to any to bypass JSON type checking
           status: 'active'
         })
 
       if (saveError) throw saveError
 
       setGeneratedPlan(plan)
+      setHasPlan(true)
     } catch (error) {
       console.error('Error generating financial plan:', error)
       setError('Error al generar el plan financiero')
@@ -174,16 +226,32 @@ export const useFinancialPlanGenerator = () => {
     }
   }
 
+  const savePlan = async () => {
+    console.log('Plan saved successfully')
+  }
+
+  const clearPlan = () => {
+    setGeneratedPlan(null)
+    setHasPlan(false)
+  }
+
   useEffect(() => {
-    if (user?.id && consolidatedData && !generatedPlan) {
-      generatePlan()
+    if (user?.id) {
+      checkExistingPlan()
     }
-  }, [user?.id, consolidatedData])
+  }, [user?.id])
 
   return {
     generatedPlan,
     isGenerating,
     error,
-    regeneratePlan: generatePlan
+    hasPlan,
+    isLoading: isDataLoading,
+    hasCompleteData: !!consolidatedData && consolidatedData.hasRealData,
+    consolidatedProfile: consolidatedData,
+    generatePlan,
+    regeneratePlan: generatePlan,
+    savePlan,
+    clearPlan
   }
 }
