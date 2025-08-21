@@ -11,6 +11,48 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const translations = {
   es: {
+    // Hero
+    "hero_title": "Tu Coach de Bienestar Financiero Personal",
+    "hero_subtitle": "Te acompañamos en cada paso hacia tu libertad financiera con seguimiento inteligente, motivación constante y estrategias personalizadas. No solo administramos tu dinero, te acompañamos en tu crecimiento financiero.",
+    "hero_cta_primary": "Comenzar Mi Transformación Financiera",
+    "hero_cta_secondary": "Conocer Más",
+    "hero_stat_coach": "Coach Personal",
+    "hero_stat_personalized": "Personalizado", 
+    "hero_stat_motivation": "Motivación Constante",
+
+    // What is Credipal
+    "what_is_title": "¿Qué es Credipal?",
+    "what_is_description": "Credipal es más que una aplicación financiera - es tu compañero personal en el viaje hacia la libertad económica. Combinamos inteligencia artificial con coaching humano para transformar la ansiedad financiera en confianza y control sobre tu futuro.",
+
+    // Benefits
+    "benefits_title": "¿Por qué elegir Credipal como tu coach financiero?",
+    "benefits_subtitle": "El primer asistente financiero que actúa como tu coach personal, motivándote día a día hacia tus metas económicas.",
+    "benefit_1_title": "Coach Personal 24/7",
+    "benefit_1_desc": "Tu asistente inteligente que nunca duerme, siempre disponible para guiarte hacia tus metas financieras.",
+    "benefit_2_title": "Seguimiento Inteligente", 
+    "benefit_2_desc": "Monitorea automáticamente tu progreso y te alerta sobre oportunidades de mejora en tiempo real.",
+    "benefit_3_title": "Motivación Constante",
+    "benefit_3_desc": "Te impulsa día a día con recordatorios personalizados y celebra cada logro contigo.",
+    "benefit_4_title": "Estrategias Personalizadas",
+    "benefit_4_desc": "Planes financieros únicos adaptados a tu situación, objetivos y estilo de vida.",
+
+    // How it helps
+    "how_helps_title": "Cómo te ayuda Credipal",
+    "how_helps_subtitle": "Nuestro enfoque integral te acompaña desde la planificación hasta el logro de tu libertad financiera, paso a paso.",
+
+    // Testimonials  
+    "testimonials_title": "Historias de transformación",
+    "testimonials_subtitle": "Miles de personas han transformado su bienestar financiero con Credipal. Estas son algunas de sus historias.",
+
+    // CTA
+    "cta_title": "Comienza tu transformación financiera hoy",
+    "cta_subtitle": "Únete a miles de personas que ya han tomado control de su bienestar financiero con Credipal. Tu coach personal te está esperando.",
+    "cta_button": "Comenzar Ahora - Es Gratis",
+
+    // Contact
+    "contact_title": "¿Tienes preguntas sobre tu bienestar financiero?",
+    "contact_subtitle": "Nuestro equipo está aquí para ayudarte. Contáctanos y comienza tu transformación.",
+
     // Onboarding
     "welcome_title": "¡Bienvenido a Credipal!",
     "welcome_subtitle": "Tu asistente financiero personal",
@@ -69,6 +111,48 @@ const translations = {
     "bienestar_financiero": "Bienestar Financiero"
   },
   en: {
+    // Hero
+    "hero_title": "Your Personal Financial Wellness Coach",
+    "hero_subtitle": "We accompany you every step towards your financial freedom with intelligent tracking, constant motivation, and personalized strategies. We don't just manage your money, we accompany you in your financial growth.",
+    "hero_cta_primary": "Start My Financial Transformation",
+    "hero_cta_secondary": "Learn More",
+    "hero_stat_coach": "Personal Coach",
+    "hero_stat_personalized": "Personalized",
+    "hero_stat_motivation": "Constant Motivation",
+
+    // What is Credipal
+    "what_is_title": "What is Credipal?",
+    "what_is_description": "Credipal is more than a financial application - it's your personal companion on the journey towards economic freedom. We combine artificial intelligence with human coaching to transform financial anxiety into confidence and control over your future.",
+
+    // Benefits
+    "benefits_title": "Why choose Credipal as your financial coach?",
+    "benefits_subtitle": "The first financial assistant that acts as your personal coach, motivating you daily towards your economic goals.",
+    "benefit_1_title": "24/7 Personal Coach",
+    "benefit_1_desc": "Your intelligent assistant that never sleeps, always available to guide you towards your financial goals.",
+    "benefit_2_title": "Intelligent Tracking",
+    "benefit_2_desc": "Automatically monitors your progress and alerts you about real-time improvement opportunities.",
+    "benefit_3_title": "Constant Motivation",
+    "benefit_3_desc": "Drives you daily with personalized reminders and celebrates every achievement with you.",
+    "benefit_4_title": "Personalized Strategies",
+    "benefit_4_desc": "Unique financial plans adapted to your situation, objectives, and lifestyle.",
+
+    // How it helps
+    "how_helps_title": "How Credipal helps you",
+    "how_helps_subtitle": "Our comprehensive approach accompanies you from planning to achieving your financial freedom, step by step.",
+
+    // Testimonials
+    "testimonials_title": "Transformation stories",
+    "testimonials_subtitle": "Thousands of people have transformed their financial wellness with Credipal. These are some of their stories.",
+
+    // CTA
+    "cta_title": "Start your financial transformation today",
+    "cta_subtitle": "Join thousands of people who have already taken control of their financial wellness with Credipal. Your personal coach is waiting for you.",
+    "cta_button": "Start Now - It's Free",
+
+    // Contact
+    "contact_title": "Do you have questions about your financial wellness?",
+    "contact_subtitle": "Our team is here to help you. Contact us and start your transformation.",
+
     // Onboarding
     "welcome_title": "Welcome to Credipal!",
     "welcome_subtitle": "Your personal financial assistant",
@@ -135,7 +219,7 @@ interface LanguageProviderProps {
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const [language, setLanguage] = useState<'es' | 'en'>(() => {
     const saved = localStorage.getItem('credipal_language')
-    return (saved as 'es' | 'en') || 'es'
+    return (saved as 'es' | 'en') || 'en' // Changed default to English
   })
 
   useEffect(() => {

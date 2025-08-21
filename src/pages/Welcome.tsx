@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -43,23 +42,23 @@ export const Welcome = () => {
   const benefits = [
     {
       icon: Brain,
-      title: "Coach Personal 24/7",
-      description: "Tu asistente inteligente que nunca duerme, siempre disponible para guiarte hacia tus metas financieras."
+      titleKey: "benefit_1_title",
+      descKey: "benefit_1_desc"
     },
     {
       icon: TrendingUp,
-      title: "Seguimiento Inteligente",
-      description: "Monitorea automáticamente tu progreso y te alerta sobre oportunidades de mejora en tiempo real."
+      titleKey: "benefit_2_title", 
+      descKey: "benefit_2_desc"
     },
     {
       icon: Heart,
-      title: "Motivación Constante",
-      description: "Te impulsa día a día con recordatorios personalizados y celebra cada logro contigo."
+      titleKey: "benefit_3_title",
+      descKey: "benefit_3_desc"
     },
     {
       icon: Target,
-      title: "Estrategias Personalizadas",
-      description: "Planes financieros únicos adaptados a tu situación, objetivos y estilo de vida."
+      titleKey: "benefit_4_title",
+      descKey: "benefit_4_desc"
     }
   ];
 
@@ -125,10 +124,18 @@ export const Welcome = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-6">
-            <a href="#beneficios" className="text-gray-600 hover:text-primary transition-colors text-sm">Beneficios</a>
-            <a href="#como-ayuda" className="text-gray-600 hover:text-primary transition-colors text-sm">Cómo Te Ayuda</a>
-            <a href="#testimonios" className="text-gray-600 hover:text-primary transition-colors text-sm">Testimonios</a>
-            <a href="#contacto" className="text-gray-600 hover:text-primary transition-colors text-sm">Contacto</a>
+            <a href="#beneficios" className="text-gray-600 hover:text-primary transition-colors text-sm">
+              {t('benefits_title').split(' ')[0]}
+            </a>
+            <a href="#como-ayuda" className="text-gray-600 hover:text-primary transition-colors text-sm">
+              {t('how_helps_title').split(' ')[0] + ' ' + t('how_helps_title').split(' ')[1]}
+            </a>
+            <a href="#testimonios" className="text-gray-600 hover:text-primary transition-colors text-sm">
+              {t('testimonials_title')}
+            </a>
+            <a href="#contacto" className="text-gray-600 hover:text-primary transition-colors text-sm">
+              Contacto
+            </a>
           </nav>
 
           {/* Mobile & Desktop Actions */}
@@ -195,7 +202,7 @@ export const Welcome = () => {
         )}
       </header>
 
-      {/* Mobile-First Hero Section */}
+      {/* Mobile-First Hero Section - FIXED */}
       <section className="pt-20 pb-12 md:pb-16 bg-gradient-to-br from-primary/5 via-white to-secondary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
@@ -209,75 +216,72 @@ export const Welcome = () => {
             </div>
             
             <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 md:mb-6 px-2">
-              Tu Coach de Bienestar Financiero Personal
+              {t('hero_title')}
             </h2>
             
             <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 max-w-3xl mx-auto leading-relaxed px-2">
-              Te acompañamos en cada paso hacia tu libertad financiera con seguimiento inteligente, 
-              motivación constante y estrategias personalizadas. No solo administramos tu dinero, 
-              <strong> te acompañamos en tu crecimiento financiero.</strong>
+              {t('hero_subtitle')}
             </p>
             
             <div className="flex flex-col gap-3 md:gap-4 items-center mb-8 md:mb-12 px-4">
               <Button 
                 onClick={handleGetStarted} 
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-base md:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-sm md:text-base rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium leading-tight"
               >
-                Comenzar Mi Transformación Financiera
-                <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
+                <span className="text-center">{t('hero_cta_primary')}</span>
+                <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-2 border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-base md:text-lg rounded-xl transition-all duration-300"
+                className="border-2 border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-sm md:text-base rounded-xl transition-all duration-300 font-medium"
               >
-                Conocer Más
+                {t('hero_cta_secondary')}
               </Button>
             </div>
             
+            {/* FIXED - Better contrast for stats */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-8 text-center px-4">
-              <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg">
+              <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-gray-100">
                 <div className="text-2xl md:text-3xl font-bold text-primary mb-2">24/7</div>
-                <div className="text-sm md:text-base text-gray-600">Coach Personal</div>
+                <div className="text-sm md:text-base text-gray-700 font-medium">{t('hero_stat_coach')}</div>
               </div>
-              <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg">
+              <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-gray-100">
                 <div className="text-2xl md:text-3xl font-bold text-secondary mb-2">100%</div>
-                <div className="text-sm md:text-base text-gray-600">Personalizado</div>
+                <div className="text-sm md:text-base text-gray-700 font-medium">{t('hero_stat_personalized')}</div>
               </div>
-              <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg">
+              <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-gray-100">
                 <div className="text-2xl md:text-3xl font-bold text-primary mb-2">∞</div>
-                <div className="text-sm md:text-base text-gray-600">Motivación Constante</div>
+                <div className="text-sm md:text-base text-gray-700 font-medium">{t('hero_stat_motivation')}</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* What is Credipal Section - Mobile Optimized */}
+      {/* What is Credipal Section - FIXED contrast */}
       <section className="py-12 md:py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6 md:mb-8 px-2">
-              ¿Qué es Credipal?
+              {t('what_is_title')}
             </h2>
-            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-lg mx-2 md:mx-0">
-              <p className="text-base md:text-xl text-gray-700 mb-4 md:mb-6 leading-relaxed">
-                <strong>Credipal es más que una aplicación financiera</strong> - es tu compañero personal 
-                en el viaje hacia la libertad económica. Combinamos inteligencia artificial con coaching 
-                humano para transformar la ansiedad financiera en confianza y control sobre tu futuro.
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-lg mx-2 md:mx-0 border border-gray-100">
+              <p className="text-base md:text-xl text-gray-700 mb-4 md:mb-6 leading-relaxed font-medium">
+                {t('what_is_description')}
               </p>
               <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-2 md:gap-4 text-xs md:text-sm">
-                <span className="bg-primary/10 text-primary px-3 py-2 rounded-full font-medium">
+                <span className="bg-primary/15 text-primary px-3 py-2 rounded-full font-semibold border border-primary/20">
                   🎯 Coach Personal
                 </span>
-                <span className="bg-secondary/10 text-secondary px-3 py-2 rounded-full font-medium">
+                <span className="bg-secondary/15 text-secondary px-3 py-2 rounded-full font-semibold border border-secondary/20">
                   📊 Seguimiento Inteligente
                 </span>
-                <span className="bg-primary/10 text-primary px-3 py-2 rounded-full font-medium">
+                <span className="bg-primary/15 text-primary px-3 py-2 rounded-full font-semibold border border-primary/20">
                   💪 Motivación Diaria
                 </span>
-                <span className="bg-secondary/10 text-secondary px-3 py-2 rounded-full font-medium">
+                <span className="bg-secondary/15 text-secondary px-3 py-2 rounded-full font-semibold border border-secondary/20">
                   🚀 Crecimiento Sostenible
                 </span>
               </div>
@@ -291,11 +295,10 @@ export const Welcome = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4 px-2">
-              ¿Por qué elegir Credipal como tu coach financiero?
+              {t('benefits_title')}
             </h2>
             <p className="text-base md:text-xl text-gray-600 max-w-2xl mx-auto px-2">
-              El primer asistente financiero que actúa como tu coach personal, 
-              motivándote día a día hacia tus metas económicas.
+              {t('benefits_subtitle')}
             </p>
           </div>
 
@@ -305,8 +308,8 @@ export const Welcome = () => {
                 <div className="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 md:mb-6 group-hover:shadow-lg transition-shadow duration-300">
                   <benefit.icon className="h-7 w-7 md:h-8 md:w-8 text-white" />
                 </div>
-                <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2 md:mb-3">{benefit.title}</h3>
-                <p className="text-sm md:text-base text-gray-600 leading-relaxed">{benefit.description}</p>
+                <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2 md:mb-3">{t(benefit.titleKey)}</h3>
+                <p className="text-sm md:text-base text-gray-600 leading-relaxed">{t(benefit.descKey)}</p>
               </div>
             ))}
           </div>
@@ -318,11 +321,10 @@ export const Welcome = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4 px-2">
-              Cómo te ayuda Credipal
+              {t('how_helps_title')}
             </h2>
             <p className="text-base md:text-xl text-gray-600 max-w-2xl mx-auto px-2">
-              Nuestro enfoque integral te acompaña desde la planificación hasta el logro 
-              de tu libertad financiera, paso a paso.
+              {t('how_helps_subtitle')}
             </p>
           </div>
 
@@ -354,11 +356,10 @@ export const Welcome = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4 px-2">
-              Historias de transformación
+              {t('testimonials_title')}
             </h2>
             <p className="text-base md:text-xl text-gray-600 max-w-2xl mx-auto px-2">
-              Miles de personas han transformado su bienestar financiero con Credipal. 
-              Estas son algunas de sus historias.
+              {t('testimonials_subtitle')}
             </p>
           </div>
 
@@ -386,11 +387,10 @@ export const Welcome = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto text-white">
             <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6 px-2">
-              Comienza tu transformación financiera hoy
+              {t('cta_title')}
             </h2>
             <p className="text-base md:text-xl mb-6 md:mb-8 opacity-90 px-2">
-              Únete a miles de personas que ya han tomado control de su bienestar financiero 
-              con Credipal. Tu coach personal te está esperando.
+              {t('cta_subtitle')}
             </p>
             <div className="flex flex-col gap-4 items-center mb-6 md:mb-8 px-4">
               <Button 
@@ -398,7 +398,7 @@ export const Welcome = () => {
                 size="lg"
                 className="bg-white text-primary hover:bg-gray-50 w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-base md:text-lg rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                Comenzar Ahora - Es Gratis
+                {t('cta_button')}
                 <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
               </Button>
             </div>
@@ -426,10 +426,10 @@ export const Welcome = () => {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 md:mb-16">
               <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4 px-2">
-                ¿Tienes preguntas sobre tu bienestar financiero?
+                {t('contact_title')}
               </h2>
               <p className="text-base md:text-xl text-gray-600 px-2">
-                Nuestro equipo está aquí para ayudarte. Contáctanos y comienza tu transformación.
+                {t('contact_subtitle')}
               </p>
             </div>
 
