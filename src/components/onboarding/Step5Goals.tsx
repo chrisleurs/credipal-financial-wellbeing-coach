@@ -17,7 +17,7 @@ interface Step5GoalsProps {
 
 const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
   const navigate = useNavigate()
-  const { financialData, setFinancialGoals, completeOnboarding } = useFinancialStore()
+  const { financialData, updateGoals, completeOnboarding } = useFinancialStore()
   const { updateOnboardingStatus } = useOnboardingStatus()
   const { consolidateOnboardingData } = useOnboardingDataConsolidation()
   const [customGoal, setCustomGoal] = useState('')
@@ -42,13 +42,13 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
       newGoals = [...currentGoals, goalLabel]
     }
     
-    setFinancialGoals(newGoals)
+    updateGoals(newGoals)
   }
 
   const handleAddCustomGoal = () => {
     if (customGoal.trim()) {
       const currentGoals = financialData.financialGoals || []
-      setFinancialGoals([...currentGoals, customGoal.trim()])
+      updateGoals([...currentGoals, customGoal.trim()])
       setCustomGoal('')
     }
   }
