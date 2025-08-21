@@ -20,9 +20,11 @@ interface GoalCardProps {
     progress: number
     actionText: string
   }
+  onAction?: (goalId: string) => void
+  onViewDetails?: (goalId: string) => void
 }
 
-export const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
+export const GoalCard: React.FC<GoalCardProps> = ({ goal, onAction, onViewDetails }) => {
   const getStatusIcon = () => {
     switch (goal.status) {
       case 'completed':
@@ -44,6 +46,18 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
         return 'bg-purple-50 text-purple-700 border-purple-200'
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200'
+    }
+  }
+
+  const handleAction = () => {
+    if (onAction) {
+      onAction(goal.id)
+    }
+  }
+
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails(goal.id)
     }
   }
 
@@ -89,13 +103,26 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
             <span>{new Date(goal.deadline).toLocaleDateString('es-ES')}</span>
           </div>
 
-          <Button 
-            className="w-full" 
-            disabled={goal.status === 'completed'}
-            variant={goal.status === 'completed' ? 'secondary' : 'default'}
-          >
-            {goal.status === 'completed' ? '¡Completado!' : goal.actionText}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              className="flex-1" 
+              disabled={goal.status === 'completed'}
+              variant={goal.status === 'completed' ? 'secondary' : 'default'}
+              onClick={handleAction}
+            >
+              {goal.status === 'completed' ? '¡Completado!' : goal.actionText}
+            </Button>
+            
+            {onViewDetails && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleViewDetails}
+              >
+                Ver detalles
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
