@@ -396,10 +396,10 @@ export const Welcome = () => {
               <Button 
                 onClick={handleGetStarted}
                 size="lg"
-                className="bg-white text-primary hover:bg-gray-50 w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-base md:text-lg rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-white text-primary hover:bg-gray-50 w-full sm:w-auto px-6 md:px-8 py-4 md:py-5 text-sm md:text-base rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 h-auto min-h-[56px] flex items-center justify-center whitespace-normal text-center leading-tight"
               >
-                {t('cta_button')}
-                <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
+                <span className="text-center leading-tight break-words">{t('cta_button')}</span>
+                <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 text-xs md:text-sm text-white/80 px-4">
