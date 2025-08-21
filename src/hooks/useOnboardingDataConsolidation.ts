@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { FinancialData } from '@/types/unified'
 
 export const useOnboardingDataConsolidation = () => {
   const { user } = useAuth()
@@ -34,8 +35,15 @@ export const useOnboardingDataConsolidation = () => {
     try {
       console.log('🔄 Starting onboarding data consolidation...')
       
-      // 1. Get current onboarding data from store
-      const onboardingDataFromProfile = onboardingData.data?.onboarding_data || {}
+      // 1. Get current onboarding data from store and type it properly
+      const rawOnboardingData = onboardingData.data?.onboarding_data
+      
+      // Type guard to ensure we have a valid object
+      const onboardingDataFromProfile: Partial<FinancialData> = 
+        rawOnboardingData && typeof rawOnboardingData === 'object' && !Array.isArray(rawOnboardingData)
+          ? rawOnboardingData as FinancialData
+          : {}
+      
       console.log('Onboarding data from profile:', onboardingDataFromProfile)
 
       // 2. Get existing onboarding expenses
@@ -68,10 +76,10 @@ export const useOnboardingDataConsolidation = () => {
         }
       } 
       // If we have category totals from store, create basic expenses
-      else if (onboardingDataFromProfile.expenseCategories) {
+      else if (onboardingDataFromProfile.expenseCategories && typeof onboardingDataFromProfile.expenseCategories === 'object') {
         console.log('Found expense categories from store, creating basic expenses...')
         
-        const categoryMapping = {
+        const categoryMapping: Record<string, string> = {
           'food': 'Food & Dining',
           'transport': 'Transportation',
           'housing': 'Housing & Utilities',
@@ -80,7 +88,7 @@ export const useOnboardingDataConsolidation = () => {
         }
 
         Object.entries(onboardingDataFromProfile.expenseCategories).forEach(([key, amount]) => {
-          if (amount && amount > 0) {
+          if (typeof amount === 'number' && amount > 0) {
             expensesToCreate.push({
               user_id: user.id,
               amount: amount,
@@ -94,7 +102,7 @@ export const useOnboardingDataConsolidation = () => {
         })
       }
       // Fallback: Create minimal expenses if nothing exists
-      else if (onboardingDataFromProfile.monthlyExpenses && onboardingDataFromProfile.monthlyExpenses > 0) {
+      else if (typeof onboardingDataFromProfile.monthlyExpenses === 'number' && onboardingDataFromProfile.monthlyExpenses > 0) {
         console.log('Creating fallback basic expense from total amount...')
         
         expensesToCreate.push({
@@ -124,7 +132,7 @@ export const useOnboardingDataConsolidation = () => {
       }
 
       // 5. Create income sources if they exist
-      if (onboardingDataFromProfile.monthlyIncome && onboardingDataFromProfile.monthlyIncome > 0) {
+      if (typeof onboardingDataFromProfile.monthlyIncome === 'number' && onboardingDataFromProfile.monthlyIncome > 0) {
         console.log('Creating income source from onboarding data...')
         
         const { error: incomeError } = await supabase
@@ -144,7 +152,7 @@ export const useOnboardingDataConsolidation = () => {
         }
 
         // Add extra income if it exists
-        if (onboardingDataFromProfile.extraIncome && onboardingDataFromProfile.extraIncome > 0) {
+        if (typeof onboardingDataFromProfile.extraIncome === 'number' && onboardingDataFromProfile.extraIncome > 0) {
           const { error: extraIncomeError } = await supabase
             .from('income_sources')
             .insert({
@@ -162,15 +170,15 @@ export const useOnboardingDataConsolidation = () => {
       }
 
       // 6. Create goals if they exist
-      if (onboardingDataFromProfile.financialGoals && onboardingDataFromProfile.financialGoals.length > 0) {
+      if (Array.isArray(onboardingDataFromProfile.financialGoals) && onboardingDataFromProfile.financialGoals.length > 0) {
         console.log('Creating goals from onboarding data...')
         
         const goalsToCreate = onboardingDataFromProfile.financialGoals.map((goalTitle: string) => ({
           user_id: user.id,
           title: goalTitle,
           description: `Goal set during onboarding: ${goalTitle}`,
-          target_amount: onboardingDataFromProfile.monthlySavingsCapacity * 12 || 10000, // Default to annual savings capacity
-          current_amount: onboardingDataFromProfile.currentSavings || 0,
+          target_amount: (typeof onboardingDataFromProfile.monthlySavingsCapacity === 'number' ? onboardingDataFromProfile.monthlySavingsCapacity * 12 : 10000),
+          current_amount: (typeof onboardingDataFromProfile.currentSavings === 'number' ? onboardingDataFromProfile.currentSavings : 0),
           priority: 'medium',
           status: 'active'
         }))
@@ -240,7 +248,7 @@ export const useOnboardingDataConsolidation = () => {
   }
 
   return {
-    onboardingData: onboardingData.data?.onboarding_data || {},
+    onboarding_data: onboardingData.data?.onboarding_data || {},
     isCompleted: onboardingData.data?.onboarding_completed || false,
     isLoading: onboardingData.isLoading,
     error: onboardingData.error,
