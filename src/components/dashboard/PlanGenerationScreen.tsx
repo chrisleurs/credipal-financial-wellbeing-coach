@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { FinancialSummary } from './FinancialSummary'
-import { formatCurrency } from '@/utils/helpers'
 import { 
   Sparkles,
   ArrowRight,
@@ -26,9 +25,9 @@ export const PlanGenerationScreen = ({
   onGeneratePlan 
 }: PlanGenerationScreenProps) => {
   return (
-    <div className="space-y-8">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
       {/* Hero Section */}
-      <div className="text-center bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-8 border border-primary/20">
+      <div className="text-center bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-8 border border-primary/20">
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
             <Sparkles className="h-8 w-8 text-primary" />

@@ -19,7 +19,7 @@ export default function Dashboard() {
   if (isDataLoading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-[60vh]">
           <LoadingSpinner size="lg" text="Cargando tu dashboard financiero..." />
         </div>
       </AppLayout>
@@ -28,15 +28,17 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      {hasPlan && generatedPlan ? (
-        <CrediPalDashboard />
-      ) : (
-        <PlanGenerationScreen 
-          consolidatedData={consolidatedData}
-          isGenerating={isGenerating}
-          onGeneratePlan={generatePlan}
-        />
-      )}
+      <div className="w-full max-w-none">
+        {hasPlan && generatedPlan ? (
+          <CrediPalDashboard />
+        ) : (
+          <PlanGenerationScreen 
+            consolidatedData={consolidatedData}
+            isGenerating={isGenerating}
+            onGeneratePlan={generatePlan}
+          />
+        )}
+      </div>
     </AppLayout>
   )
 }

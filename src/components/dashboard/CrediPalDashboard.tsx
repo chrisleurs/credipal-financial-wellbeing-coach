@@ -20,7 +20,7 @@ export const CrediPalDashboard = () => {
 
   if (isGenerating) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh] p-6">
         <LoadingSpinner size="lg" text="CrediPal está actualizando tu plan..." />
       </div>
     )
@@ -28,8 +28,8 @@ export const CrediPalDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md">
+      <div className="flex items-center justify-center min-h-[60vh] p-6">
+        <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Error</h2>
@@ -46,9 +46,9 @@ export const CrediPalDashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-6 border border-primary/20">
+      <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-6 border border-primary/20">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -76,8 +76,8 @@ export const CrediPalDashboard = () => {
       <FinancialSummary consolidatedData={consolidatedProfile} />
 
       {/* Goals Section */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold flex items-center gap-2">
             🎯 Tus Objetivos Financieros
           </h2>
@@ -94,7 +94,7 @@ export const CrediPalDashboard = () => {
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Payments */}
         <UpcomingPayments payments={generatedPlan.nextPayments} />
 
@@ -119,7 +119,7 @@ export const CrediPalDashboard = () => {
                   <p className="text-sm text-muted-foreground mb-3">
                     {milestone.description}
                   </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-secondary rounded-full h-2">
                     <div 
                       className="bg-primary h-2 rounded-full transition-all duration-300"
                       style={{ width: `${milestone.progress}%` }}
