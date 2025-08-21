@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { useFinancialStore } from '@/store/financialStore'
 import { useAuth } from '@/hooks/useAuth'
 import Step1Income from '@/components/onboarding/Step1Income'
-import Step2Expenses from '@/components/onboarding/Step2Expenses'
 import Step3Debts from '@/components/onboarding/Step3Debts'
 import Step4Savings from '@/components/onboarding/Step4Savings'
 import Step5Goals from '@/components/onboarding/Step5Goals'
@@ -57,7 +56,10 @@ const Onboarding: React.FC = () => {
 
   const handleNext = () => {
     console.log('handleNext called, currentStep:', currentStep)
-    if (currentStep < 5) {
+    // Skip step 1 (expenses) - go directly from income (0) to debts (2)
+    if (currentStep === 0) {
+      setCurrentStep(2) // Skip to debts (was step 3, now step 2)
+    } else if (currentStep < 4) {
       setCurrentStep(currentStep + 1)
     } else {
       console.log('Last step reached, navigating to dashboard')
@@ -67,7 +69,10 @@ const Onboarding: React.FC = () => {
 
   const handleBack = () => {
     console.log('handleBack called, currentStep:', currentStep)
-    if (currentStep > 0) {
+    // Handle back navigation with skipped step
+    if (currentStep === 2) {
+      setCurrentStep(0) // Go back to income from debts
+    } else if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
     } else {
       navigate('/auth')
@@ -95,6 +100,9 @@ const Onboarding: React.FC = () => {
 
   // Show continuation prompt if there's existing progress
   if (hasExistingProgress) {
+    // Adjust step display for new flow (without expenses step)
+    const displayStep = currentStep > 1 ? currentStep : currentStep + 1
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
@@ -106,7 +114,7 @@ const Onboarding: React.FC = () => {
               Let's pick up where you left off!
             </h1>
             <p className="text-gray-600">
-              We found that you had progressed to step {currentStep + 1} of 6. 
+              We found that you had progressed to step {displayStep} of 5. 
               Would you like to continue from there or start over?
             </p>
           </div>
@@ -116,7 +124,7 @@ const Onboarding: React.FC = () => {
               onClick={handleContinue}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 rounded-xl"
             >
-              Continue from step {currentStep + 1}
+              Continue from step {displayStep}
             </Button>
             
             <Button 
@@ -137,15 +145,13 @@ const Onboarding: React.FC = () => {
     switch (currentStep) {
       case 0:
         return <Step1Income onNext={handleNext} onBack={handleBack} />
-      case 1:
-        return <Step2Expenses onNext={handleNext} onBack={handleBack} />
-      case 2:
+      case 2: // Debts (was step 3, now step 2)
         return <Step3Debts onNext={handleNext} onBack={handleBack} />
-      case 3:
+      case 3: // Savings (was step 4, now step 3)
         return <Step4Savings onNext={handleNext} onBack={handleBack} />
-      case 4:
+      case 4: // Goals (was step 5, now step 4)
         return <Step5Goals onNext={handleNext} onBack={handleBack} />
-      case 5:
+      case 5: // WhatsApp (was step 6, now step 5)
         return <Step6WhatsApp onBack={handleBack} />
       default:
         return <LoadingSpinner />

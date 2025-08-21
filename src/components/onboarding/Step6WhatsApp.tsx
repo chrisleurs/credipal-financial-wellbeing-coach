@@ -33,10 +33,10 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
       completeOnboarding()
       console.log('Local onboarding completed')
       
-      // ✨ NUEVA FUNCIONALIDAD: Consolidar todos los datos del onboarding
-      console.log('🔄 Consolidando datos del onboarding...')
+      // ✨ CONSOLIDATE ALL ONBOARDING DATA
+      console.log('🔄 Consolidating onboarding data and migrating to main tables...')
       await consolidateOnboardingData(true) // Pass true to indicate completion
-      console.log('✅ Datos consolidados exitosamente')
+      console.log('✅ Data consolidated and migrated successfully')
       
       // Update onboarding status in database
       console.log('Attempting to update database onboarding status...')
@@ -95,8 +95,8 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
 
   return (
     <OnboardingStep
-      currentStep={5}
-      totalSteps={6}
+      currentStep={4}
+      totalSteps={5}
       title="Would you like to receive tips via WhatsApp?"
       subtitle="Credipal can send you reminders, financial tips, and answer your questions via WhatsApp."
       onNext={handleGoToDashboard}
