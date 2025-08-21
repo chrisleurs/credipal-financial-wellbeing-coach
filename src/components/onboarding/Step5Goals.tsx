@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Plus, Target, TrendingUp, Home, GraduationCap, Car, Heart } from 'lucide-react'
+import { Target, Plus, Check } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useFinancialStore } from '@/store/financialStore'
-import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
 import { useOnboardingDataConsolidation } from '@/hooks/useOnboardingDataConsolidation'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useNavigate } from 'react-router-dom'
 
 interface Step5GoalsProps {
@@ -15,171 +14,171 @@ interface Step5GoalsProps {
   onBack: () => void
 }
 
-const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
-  const navigate = useNavigate()
-  const { financialData, updateGoals, completeOnboarding } = useFinancialStore()
-  const { updateOnboardingStatus } = useOnboardingStatus()
+export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
+  const { updateGoals } = useFinancialStore()
   const { consolidateOnboardingData } = useOnboardingDataConsolidation()
-  const [customGoal, setCustomGoal] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
+  const [goals, setGoals] = useState<string[]>([])
+  const [newGoal, setNewGoal] = useState('')
+  const [isCompleting, setIsCompleting] = useState(false)
 
-  const predefinedGoals = [
-    { id: 'emergency', label: 'Emergency Fund', icon: Target },
-    { id: 'retirement', label: 'Retirement Savings', icon: TrendingUp },
-    { id: 'house', label: 'Buy a House', icon: Home },
-    { id: 'education', label: 'Education Fund', icon: GraduationCap },
-    { id: 'vacation', label: 'Dream Vacation', icon: Car },
-    { id: 'health', label: 'Health & Wellness', icon: Heart },
-  ]
-
-  const handleGoalToggle = (goalLabel: string) => {
-    const currentGoals = financialData.financialGoals || []
-    let newGoals
-    
-    if (currentGoals.includes(goalLabel)) {
-      newGoals = currentGoals.filter(goal => goal !== goalLabel)
-    } else {
-      newGoals = [...currentGoals, goalLabel]
-    }
-    
-    updateGoals(newGoals)
-  }
-
-  const handleAddCustomGoal = () => {
-    if (customGoal.trim()) {
-      const currentGoals = financialData.financialGoals || []
-      updateGoals([...currentGoals, customGoal.trim()])
-      setCustomGoal('')
+  const addGoal = () => {
+    if (newGoal.trim()) {
+      setGoals([...goals, newGoal.trim()])
+      setNewGoal('')
     }
   }
 
-  const handleCompleteOnboarding = async () => {
-    console.log('Completing onboarding from Goals step')
-    
+  const removeGoal = (index: number) => {
+    setGoals(goals.filter((_, i) => i !== index))
+  }
+
+  const handleNext = async () => {
     try {
-      setIsLoading(true)
+      console.log('Step5Goals: Starting onboarding completion process...')
+      setIsCompleting(true)
       
-      // Mark onboarding as complete in local store
-      completeOnboarding()
-      console.log('Local onboarding completed')
-      
-      // Consolidate all onboarding data and migrate to main tables
-      console.log('🔄 Consolidating onboarding data and migrating to main tables...')
-      await consolidateOnboardingData(true) // Pass true to indicate completion
-      console.log('✅ Data consolidated and migrated successfully')
-      
-      // Update onboarding status in database
-      console.log('Attempting to update database onboarding status...')
-      await updateOnboardingStatus(true)
-      console.log('Database onboarding status updated successfully')
-      
+      // Update goals in store
+      updateGoals(goals)
+      console.log('Step5Goals: Goals updated in store:', goals)
+
+      // Consolidate all onboarding data and mark as completed
+      await consolidateOnboardingData(true)
+      console.log('Step5Goals: Data consolidation completed')
+
       // Navigate to dashboard
-      console.log('Navigating to dashboard...')
+      console.log('Step5Goals: Navigating to dashboard')
       navigate('/dashboard', { replace: true })
-      
     } catch (error) {
-      console.error('Error completing onboarding:', error)
-      // Even if database update fails, force navigation to dashboard
-      console.log('Database update failed, forcing navigation anyway...')
-      setTimeout(() => {
-        window.location.href = '/dashboard'
-      }, 500)
-    } finally {
-      setIsLoading(false)
+      console.error('Step5Goals: Error completing onboarding:', error)
+      setIsCompleting(false)
     }
   }
+
+  if (isCompleting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="h-8 w-8 text-emerald-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            ¡Completando tu configuración!
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Estamos procesando tu información y creando tu dashboard personalizado...
+          </p>
+          <LoadingSpinner size="lg" />
+        </div>
+      </div>
+    )
+  }
+
+  const popularGoals = [
+    'Crear un fondo de emergencia',
+    'Pagar todas mis deudas',
+    'Ahorrar para una casa',
+    'Planificar mi jubilación',
+    'Ahorrar para vacaciones',
+    'Invertir en educación',
+    'Comprar un auto',
+    'Generar ingresos pasivos'
+  ]
 
   return (
     <OnboardingStep
       currentStep={4}
-      totalSteps={4}
-      title="What are your financial goals?"
-      subtitle="Select or add the goals you want to achieve. This helps us personalize your plan - but don't stress if you're not sure yet!"
-      onNext={handleCompleteOnboarding}
+      totalSteps={5}
+      title="¿Cuáles son tus metas financieras?"
+      subtitle="Define objetivos claros para mantener tu motivación y medir tu progreso 🎯"
+      onNext={handleNext}
       onBack={onBack}
-      canProceed={true}
-      nextButtonText={isLoading ? "Completing..." : "Complete Setup!"}
-      isLoading={isLoading}
+      nextButtonText="Completar Configuración"
+      showProgress
     >
       <div className="space-y-6">
-        {/* Predefined Goals Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {predefinedGoals.map((goal) => {
-            const Icon = goal.icon
-            const isSelected = financialData.financialGoals?.includes(goal.label)
-            
-            return (
-              <button
-                key={goal.id}
-                onClick={() => handleGoalToggle(goal.label)}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${
-                  isSelected 
-                    ? 'border-emerald-500 bg-emerald-50' 
-                    : 'border-gray-200 hover:border-emerald-300 bg-white'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <Icon className={`h-5 w-5 ${isSelected ? 'text-emerald-600' : 'text-gray-500'}`} />
-                  <span className={`font-medium ${isSelected ? 'text-emerald-900' : 'text-gray-700'}`}>
-                    {goal.label}
-                  </span>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Selected Goals */}
-        {financialData.financialGoals && financialData.financialGoals.length > 0 && (
-          <div className="bg-emerald-50 p-4 rounded-xl">
-            <h4 className="font-medium text-emerald-900 mb-3">Your Selected Goals:</h4>
-            <div className="flex flex-wrap gap-2">
-              {financialData.financialGoals.map((goal, index) => (
-                <Badge 
-                  key={index} 
-                  variant="secondary" 
-                  className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                >
-                  {goal}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Add Custom Goal */}
-        <div className="border-2 border-dashed border-gray-300 rounded-xl p-4">
-          <h4 className="font-medium text-gray-700 mb-3">Add a Custom Goal</h4>
-          <div className="flex space-x-2">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-800">Agregar meta personalizada</h3>
+          <div className="flex gap-2">
             <Input
-              type="text"
-              placeholder="e.g., Start a business, Travel to Japan..."
-              value={customGoal}
-              onChange={(e) => setCustomGoal(e.target.value)}
+              placeholder="Ej: Ahorrar $10,000 para emergencias"
+              value={newGoal}
+              onChange={(e) => setNewGoal(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addGoal()}
               className="flex-1"
-              onKeyPress={(e) => e.key === 'Enter' && handleAddCustomGoal()}
             />
             <Button 
-              onClick={handleAddCustomGoal}
-              disabled={!customGoal.trim()}
-              size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={addGoal} 
+              disabled={!newGoal.trim()}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
             >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Motivational Note */}
-        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
-          <p className="text-sm text-blue-800 text-center">
-            💡 <strong>Remember:</strong> Goals can be updated anytime from your dashboard. 
-            The important thing is to start somewhere!
+        {/* Popular Goals */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-800">Metas populares</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {popularGoals.map((goal) => (
+              <Button
+                key={goal}
+                variant="outline"
+                onClick={() => setGoals([...goals, goal])}
+                disabled={goals.includes(goal)}
+                className="h-auto p-4 text-left justify-start hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50"
+              >
+                <Target className="h-4 w-4 mr-3 text-emerald-600" />
+                <span className="text-sm">{goal}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Selected Goals */}
+        {goals.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">Tus metas seleccionadas</h3>
+            <div className="space-y-2">
+              {goals.map((goal, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-200"
+                >
+                  <div className="flex items-center">
+                    <Check className="h-4 w-4 text-emerald-600 mr-3" />
+                    <span className="text-sm font-medium text-gray-700">{goal}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeGoal(index)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    ×
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Skip Option */}
+        <div className="text-center pt-4">
+          <p className="text-sm text-gray-500 mb-2">
+            ¿No tienes metas específicas aún?
           </p>
+          <Button 
+            variant="ghost" 
+            onClick={handleNext}
+            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+          >
+            Saltar este paso por ahora
+          </Button>
         </div>
       </div>
     </OnboardingStep>
   )
 }
-
-export default Step5Goals

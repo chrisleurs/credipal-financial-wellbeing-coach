@@ -13,14 +13,20 @@ export const AuthRedirect = () => {
 
   useEffect(() => {
     // No hacer nada si aún estamos cargando
-    if (authLoading || onboardingLoading) {
-      console.log('AuthRedirect - Still loading auth or onboarding status');
+    if (authLoading) {
+      console.log('AuthRedirect - Auth still loading');
       return;
     }
 
     // Si no hay usuario, no hacer redirect automático
     if (!user) {
       console.log('AuthRedirect - No user found');
+      return;
+    }
+
+    // Si estamos cargando el estado de onboarding, esperar
+    if (onboardingLoading) {
+      console.log('AuthRedirect - Onboarding status loading');
       return;
     }
 
@@ -59,11 +65,13 @@ export const AuthRedirect = () => {
     }
   }, [user, onboardingCompleted, authLoading, onboardingLoading, navigate, location.pathname]);
 
-  // Mostrar spinner solo mientras se cargan los estados
+  // Mostrar spinner mientras se cargan los estados críticos
   if (authLoading || (user && onboardingLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
-        <LoadingSpinner size="lg" text="Verificando estado de usuario..." />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <LoadingSpinner size="lg" text="Verificando estado de usuario..." />
+        </div>
       </div>
     );
   }
