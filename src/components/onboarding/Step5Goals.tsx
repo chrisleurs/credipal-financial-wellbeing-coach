@@ -1,11 +1,14 @@
 
 import React, { useState } from 'react'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Target, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Plus, Target, TrendingUp, Home, GraduationCap, Car, Heart } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
 import { useFinancialStore } from '@/store/financialStore'
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
+import { useOnboardingDataConsolidation } from '@/hooks/useOnboardingDataConsolidation'
+import { useNavigate } from 'react-router-dom'
 
 interface Step5GoalsProps {
   onNext: () => void
@@ -13,147 +16,165 @@ interface Step5GoalsProps {
 }
 
 const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
-  const { financialData, updateFinancialData } = useFinancialStore()
-  const [goals, setGoals] = useState<string[]>(financialData.financialGoals || [])
-  const [newGoal, setNewGoal] = useState('')
+  const navigate = useNavigate()
+  const { financialData, setFinancialGoals, completeOnboarding } = useFinancialStore()
+  const { updateOnboardingStatus } = useOnboardingStatus()
+  const { consolidateOnboardingData } = useOnboardingDataConsolidation()
+  const [customGoal, setCustomGoal] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const goalsByTimeframe = {
-    'Short-Term (0-12 months)': [
-      { value: 'Emergency fund', icon: '💰' },
-      { value: 'Vacation', icon: '🏖️' }
-    ],
-    'Mid-Term (1-3 years)': [
-      { value: 'Buy a car', icon: '🚗' },
-      { value: 'Education', icon: '🎓' },
-      { value: 'Buy a house', icon: '🏡' }
-    ],
-    'Long-Term (3+ years)': [
-      { value: 'Retirement', icon: '👵' },
-      { value: 'Investments', icon: '📈' }
-    ]
+  const predefinedGoals = [
+    { id: 'emergency', label: 'Emergency Fund', icon: Target },
+    { id: 'retirement', label: 'Retirement Savings', icon: TrendingUp },
+    { id: 'house', label: 'Buy a House', icon: Home },
+    { id: 'education', label: 'Education Fund', icon: GraduationCap },
+    { id: 'vacation', label: 'Dream Vacation', icon: Car },
+    { id: 'health', label: 'Health & Wellness', icon: Heart },
+  ]
+
+  const handleGoalToggle = (goalLabel: string) => {
+    const currentGoals = financialData.financialGoals || []
+    let newGoals
+    
+    if (currentGoals.includes(goalLabel)) {
+      newGoals = currentGoals.filter(goal => goal !== goalLabel)
+    } else {
+      newGoals = [...currentGoals, goalLabel]
+    }
+    
+    setFinancialGoals(newGoals)
   }
 
-  const addGoal = (goal: string) => {
-    if (goal.trim() && !goals.includes(goal)) {
-      setGoals([...goals, goal])
-      setNewGoal('')
+  const handleAddCustomGoal = () => {
+    if (customGoal.trim()) {
+      const currentGoals = financialData.financialGoals || []
+      setFinancialGoals([...currentGoals, customGoal.trim()])
+      setCustomGoal('')
     }
   }
 
-  const removeGoal = (goalToRemove: string) => {
-    setGoals(goals.filter(goal => goal !== goalToRemove))
+  const handleCompleteOnboarding = async () => {
+    console.log('Completing onboarding from Goals step')
+    
+    try {
+      setIsLoading(true)
+      
+      // Mark onboarding as complete in local store
+      completeOnboarding()
+      console.log('Local onboarding completed')
+      
+      // Consolidate all onboarding data and migrate to main tables
+      console.log('🔄 Consolidating onboarding data and migrating to main tables...')
+      await consolidateOnboardingData(true) // Pass true to indicate completion
+      console.log('✅ Data consolidated and migrated successfully')
+      
+      // Update onboarding status in database
+      console.log('Attempting to update database onboarding status...')
+      await updateOnboardingStatus(true)
+      console.log('Database onboarding status updated successfully')
+      
+      // Navigate to dashboard
+      console.log('Navigating to dashboard...')
+      navigate('/dashboard', { replace: true })
+      
+    } catch (error) {
+      console.error('Error completing onboarding:', error)
+      // Even if database update fails, force navigation to dashboard
+      console.log('Database update failed, forcing navigation anyway...')
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 500)
+    } finally {
+      setIsLoading(false)
+    }
   }
-
-  const handleNext = () => {
-    updateFinancialData({
-      financialGoals: goals
-    })
-    onNext()
-  }
-
-  const canProceed = true // Allow continuing without goals
 
   return (
     <OnboardingStep
       currentStep={4}
-      totalSteps={5}
+      totalSteps={4}
       title="What are your financial goals?"
       subtitle="Select or add the goals you want to achieve. This helps us personalize your plan - but don't stress if you're not sure yet!"
-      onNext={handleNext}
+      onNext={handleCompleteOnboarding}
       onBack={onBack}
-      canProceed={canProceed}
-      nextButtonText="Awesome, let's finish up!"
+      canProceed={true}
+      nextButtonText={isLoading ? "Completing..." : "Complete Setup!"}
+      isLoading={isLoading}
     >
       <div className="space-y-6">
-        <div className="flex justify-center mb-6">
-          <div className="bg-emerald-100 p-6 rounded-full">
-            <Target className="h-12 w-12 text-emerald-600" />
-          </div>
+        {/* Predefined Goals Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {predefinedGoals.map((goal) => {
+            const Icon = goal.icon
+            const isSelected = financialData.financialGoals?.includes(goal.label)
+            
+            return (
+              <button
+                key={goal.id}
+                onClick={() => handleGoalToggle(goal.label)}
+                className={`p-4 rounded-xl border-2 transition-all text-left ${
+                  isSelected 
+                    ? 'border-emerald-500 bg-emerald-50' 
+                    : 'border-gray-200 hover:border-emerald-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <Icon className={`h-5 w-5 ${isSelected ? 'text-emerald-600' : 'text-gray-500'}`} />
+                  <span className={`font-medium ${isSelected ? 'text-emerald-900' : 'text-gray-700'}`}>
+                    {goal.label}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
         </div>
 
-        {/* Goals organized by timeframes */}
-        <div className="space-y-6">
-          {Object.entries(goalsByTimeframe).map(([timeframe, timeframeGoals]) => (
-            <div key={timeframe} className="space-y-3">
-              <h3 className="font-medium text-gray-900 text-lg">{timeframe}</h3>
-              <div className="grid grid-cols-1 gap-2">
-                {timeframeGoals.map((goal) => (
-                  <Button
-                    key={goal.value}
-                    variant="outline"
-                    onClick={() => addGoal(goal.value)}
-                    disabled={goals.includes(goal.value)}
-                    className={`text-left h-auto py-3 flex items-center gap-3 ${
-                      goals.includes(goal.value) 
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-700' 
-                        : 'hover:bg-emerald-50'
-                    }`}
-                  >
-                    <span className="text-xl">{goal.icon}</span>
-                    <span>{goal.value}</span>
-                  </Button>
-                ))}
-              </div>
+        {/* Selected Goals */}
+        {financialData.financialGoals && financialData.financialGoals.length > 0 && (
+          <div className="bg-emerald-50 p-4 rounded-xl">
+            <h4 className="font-medium text-emerald-900 mb-3">Your Selected Goals:</h4>
+            <div className="flex flex-wrap gap-2">
+              {financialData.financialGoals.map((goal, index) => (
+                <Badge 
+                  key={index} 
+                  variant="secondary" 
+                  className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                >
+                  {goal}
+                </Badge>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
-        {/* Add custom goal */}
-        <div className="space-y-3">
-          <h3 className="font-medium text-gray-900">Custom goal</h3>
-          <div className="flex gap-2">
+        {/* Add Custom Goal */}
+        <div className="border-2 border-dashed border-gray-300 rounded-xl p-4">
+          <h4 className="font-medium text-gray-700 mb-3">Add a Custom Goal</h4>
+          <div className="flex space-x-2">
             <Input
-              placeholder="E.g., Save for a wedding, Start a business"
-              value={newGoal}
-              onChange={(e) => setNewGoal(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addGoal(newGoal)}
-              className="rounded-xl"
+              type="text"
+              placeholder="e.g., Start a business, Travel to Japan..."
+              value={customGoal}
+              onChange={(e) => setCustomGoal(e.target.value)}
+              className="flex-1"
+              onKeyPress={(e) => e.key === 'Enter' && handleAddCustomGoal()}
             />
-            <Button
-              onClick={() => addGoal(newGoal)}
-              disabled={!newGoal.trim()}
-              className="bg-emerald-600 hover:bg-emerald-700 px-4"
+            <Button 
+              onClick={handleAddCustomGoal}
+              disabled={!customGoal.trim()}
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700"
             >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Selected goals counter and list */}
-        {goals.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium text-gray-900">Your selected goals</h3>
-              <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
-                You've selected {goals.length} goal{goals.length !== 1 ? 's' : ''}.
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              {goals.map((goal) => (
-                <div
-                  key={goal}
-                  className="flex items-center justify-between bg-emerald-50 border border-emerald-200 p-3 rounded-xl"
-                >
-                  <span className="text-emerald-800 font-medium">{goal}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeGoal(goal)}
-                    className="text-emerald-600 hover:text-emerald-800 h-auto p-1"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Encouraging message */}
+        {/* Motivational Note */}
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl">
           <p className="text-sm text-blue-800 text-center">
-            <strong>💡 Don't worry!</strong> You don't have to be sure about everything right now. 
-            You can always add or change your goals later from your dashboard.
+            💡 <strong>Remember:</strong> Goals can be updated anytime from your dashboard. 
+            The important thing is to start somewhere!
           </p>
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinancialStore } from '@/store/financialStore'
@@ -56,15 +55,13 @@ const Onboarding: React.FC = () => {
 
   const handleNext = () => {
     console.log('handleNext called, currentStep:', currentStep)
-    // New flow: Income (0) → Debts (2) → Savings (3) → Goals (4) → WhatsApp (5) → Dashboard
+    // New flow: Income (0) → Debts (2) → Savings (3) → Goals (4) → Dashboard
     if (currentStep === 0) {
       setCurrentStep(2) // Skip to debts (was step 3, now step 2)
     } else if (currentStep === 2) {
       setCurrentStep(3) // Go to savings
     } else if (currentStep === 3) {
       setCurrentStep(4) // Go to goals
-    } else if (currentStep === 4) {
-      setCurrentStep(5) // Go to WhatsApp
     } else {
       console.log('Last step reached, navigating to dashboard')
       navigate('/dashboard', { replace: true })
@@ -80,8 +77,6 @@ const Onboarding: React.FC = () => {
       setCurrentStep(2) // Go back to debts from savings
     } else if (currentStep === 4) {
       setCurrentStep(3) // Go back to savings from goals
-    } else if (currentStep === 5) {
-      setCurrentStep(4) // Go back to goals from WhatsApp
     } else if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
     } else {
@@ -116,7 +111,6 @@ const Onboarding: React.FC = () => {
       if (internalStep === 2) return 2 // Debts 
       if (internalStep === 3) return 3 // Savings
       if (internalStep === 4) return 4 // Goals
-      if (internalStep === 5) return 5 // WhatsApp
       return internalStep
     }
     
@@ -133,7 +127,7 @@ const Onboarding: React.FC = () => {
               Let's pick up where you left off!
             </h1>
             <p className="text-gray-600">
-              We found that you had progressed to step {displayStep} of 5. 
+              We found that you had progressed to step {displayStep} of 4. 
               Would you like to continue from there or start over?
             </p>
           </div>
@@ -168,10 +162,8 @@ const Onboarding: React.FC = () => {
         return <Step3Debts onNext={handleNext} onBack={handleBack} />
       case 3: // Savings (was step 4, now step 3)
         return <Step4Savings onNext={handleNext} onBack={handleBack} />
-      case 4: // Goals (was step 5, now step 4)
+      case 4: // Goals (was step 5, now step 4 - final step)
         return <Step5Goals onNext={handleNext} onBack={handleBack} />
-      case 5: // WhatsApp (was step 6, now step 5)
-        return <Step6WhatsApp onBack={handleBack} />
       default:
         return <LoadingSpinner />
     }
