@@ -67,6 +67,17 @@ export const useAuth = () => {
     }
   }, [])
 
+  const clearAuthData = () => {
+    console.log('Clearing auth data from localStorage')
+    // Limpiar datos específicos de Supabase
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('sb-rvyvqgtwlwbaurcooypk-auth-token')) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
+
   const signIn = async (email: string, password: string) => {
     console.log('Attempting sign in for:', email)
     setState(prev => ({ ...prev, loading: true, error: null }))
@@ -95,6 +106,9 @@ export const useAuth = () => {
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     console.log('Attempting sign up for:', email)
     setState(prev => ({ ...prev, loading: true, error: null }))
+    
+    // Limpiar datos de auth anteriores antes de intentar registrarse
+    clearAuthData()
     
     try {
       const redirectUrl = `${window.location.origin}/`
@@ -139,6 +153,7 @@ export const useAuth = () => {
       }
       
       console.log('Sign out successful')
+      clearAuthData()
       setState({ user: null, session: null, loading: false, error: null })
     } catch (error: any) {
       console.error('Sign out exception:', error)
@@ -158,6 +173,7 @@ export const useAuth = () => {
     signOut,
     login,
     register,
-    logout
+    logout,
+    clearAuthData
   }
 }

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { validateEmail } from '@/utils/helpers';
+import { toast } from 'sonner';
 
 interface SignUpFormProps {
   onSuccess?: () => void;
+  onSwitchToLogin?: () => void;
 }
 
-export const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
+export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   const { register, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -53,7 +56,33 @@ export const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
       return;
     }
 
-    await register(formData.email, formData.password, formData.firstName, formData.lastName);
+    console.log('Auth - attempting sign up');
+    const result = await register(formData.email, formData.password, formData.firstName, formData.lastName);
+    
+    if (result?.error) {
+      console.log('SignUp error detected:', result.error);
+      
+      // Si el usuario ya existe, mostrar mensaje y opción de ir a login
+      if (result.error.message?.includes('User already registered') || 
+          result.error.message?.includes('already registered') ||
+          result.error.code === 'user_already_exists') {
+        
+        toast.error('Este email ya está registrado', {
+          description: 'Puedes iniciar sesión con tu cuenta existente',
+          action: {
+            label: 'Ir a Login',
+            onClick: () => onSwitchToLogin?.()
+          }
+        });
+        return;
+      }
+      
+      // Otros errores
+      toast.error('Error al crear cuenta', {
+        description: result.error.message || 'Hubo un problema al crear tu cuenta'
+      });
+      return;
+    }
     
     if (onSuccess) {
       onSuccess();
@@ -161,6 +190,18 @@ export const SignUpForm = ({ onSuccess }: SignUpFormProps) => {
       >
         {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
       </Button>
+
+      {/* Opción de cambiar a login si el email ya existe */}
+      <div className="text-center text-sm text-muted-foreground">
+        ¿Ya tienes cuenta?{' '}
+        <button 
+          type="button"
+          onClick={onSwitchToLogin}
+          className="text-primary hover:underline font-medium"
+        >
+          Inicia sesión aquí
+        </button>
+      </div>
     </form>
   );
 };

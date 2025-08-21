@@ -1,189 +1,106 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuth } from '@/hooks/useAuth'
-import { Heart, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
 
-const Auth: React.FC = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { signIn, signUp, loading, error, user, session } = useAuth()
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: ''
-  })
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { SignUpForm } from '@/components/auth/SignUpForm';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-  // Redirect if already authenticated
+const Auth = () => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('login');
+
+  // Limpiar localStorage y sessionStorage al entrar a auth
   useEffect(() => {
-    if (user && session) {
-      const from = location.state?.from?.pathname || '/dashboard'
-      console.log('Auth - user already authenticated, redirecting to:', from)
-      navigate(from, { replace: true })
-    }
-  }, [user, session, navigate, location])
+    console.log('Auth page - clearing storage');
+    // Limpiar cualquier dato de sesión anterior
+    localStorage.removeItem('sb-rvyvqgtwlwbaurcooypk-auth-token');
+    sessionStorage.clear();
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    try {
-      let result
-      if (isSignUp) {
-        console.log('Auth - attempting sign up')
-        result = await signUp(formData.email, formData.password, formData.firstName, formData.lastName)
-      } else {
-        console.log('Auth - attempting sign in')
-        result = await signIn(formData.email, formData.password)
-      }
-      
-      if (result && !result.error) {
-        console.log('Auth - authentication successful')
-        const from = location.state?.from?.pathname || '/dashboard'
-        navigate(from, { replace: true })
-      }
-    } catch (error) {
-      console.error('Auth - authentication error:', error)
-    }
-  }
+  const handleAuthSuccess = () => {
+    console.log('Auth success, user should be redirected automatically');
+  };
 
-  const updateFormData = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+  const switchToLogin = () => {
+    setActiveTab('login');
+  };
 
-  // Don't render if already authenticated
-  if (user && session) {
-    return null
-  }
+  const switchToSignUp = () => {
+    setActiveTab('signup');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="bg-gradient-to-r from-emerald-400 to-teal-500 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <Heart className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Bienvenido a Credipal
+    <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="mb-4 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al inicio
+          </Button>
+          
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            CrediPal
           </h1>
-          <p className="text-gray-600">
-            {isSignUp ? 'Crea tu cuenta para comenzar' : 'Inicia sesión para continuar'}
+          <p className="text-muted-foreground">
+            Tu compañero inteligente para el control financiero
           </p>
         </div>
 
-        <Card className="bg-white/80 backdrop-blur-sm border-emerald-200">
-          <CardHeader>
-            <CardTitle className="text-center">
-              {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Nombres (solo en sign up) */}
-              {isSignUp && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Nombre"
-                      value={formData.firstName}
-                      onChange={(e) => updateFormData('firstName', e.target.value)}
-                      className="pl-9 rounded-xl"
-                      required
-                    />
-                  </div>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Apellido"
-                      value={formData.lastName}
-                      onChange={(e) => updateFormData('lastName', e.target.value)}
-                      className="pl-9 rounded-xl"
-                      required
-                    />
-                  </div>
+        <Card className="backdrop-blur-sm bg-background/80 border-white/20">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+              <TabsTrigger value="signup">Crear Cuenta</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
+              <CardHeader>
+                <CardTitle>Bienvenido de vuelta</CardTitle>
+                <CardDescription>
+                  Ingresa tus credenciales para acceder a tu cuenta
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LoginForm onSuccess={handleAuthSuccess} />
+                
+                <div className="text-center text-sm text-muted-foreground mt-4">
+                  ¿No tienes cuenta?{' '}
+                  <button 
+                    onClick={switchToSignUp}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Regístrate aquí
+                  </button>
                 </div>
-              )}
-
-              {/* Email */}
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="email"
-                  placeholder="correo@ejemplo.com"
-                  value={formData.email}
-                  onChange={(e) => updateFormData('email', e.target.value)}
-                  className="pl-9 rounded-xl"
-                  required
+              </CardContent>
+            </TabsContent>
+            
+            <TabsContent value="signup">
+              <CardHeader>
+                <CardTitle>Crear tu cuenta</CardTitle>
+                <CardDescription>
+                  Completa el formulario para comenzar tu journey financiero
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SignUpForm 
+                  onSuccess={handleAuthSuccess} 
+                  onSwitchToLogin={switchToLogin}
                 />
-              </div>
-
-              {/* Password */}
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Contraseña"
-                  value={formData.password}
-                  onChange={(e) => updateFormData('password', e.target.value)}
-                  className="pl-9 pr-9 rounded-xl"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-
-              {/* Error message */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
-
-              {/* Submit button */}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 rounded-xl"
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Procesando...
-                  </div>
-                ) : (
-                  isSignUp ? 'Crear cuenta' : 'Iniciar sesión'
-                )}
-              </Button>
-
-              {/* Toggle mode */}
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  className="text-sm text-emerald-600 hover:text-emerald-700"
-                >
-                  {isSignUp ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Créala aquí'}
-                </button>
-              </div>
-            </form>
-          </CardContent>
+              </CardContent>
+            </TabsContent>
+          </Tabs>
         </Card>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Auth
+export default Auth;
