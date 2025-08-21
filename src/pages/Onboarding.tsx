@@ -20,6 +20,15 @@ const Onboarding: React.FC = () => {
   const [isLoadingProgress, setIsLoadingProgress] = useState(true)
   const [hasExistingProgress, setHasExistingProgress] = useState(false)
 
+  // Scroll to top on component mount and step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  }, [])
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  }, [currentStep])
+
   useEffect(() => {
     const initializeOnboarding = async () => {
       if (!user) return
@@ -143,7 +152,7 @@ const Onboarding: React.FC = () => {
     }
   }
 
-  return <div>{renderStep()}</div>
+  return <div className="scroll-smooth">{renderStep()}</div>
 }
 
 export default Onboarding

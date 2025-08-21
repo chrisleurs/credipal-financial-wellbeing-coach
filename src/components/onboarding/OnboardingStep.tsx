@@ -1,5 +1,5 @@
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -32,8 +32,13 @@ const OnboardingStep: React.FC<OnboardingStepProps> = ({
 }) => {
   const { t } = useLanguage()
 
+  // Ensure scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  }, [currentStep])
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex flex-col relative">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex flex-col relative overflow-x-hidden">
       {/* Language Toggle */}
       <LanguageToggle variant="onboarding" />
       
