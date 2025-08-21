@@ -219,7 +219,7 @@ interface LanguageProviderProps {
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const [language, setLanguage] = useState<'es' | 'en'>(() => {
     const saved = localStorage.getItem('credipal_language')
-    return (saved as 'es' | 'en') || 'en' // Changed default to English
+    return (saved as 'es' | 'en') || 'en' // English is default
   })
 
   useEffect(() => {

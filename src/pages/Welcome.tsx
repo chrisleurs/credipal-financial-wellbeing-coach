@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -202,7 +203,7 @@ export const Welcome = () => {
         )}
       </header>
 
-      {/* Mobile-First Hero Section - FIXED */}
+      {/* Mobile-First Hero Section - FIXED CONTRAST */}
       <section className="pt-20 pb-12 md:pb-16 bg-gradient-to-br from-primary/5 via-white to-secondary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
@@ -227,15 +228,15 @@ export const Welcome = () => {
               <Button 
                 onClick={handleGetStarted} 
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-sm md:text-base rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium leading-tight"
+                className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-sm md:text-base rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium h-auto min-h-[48px] flex items-center justify-center whitespace-normal text-center"
               >
-                <span className="text-center">{t('hero_cta_primary')}</span>
+                <span className="text-center leading-tight">{t('hero_cta_primary')}</span>
                 <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
-                className="border-2 border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-sm md:text-base rounded-xl transition-all duration-300 font-medium"
+                className="border-2 border-primary text-primary hover:bg-primary hover:text-white w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 text-sm md:text-base rounded-xl transition-all duration-300 font-medium h-auto min-h-[48px]"
               >
                 {t('hero_cta_secondary')}
               </Button>
@@ -245,15 +246,15 @@ export const Welcome = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-8 text-center px-4">
               <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-gray-100">
                 <div className="text-2xl md:text-3xl font-bold text-primary mb-2">24/7</div>
-                <div className="text-sm md:text-base text-gray-700 font-medium">{t('hero_stat_coach')}</div>
+                <div className="text-sm md:text-base text-gray-800 font-semibold">{t('hero_stat_coach')}</div>
               </div>
               <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-gray-100">
                 <div className="text-2xl md:text-3xl font-bold text-secondary mb-2">100%</div>
-                <div className="text-sm md:text-base text-gray-700 font-medium">{t('hero_stat_personalized')}</div>
+                <div className="text-sm md:text-base text-gray-800 font-semibold">{t('hero_stat_personalized')}</div>
               </div>
               <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-gray-100">
                 <div className="text-2xl md:text-3xl font-bold text-primary mb-2">∞</div>
-                <div className="text-sm md:text-base text-gray-700 font-medium">{t('hero_stat_motivation')}</div>
+                <div className="text-sm md:text-base text-gray-800 font-semibold">{t('hero_stat_motivation')}</div>
               </div>
             </div>
           </div>
@@ -268,7 +269,7 @@ export const Welcome = () => {
               {t('what_is_title')}
             </h2>
             <div className="bg-white rounded-3xl p-6 md:p-8 shadow-lg mx-2 md:mx-0 border border-gray-100">
-              <p className="text-base md:text-xl text-gray-700 mb-4 md:mb-6 leading-relaxed font-medium">
+              <p className="text-base md:text-xl text-gray-800 mb-4 md:mb-6 leading-relaxed font-medium">
                 {t('what_is_description')}
               </p>
               <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-2 md:gap-4 text-xs md:text-sm">
