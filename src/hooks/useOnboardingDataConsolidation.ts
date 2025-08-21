@@ -38,10 +38,10 @@ export const useOnboardingDataConsolidation = () => {
       // 1. Get current onboarding data from store and type it properly
       const rawOnboardingData = onboardingData.data?.onboarding_data
       
-      // Type guard to ensure we have a valid object
+      // Type guard to ensure we have a valid object - convert via unknown first
       const onboardingDataFromProfile: Partial<FinancialData> = 
         rawOnboardingData && typeof rawOnboardingData === 'object' && !Array.isArray(rawOnboardingData)
-          ? rawOnboardingData as FinancialData
+          ? (rawOnboardingData as unknown) as FinancialData
           : {}
       
       console.log('Onboarding data from profile:', onboardingDataFromProfile)
@@ -179,8 +179,8 @@ export const useOnboardingDataConsolidation = () => {
           description: `Goal set during onboarding: ${goalTitle}`,
           target_amount: (typeof onboardingDataFromProfile.monthlySavingsCapacity === 'number' ? onboardingDataFromProfile.monthlySavingsCapacity * 12 : 10000),
           current_amount: (typeof onboardingDataFromProfile.currentSavings === 'number' ? onboardingDataFromProfile.currentSavings : 0),
-          priority: 'medium',
-          status: 'active'
+          priority: 'medium' as const,
+          status: 'active' as const
         }))
 
         const { error: goalsError } = await supabase
