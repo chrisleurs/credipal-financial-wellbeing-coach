@@ -56,7 +56,7 @@ const Step5Goals: React.FC<Step5GoalsProps> = ({ onNext, onBack }) => {
   return (
     <OnboardingStep
       currentStep={4}
-      totalSteps={6}
+      totalSteps={5}
       title="What are your financial goals?"
       subtitle="Select or add the goals you want to achieve. This helps us personalize your plan - but don't stress if you're not sure yet!"
       onNext={handleNext}

@@ -95,7 +95,7 @@ const Step6WhatsApp: React.FC<Step6WhatsAppProps> = ({ onBack }) => {
 
   return (
     <OnboardingStep
-      currentStep={4}
+      currentStep={5}
       totalSteps={5}
       title="Would you like to receive tips via WhatsApp?"
       subtitle="Credipal can send you reminders, financial tips, and answer your questions via WhatsApp."

@@ -56,11 +56,15 @@ const Onboarding: React.FC = () => {
 
   const handleNext = () => {
     console.log('handleNext called, currentStep:', currentStep)
-    // Skip step 1 (expenses) - go directly from income (0) to debts (2)
+    // New flow: Income (0) → Debts (2) → Savings (3) → Goals (4) → WhatsApp (5) → Dashboard
     if (currentStep === 0) {
       setCurrentStep(2) // Skip to debts (was step 3, now step 2)
-    } else if (currentStep < 4) {
-      setCurrentStep(currentStep + 1)
+    } else if (currentStep === 2) {
+      setCurrentStep(3) // Go to savings
+    } else if (currentStep === 3) {
+      setCurrentStep(4) // Go to goals
+    } else if (currentStep === 4) {
+      setCurrentStep(5) // Go to WhatsApp
     } else {
       console.log('Last step reached, navigating to dashboard')
       navigate('/dashboard', { replace: true })
@@ -72,6 +76,12 @@ const Onboarding: React.FC = () => {
     // Handle back navigation with skipped step
     if (currentStep === 2) {
       setCurrentStep(0) // Go back to income from debts
+    } else if (currentStep === 3) {
+      setCurrentStep(2) // Go back to debts from savings
+    } else if (currentStep === 4) {
+      setCurrentStep(3) // Go back to savings from goals
+    } else if (currentStep === 5) {
+      setCurrentStep(4) // Go back to goals from WhatsApp
     } else if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
     } else {
@@ -100,8 +110,17 @@ const Onboarding: React.FC = () => {
 
   // Show continuation prompt if there's existing progress
   if (hasExistingProgress) {
-    // Adjust step display for new flow (without expenses step)
-    const displayStep = currentStep > 1 ? currentStep : currentStep + 1
+    // Convert internal step to display step for user
+    const getDisplayStep = (internalStep: number) => {
+      if (internalStep === 0) return 1 // Income
+      if (internalStep === 2) return 2 // Debts 
+      if (internalStep === 3) return 3 // Savings
+      if (internalStep === 4) return 4 // Goals
+      if (internalStep === 5) return 5 // WhatsApp
+      return internalStep
+    }
+    
+    const displayStep = getDisplayStep(currentStep)
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center p-6">
