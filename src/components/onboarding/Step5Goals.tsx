@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import { Target, Plus, Check } from 'lucide-react'
 import OnboardingStep from './OnboardingStep'
@@ -7,6 +8,8 @@ import { useFinancialStore } from '@/store/financialStore'
 import { useOnboardingDataConsolidation } from '@/hooks/useOnboardingDataConsolidation'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/integrations/supabase/client'
 
 interface Step5GoalsProps {
   onNext: () => void
@@ -17,6 +20,7 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
   const { updateGoals } = useFinancialStore()
   const { consolidateOnboardingData } = useOnboardingDataConsolidation()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [goals, setGoals] = useState<string[]>([])
   const [newGoal, setNewGoal] = useState('')
   const [isCompleting, setIsCompleting] = useState(false)
@@ -33,6 +37,11 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
   }
 
   const handleNext = async () => {
+    if (!user?.id) {
+      console.error('No user found when completing onboarding')
+      return
+    }
+
     try {
       console.log('Step5Goals: Starting onboarding completion process...')
       setIsCompleting(true)
@@ -41,13 +50,26 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
       updateGoals(goals)
       console.log('Step5Goals: Goals updated in store:', goals)
 
-      // Consolidate all onboarding data and mark as completed
+      // Consolidate all onboarding data
       await consolidateOnboardingData(true)
       console.log('Step5Goals: Data consolidation completed')
 
-      // Navigate to dashboard
+      // Force a small delay to ensure database updates are processed
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Verify that onboarding is marked as completed
+      const { data: profileCheck } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('user_id', user.id)
+        .single()
+
+      console.log('Step5Goals: Profile check after completion:', profileCheck)
+
+      // Navigate to dashboard with replace to prevent back navigation
       console.log('Step5Goals: Navigating to dashboard')
       navigate('/dashboard', { replace: true })
+      
     } catch (error) {
       console.error('Step5Goals: Error completing onboarding:', error)
       setIsCompleting(false)

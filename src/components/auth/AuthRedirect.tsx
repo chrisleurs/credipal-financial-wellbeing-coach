@@ -38,17 +38,17 @@ export const AuthRedirect = () => {
     const protectedRoutes = ['/dashboard', '/expenses', '/debts', '/plan', '/profile', '/calendar'];
     const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
     
+    // Si el usuario completó el onboarding, nunca permitir regresar a /onboarding
+    if (onboardingCompleted === true && currentPath === '/onboarding') {
+      console.log('AuthRedirect - User completed onboarding but trying to access /onboarding, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    
     // Si el usuario está en una ruta protegida pero no ha completado onboarding
     if (isProtectedRoute && onboardingCompleted === false) {
       console.log('AuthRedirect - User in protected route but onboarding incomplete, redirecting to onboarding');
       navigate('/onboarding', { replace: true });
-      return;
-    }
-    
-    // Si el usuario está en onboarding pero ya completó el proceso
-    if (currentPath === '/onboarding' && onboardingCompleted === true) {
-      console.log('AuthRedirect - User in onboarding but already completed, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
       return;
     }
     
