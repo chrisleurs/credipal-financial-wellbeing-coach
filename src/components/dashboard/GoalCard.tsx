@@ -3,128 +3,100 @@ import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/utils/helpers'
-import type { FinancialGoal } from '@/types/financialPlan'
-import { CheckCircle, Clock, Target } from 'lucide-react'
+import { CheckCircle, Clock, Target, Calendar } from 'lucide-react'
 
 interface GoalCardProps {
-  goal: FinancialGoal
-  onAction: (goalId: string) => void
-  onViewDetails: (goalId: string) => void
+  goal: {
+    id: string
+    type: 'short' | 'medium' | 'long'
+    title: string
+    emoji: string
+    targetAmount: number
+    currentAmount: number
+    deadline: string
+    status: 'pending' | 'in_progress' | 'completed'
+    progress: number
+    actionText: string
+  }
 }
 
-export const GoalCard: React.FC<GoalCardProps> = ({ goal, onAction, onViewDetails }) => {
+export const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
   const getStatusIcon = () => {
     switch (goal.status) {
       case 'completed':
-        return <CheckCircle className="h-6 w-6 text-green-500" />
+        return <CheckCircle className="h-5 w-5 text-green-500" />
       case 'in_progress':
-        return <Target className="h-6 w-6 text-primary" />
+        return <Target className="h-5 w-5 text-blue-500" />
       default:
-        return <Clock className="h-6 w-6 text-muted-foreground" />
+        return <Clock className="h-5 w-5 text-gray-400" />
     }
   }
 
-  const getStatusColor = () => {
-    switch (goal.status) {
-      case 'completed':
-        return 'border-green-200 bg-green-50'
-      case 'in_progress':
-        return 'border-primary/20 bg-primary/5'
+  const getTypeColor = () => {
+    switch (goal.type) {
+      case 'short':
+        return 'bg-green-50 text-green-700 border-green-200'
+      case 'medium':
+        return 'bg-blue-50 text-blue-700 border-blue-200'
+      case 'long':
+        return 'bg-purple-50 text-purple-700 border-purple-200'
       default:
-        return 'border-muted bg-muted/20'
+        return 'bg-gray-50 text-gray-700 border-gray-200'
     }
-  }
-
-  const formatDeadline = (deadline: string) => {
-    const date = new Date(deadline)
-    const now = new Date()
-    const diffTime = date.getTime() - now.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    if (diffDays < 0) return 'Vencido'
-    if (diffDays === 0) return 'Hoy'
-    if (diffDays === 1) return 'Mañana'
-    if (diffDays < 30) return `${diffDays} días`
-    if (diffDays < 365) return `${Math.ceil(diffDays / 30)} meses`
-    return `${Math.ceil(diffDays / 365)} años`
   }
 
   return (
-    <Card className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg ${getStatusColor()}`}>
+    <Card className="relative overflow-hidden hover:shadow-md transition-all duration-200">
       <CardContent className="p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{goal.emoji}</span>
+            <span className="text-2xl">{goal.emoji}</span>
             <div>
-              <h3 className="font-semibold text-lg text-foreground">
-                {goal.title}
-              </h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {getStatusIcon()}
-                <span className="capitalize">{goal.type} plazo</span>
-              </div>
+              <h3 className="font-semibold text-lg">{goal.title}</h3>
+              <Badge variant="outline" className={`text-xs ${getTypeColor()}`}>
+                {goal.type === 'short' ? 'Corto plazo' : 
+                 goal.type === 'medium' ? 'Mediano plazo' : 'Largo plazo'}
+              </Badge>
             </div>
           </div>
+          {getStatusIcon()}
         </div>
 
-        {/* Progress */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">Progreso</span>
-            <span className="text-sm font-medium">{Math.round(goal.progress)}%</span>
+        <div className="space-y-4">
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-muted-foreground">Progreso</span>
+              <span className="font-medium">{Math.round(goal.progress)}%</span>
+            </div>
+            <Progress value={goal.progress} className="h-3" />
           </div>
-          <Progress 
-            value={goal.progress} 
-            className="h-3 mb-2"
-          />
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-semibold text-primary">
-              {formatCurrency(goal.currentAmount)}
-            </span>
-            <span className="text-muted-foreground">
-              de {formatCurrency(goal.targetAmount)}
-            </span>
-          </div>
-        </div>
 
-        {/* Deadline */}
-        <div className="mb-4 p-3 bg-background rounded-lg">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Tiempo restante:</span>
-            <span className="text-sm font-medium">
-              {formatDeadline(goal.deadline)}
-            </span>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground">Actual</p>
+              <p className="font-semibold">{formatCurrency(goal.currentAmount)}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Meta</p>
+              <p className="font-semibold">{formatCurrency(goal.targetAmount)}</p>
+            </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button
-            onClick={() => onAction(goal.id)}
-            className="flex-1 bg-primary hover:bg-primary/90"
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            <span>{new Date(goal.deadline).toLocaleDateString('es-ES')}</span>
+          </div>
+
+          <Button 
+            className="w-full" 
             disabled={goal.status === 'completed'}
+            variant={goal.status === 'completed' ? 'secondary' : 'default'}
           >
-            {goal.status === 'completed' ? 'Completada' : goal.actionText}
-          </Button>
-          <Button
-            onClick={() => onViewDetails(goal.id)}
-            variant="outline"
-            size="sm"
-          >
-            Ver detalles
+            {goal.status === 'completed' ? '¡Completado!' : goal.actionText}
           </Button>
         </div>
-
-        {/* Success indicator */}
-        {goal.status === 'completed' && (
-          <div className="absolute top-2 right-2">
-            <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-              ¡Lograda!
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   )
