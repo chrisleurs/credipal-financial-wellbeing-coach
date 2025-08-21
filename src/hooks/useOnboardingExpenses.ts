@@ -32,8 +32,7 @@ export const useOnboardingExpenses = () => {
       if (!user) return [];
       
       console.log('Fetching onboarding expenses for user:', user.id);
-      // Use type assertion to bypass TypeScript strict typing
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('onboarding_expenses')
         .select('*')
         .eq('user_id', user.id)
@@ -71,8 +70,7 @@ export const useOnboardingExpenses = () => {
 
     try {
       console.log('Adding expense:', expenseData);
-      // Use type assertion to bypass TypeScript strict typing
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('onboarding_expenses')
         .insert({
           ...expenseData,
@@ -110,8 +108,7 @@ export const useOnboardingExpenses = () => {
   }) => {
     try {
       console.log('Updating expense:', id, expenseData);
-      // Use type assertion to bypass TypeScript strict typing
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('onboarding_expenses')
         .update(expenseData)
         .eq('id', id)
@@ -143,8 +140,7 @@ export const useOnboardingExpenses = () => {
   const deleteExpense = async (id: string) => {
     try {
       console.log('Deleting expense:', id);
-      // Use type assertion to bypass TypeScript strict typing
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('onboarding_expenses')
         .delete()
         .eq('id', id);
@@ -176,8 +172,7 @@ export const useOnboardingExpenses = () => {
 
     try {
       console.log('Clearing all expenses for user:', user.id);
-      // Use type assertion to bypass TypeScript strict typing
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('onboarding_expenses')
         .delete()
         .eq('user_id', user.id);

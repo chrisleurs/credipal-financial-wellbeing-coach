@@ -46,7 +46,7 @@ const EXPENSE_CATEGORIES = [
 
 const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
   const { financialData, updateFinancialData } = useFinancialStore()
-  const { expenses, addExpense, updateExpense, deleteExpense } = useOnboardingExpenses()
+  const { expenses, addExpense, updateExpense, deleteExpense, isLoading } = useOnboardingExpenses()
   const [editingExpense, setEditingExpense] = useState<OnboardingExpense | null>(null)
 
   // Group expenses by category
@@ -61,18 +61,20 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
   }, [expenses]);
 
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalIncome = financialData.monthlyIncome + financialData.extraIncome;
 
   const handleAddExpense = async (data: { category: string; subcategory: string; amount: number }) => {
+    console.log('Adding expense:', data);
     return await addExpense(data);
   };
 
   const handleEditExpense = (expense: OnboardingExpense) => {
     setEditingExpense(expense);
-    // For now, we'll just log this - you can implement inline editing later if needed
     console.log('Edit expense:', expense);
   };
 
   const handleDeleteExpense = async (id: string) => {
+    console.log('Deleting expense:', id);
     await deleteExpense(id);
   };
 
@@ -96,6 +98,24 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
   };
 
   const canProceed = totalExpenses > 0;
+
+  if (isLoading) {
+    return (
+      <OnboardingStep
+        currentStep={1}
+        totalSteps={6}
+        title="Loading your expenses..."
+        subtitle="Please wait while we load your data"
+        onNext={handleNext}
+        onBack={onBack}
+        canProceed={false}
+      >
+        <div className="flex justify-center items-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+        </div>
+      </OnboardingStep>
+    );
+  }
 
   return (
     <OnboardingStep
@@ -134,24 +154,29 @@ const Step2Expenses: React.FC<Step2ExpensesProps> = ({ onNext, onBack }) => {
             </div>
             <div className="mt-2 text-sm text-orange-700">
               Total individual expenses: {expenses.length} items
+              {totalIncome > 0 && (
+                <span className="ml-2 font-medium">
+                  ({Math.round((totalExpenses / totalIncome) * 100)}% of income)
+                </span>
+              )}
             </div>
           </div>
         )}
 
         {/* Balance preview */}
-        {totalExpenses > 0 && financialData.monthlyIncome > 0 && (
+        {totalExpenses > 0 && totalIncome > 0 && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
             <div className="text-center">
               <p className="text-sm text-blue-700 mb-1">Your estimated balance</p>
               <p className={`text-xl font-bold ${
-                (financialData.monthlyIncome + financialData.extraIncome - totalExpenses) >= 0 
+                (totalIncome - totalExpenses) >= 0 
                   ? 'text-green-700' 
                   : 'text-red-700'
               }`}>
-                ${((financialData.monthlyIncome + financialData.extraIncome) - totalExpenses).toLocaleString()}
+                ${(totalIncome - totalExpenses).toLocaleString()}
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                {(financialData.monthlyIncome + financialData.extraIncome - totalExpenses) >= 0 
+                {(totalIncome - totalExpenses) >= 0 
                   ? "Great! You have a positive balance 🎉" 
                   : "No worries, we'll find the perfect balance together 💪"}
               </p>
