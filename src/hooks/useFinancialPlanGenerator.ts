@@ -42,7 +42,7 @@ export const useFinancialPlanGenerator = () => {
   const [error, setError] = useState<string | null>(null)
   const [hasPlan, setHasPlan] = useState(false)
 
-  // Check if user already has a plan
+  // Check if user already has a plan - Fixed to handle multiple rows
   const checkExistingPlan = async () => {
     if (!user?.id) return
 
@@ -52,10 +52,11 @@ export const useFinancialPlanGenerator = () => {
         .select('plan_data')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .single()
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-      if (data?.plan_data && !error) {
-        const planData = data.plan_data as any
+      if (data && data.length > 0 && data[0]?.plan_data && !error) {
+        const planData = data[0].plan_data as any
         setGeneratedPlan(planData)
         setHasPlan(true)
       } else {
@@ -83,7 +84,7 @@ export const useFinancialPlanGenerator = () => {
         id: 'emergency-fund',
         type: 'short',
         title: 'Fondo de Emergencia',
-        emoji: '🟢',
+        emoji: '🛡️',
         targetAmount: emergencyFundTarget,
         currentAmount: consolidatedData.currentSavings,
         deadline: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -204,13 +205,13 @@ export const useFinancialPlanGenerator = () => {
         summary: "Plan personalizado basado en tu situación financiera actual"
       }
 
-      // Guardar el plan en la base de datos - fix the JSON conversion
+      // Guardar el plan en la base de datos
       const { error: saveError } = await supabase
         .from('financial_plans')
         .upsert({
           user_id: user.id,
           plan_type: 'credipal-generated',
-          plan_data: plan as any, // Cast to any to bypass JSON type checking
+          plan_data: plan as any,
           status: 'active'
         })
 
