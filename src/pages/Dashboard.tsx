@@ -1,43 +1,27 @@
 
 import React from 'react'
-import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
-import { useFinancialPlanGenerator } from '@/hooks/useFinancialPlanGenerator'
-import { CrediPalDashboard } from '@/components/dashboard/CrediPalDashboard'
-import { PlanGenerationScreen } from '@/components/dashboard/PlanGenerationScreen'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { MobileFirstDashboard } from '@/components/dashboard/MobileFirstDashboard'
+import { CoachBubble } from '@/components/dashboard/CoachBubble'
+import { useChatAI } from '@/hooks/useChatAI'
 
 export default function Dashboard() {
-  const { consolidatedData, isLoading: isDataLoading } = useConsolidatedFinancialData()
-  const { 
-    generatedPlan, 
-    hasPlan, 
-    isGenerating, 
-    generatePlan 
-  } = useFinancialPlanGenerator()
+  const { addInitialMessage } = useChatAI()
 
-  if (isDataLoading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <LoadingSpinner size="lg" text="Cargando tu dashboard financiero..." />
-        </div>
-      </AppLayout>
-    )
+  const handleOpenChat = () => {
+    addInitialMessage("¡Hola! Soy CrediPal, tu coach financiero personal. ¿En qué puedo ayudarte hoy?")
+    // Here you would open the chat interface
+    console.log('Opening chat with CrediPal...')
   }
 
   return (
     <AppLayout>
-      <div className="w-full max-w-none">
-        {hasPlan && generatedPlan ? (
-          <CrediPalDashboard />
-        ) : (
-          <PlanGenerationScreen 
-            consolidatedData={consolidatedData}
-            isGenerating={isGenerating}
-            onGeneratePlan={generatePlan}
-          />
-        )}
+      <div className="relative">
+        <MobileFirstDashboard />
+        <CoachBubble 
+          message="¡Genial progreso esta semana! 🎉 ¿Quieres acelerar tu plan financiero?"
+          onOpenChat={handleOpenChat}
+        />
       </div>
     </AppLayout>
   )
