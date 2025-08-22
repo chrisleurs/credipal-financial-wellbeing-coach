@@ -1,17 +1,9 @@
 
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { CrediPalActivationButton } from './CrediPalActivationButton'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { FinancialSummary } from './FinancialSummary'
-import { 
-  Sparkles,
-  ArrowRight,
-  Target,
-  TrendingUp,
-  Shield,
-  Zap
-} from 'lucide-react'
+import { AlertTriangle, Sparkles, TrendingUp, Target } from 'lucide-react'
 
 interface PlanGenerationScreenProps {
   consolidatedData: any
@@ -19,162 +11,144 @@ interface PlanGenerationScreenProps {
   onGeneratePlan: () => void
 }
 
-export const PlanGenerationScreen = ({ 
+export const PlanGenerationScreen: React.FC<PlanGenerationScreenProps> = ({ 
   consolidatedData, 
   isGenerating, 
   onGeneratePlan 
-}: PlanGenerationScreenProps) => {
+}) => {
+  if (isGenerating) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner size="lg" text="CrediPal está creando tu plan personalizado..." />
+      </div>
+    )
+  }
+
+  if (!consolidatedData || !consolidatedData.hasRealData) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardHeader>
+            <div className="flex items-center gap-4">
+              <AlertTriangle className="h-8 w-8 text-amber-600" />
+              <div>
+                <CardTitle className="text-xl">Información Incompleta</CardTitle>
+                <p className="text-muted-foreground">
+                  CrediPal necesita tu información financiera para crear el mejor plan
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-amber-800">
+                Para activar tu coach financiero personal, completa tu perfil con:
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-amber-700">
+                <li>Tus fuentes de ingresos mensuales</li>
+                <li>Tus gastos principales por categoría</li>
+                <li>Información sobre tus deudas actuales</li>
+                <li>Tus metas de ahorro (opcional)</li>
+              </ul>
+              <div className="pt-4 border-t border-amber-200">
+                <p className="text-sm text-amber-600">
+                  💡 Consejo: Mientras más precisa sea tu información, mejor será tu plan personalizado
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto w-full">
-      {/* Hero Section */}
-      <div className="text-center bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-8 border border-primary/20">
-        <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <Sparkles className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold text-primary">CrediPal</h1>
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
+      {/* Header inspiracional */}
+      <div className="text-center space-y-4">
+        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
+          <Sparkles className="h-4 w-4" />
+          Tu información está lista
         </div>
-        <h2 className="text-2xl font-semibold mb-4">Tu asistente financiero personal</h2>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Analiza tu información financiera y crea un plan personalizado para alcanzar tus objetivos
+        <h1 className="text-4xl font-bold tracking-tight">
+          Es hora de activar tu <span className="text-primary">CrediPal</span>
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Tu coach financiero personal está listo para crear un plan que transformará tu vida financiera
         </p>
       </div>
 
-      {/* Financial Summary */}
-      {consolidatedData && <FinancialSummary consolidatedData={consolidatedData} />}
-
-      {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="text-center">
-          <CardContent className="p-6">
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Target className="h-6 w-6 text-blue-600" />
-            </div>
-            <h3 className="font-semibold mb-2">Objetivos Personalizados</h3>
+      {/* Preview de lo que se activará */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="p-6 text-center">
+            <Target className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Plan 3.2.1</h3>
             <p className="text-sm text-muted-foreground">
-              Metas específicas basadas en tu situación financiera actual
+              Metodología probada: eliminar deudas, crear fondo de emergencia, comenzar a invertir
             </p>
           </CardContent>
         </Card>
 
-        <Card className="text-center">
-          <CardContent className="p-6">
-            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <TrendingUp className="h-6 w-6 text-green-600" />
-            </div>
-            <h3 className="font-semibold mb-2">Seguimiento Inteligente</h3>
+        <Card className="border-green-200 bg-green-50/50">
+          <CardContent className="p-6 text-center">
+            <TrendingUp className="h-12 w-12 text-green-600 mx-auto mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Seguimiento Inteligente</h3>
             <p className="text-sm text-muted-foreground">
-              Monitoreo automático de tu progreso y recomendaciones dinámicas
+              Mini-metas motivacionales y tracker de progreso trimestral automático
             </p>
           </CardContent>
         </Card>
 
-        <Card className="text-center">
-          <CardContent className="p-6">
-            <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Shield className="h-6 w-6 text-purple-600" />
-            </div>
-            <h3 className="font-semibold mb-2">Seguro y Privado</h3>
+        <Card className="border-purple-200 bg-purple-50/50">
+          <CardContent className="p-6 text-center">
+            <Sparkles className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Coach Personal</h3>
             <p className="text-sm text-muted-foreground">
-              Tu información está protegida con los más altos estándares de seguridad
+              Mensajes motivacionales y recordatorios inteligentes para mantenerte en camino
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* What's Included */}
-      <Card>
+      {/* Botón principal de activación */}
+      <CrediPalActivationButton onPlanActivated={onGeneratePlan} />
+
+      {/* Snapshot preview */}
+      <Card className="bg-gradient-to-r from-muted/30 to-muted/10">
         <CardHeader>
-          <CardTitle className="text-center">¿Qué incluye tu plan CrediPal?</CardTitle>
+          <CardTitle>Vista Previa de tu Situación</CardTitle>
+          <p className="text-muted-foreground">
+            Esto es lo que CrediPal usará para generar tu plan personalizado
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mt-1">
-                  <Target className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Objetivos Inteligentes</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Fondo de emergencia, reducción de deudas y metas de ahorro
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mt-1">
-                  <Zap className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Plan de Acción</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Pasos específicos y fechas para alcanzar tus metas
-                  </p>
-                </div>
-              </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-green-600">
+                ${consolidatedData.monthlyIncome.toLocaleString()}
+              </p>
+              <p className="text-sm text-muted-foreground">Ingresos Mensuales</p>
             </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mt-1">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Recomendaciones</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Consejos personalizados para optimizar tus finanzas
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mt-1">
-                  <Shield className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Seguimiento</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Monitoreo continuo y ajustes automáticos
-                  </p>
-                </div>
-              </div>
+            <div>
+              <p className="text-2xl font-bold text-red-600">
+                ${consolidatedData.monthlyExpenses.toLocaleString()}
+              </p>
+              <p className="text-sm text-muted-foreground">Gastos Mensuales</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-amber-600">
+                ${consolidatedData.totalDebtBalance.toLocaleString()}
+              </p>
+              <p className="text-sm text-muted-foreground">Deuda Total</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-600">
+                ${consolidatedData.savingsCapacity.toLocaleString()}
+              </p>
+              <p className="text-sm text-muted-foreground">Capacidad Mensual</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* CTA Section */}
-      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-        <CardContent className="p-8 text-center">
-          <div className="mb-6">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="h-10 w-10 text-primary" />
-            </div>
-            <h3 className="text-2xl font-bold mb-2">¡Listo para comenzar!</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              CrediPal analizará tu información y creará tu plan financiero personalizado
-            </p>
-          </div>
-          
-          <Button 
-            size="lg" 
-            className="px-8 py-3 text-lg"
-            onClick={onGeneratePlan}
-            disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <>
-                <LoadingSpinner size="sm" className="mr-2" />
-                CrediPal está creando tu plan...
-              </>
-            ) : (
-              <>
-                Generar Mi Plan Financiero
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </>
-            )}
-          </Button>
         </CardContent>
       </Card>
     </div>
