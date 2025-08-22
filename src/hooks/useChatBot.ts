@@ -5,6 +5,7 @@ import { useIncomes } from '@/domains/income/hooks/useIncomes'
 import { useDebts } from '@/domains/debts/hooks/useDebts'
 import { useToast } from '@/hooks/use-toast'
 import { useQueryClient } from '@tanstack/react-query'
+import { ExpenseCategoryType } from '@/types/domains/expenses/expense'
 
 interface ChatMessage {
   id: string
@@ -148,13 +149,13 @@ export const useChatBot = () => {
     setIsProcessing(false)
   }, [createExpense, createIncome, updateDebt, addMessage, toast, queryClient])
 
-  const getCategoryFromDescription = (description: string): string => {
+  const getCategoryFromDescription = (description: string): ExpenseCategoryType => {
     const desc = description.toLowerCase()
-    if (desc.includes('comida') || desc.includes('food') || desc.includes('restaurante')) return 'Food & Dining'
-    if (desc.includes('gas') || desc.includes('combustible') || desc.includes('uber')) return 'Transportation'
-    if (desc.includes('renta') || desc.includes('rent') || desc.includes('casa')) return 'Housing & Utilities'
-    if (desc.includes('gym') || desc.includes('netflix') || desc.includes('entretenimiento')) return 'Entertainment & Personal'
-    return 'Other'
+    if (desc.includes('comida') || desc.includes('food') || desc.includes('restaurante')) return 'food'
+    if (desc.includes('gas') || desc.includes('combustible') || desc.includes('uber')) return 'transport'
+    if (desc.includes('renta') || desc.includes('rent') || desc.includes('casa')) return 'housing'
+    if (desc.includes('gym') || desc.includes('netflix') || desc.includes('entretenimiento')) return 'entertainment'
+    return 'other'
   }
 
   const clearMessages = useCallback(() => {

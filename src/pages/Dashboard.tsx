@@ -1,13 +1,13 @@
 
 import React from 'react'
 import { MobileFirstDashboard } from '@/components/dashboard/MobileFirstDashboard'
-import { FloatingChatBot } from '@/components/dashboard/FloatingChatBot'
+import { FloatingChatbot } from '@/components/dashboard/FloatingChatbot'
 
 export default function Dashboard() {
   return (
     <div className="relative min-h-screen">
       <MobileFirstDashboard />
-      <FloatingChatBot />
+      <FloatingChatbot />
     </div>
   )
 }
