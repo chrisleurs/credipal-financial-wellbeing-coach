@@ -22,9 +22,9 @@ export const useMotivationalCoach = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
 
-  const { createExpense } = useExpenses()
+  const { createExpense, expenses } = useExpenses()
   const { createIncome } = useIncomes()
-  const { updateDebt } = useDebts()
+  const { updateDebt, debts } = useDebts()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const { consolidatedData } = useConsolidatedFinancialData()
@@ -57,11 +57,11 @@ export const useMotivationalCoach = () => {
   }, [hasInitialized, addMessage])
 
   const getQuickActions = useCallback(() => {
-    const todayExpenses = consolidatedData?.expenses?.filter(
+    const todayExpenses = expenses.filter(
       exp => new Date(exp.date).toDateString() === new Date().toDateString()
-    )?.length || 0
+    ).length
 
-    const hasDebts = (consolidatedData?.debts?.length || 0) > 0
+    const hasDebts = debts.length > 0
 
     if (todayExpenses === 0) {
       return [
@@ -84,7 +84,7 @@ export const useMotivationalCoach = () => {
       { label: "Añadir ingreso extra 💰", action: "income" },
       { label: "Recalcular mi plan 🎯", action: "recalculate" }
     ]
-  }, [consolidatedData])
+  }, [expenses, debts])
 
   const getCategoryFromDescription = (description: string): ExpenseCategoryType => {
     const desc = description.toLowerCase()
