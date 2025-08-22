@@ -23,10 +23,10 @@ import {
 import { cn } from '@/lib/utils'
 
 export const ModernCrediPalDashboard = () => {
-  const { generatedPlan } = useFinancialPlan()
+  const { dashboardData } = useFinancialPlan()
   const { consolidatedData } = useConsolidatedFinancialData()
 
-  if (!generatedPlan) {
+  if (!dashboardData) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
@@ -40,13 +40,33 @@ export const ModernCrediPalDashboard = () => {
     )
   }
 
+  // Crear datos por defecto para consolidated data si no están disponibles
+  const defaultConsolidatedData = {
+    monthlyIncome: 0,
+    monthlyExpenses: 0,
+    currentSavings: 0,
+    savingsCapacity: 0
+  }
+
+  const safeConsolidatedData = consolidatedData || defaultConsolidatedData
+
+  // Crear pagos de muestra basados en las metas
+  const mockPayments = dashboardData.goals.slice(0, 3).map(goal => ({
+    id: goal.id,
+    type: 'goal' as const,
+    name: goal.title,
+    amount: Math.round((goal.targetAmount - goal.currentAmount) / 12), // Dividir en 12 meses
+    dueDate: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Fecha aleatoria en los próximos 30 días
+    priority: goal.progress > 50 ? 'high' as const : 'medium' as const
+  }))
+
   // Usar propiedades correctas: currentAmount y targetAmount
   const getProgressPercentage = () => {
-    if (!generatedPlan.goals.length) return 0
-    const completedGoals = generatedPlan.goals.filter(g => {
+    if (!dashboardData.goals.length) return 0
+    const completedGoals = dashboardData.goals.filter(g => {
       return g.progress >= 100 || (g.currentAmount >= g.targetAmount && g.targetAmount > 0)
     })
-    return Math.round((completedGoals.length / generatedPlan.goals.length) * 100)
+    return Math.round((completedGoals.length / dashboardData.goals.length) * 100)
   }
 
   const progressPercentage = getProgressPercentage()
@@ -54,7 +74,7 @@ export const ModernCrediPalDashboard = () => {
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-background to-muted/20">
       <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8">
-        {/* Welcome Section - Simplified without redundant header */}
+        {/* Welcome Section */}
         <div className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground p-6 md:p-8 lg:p-10">
           <div className="absolute inset-0 bg-gradient-to-r from-black/10 to-transparent" />
           <div className="relative z-10">
@@ -66,7 +86,7 @@ export const ModernCrediPalDashboard = () => {
                   </div>
                   <div>
                     <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
-                      Bienvenido de vuelta 👋
+                      {dashboardData.greeting}
                     </h1>
                     <p className="text-lg md:text-xl opacity-90 font-medium">
                       Tu coach financiero personal
@@ -141,7 +161,7 @@ export const ModernCrediPalDashboard = () => {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8">
           {/* Left Column - Financial Summary */}
           <div className="xl:col-span-8 space-y-6 md:space-y-8">
-            <ModernFinancialSummary />
+            <ModernFinancialSummary consolidatedData={safeConsolidatedData} />
             
             {/* Goals Section */}
             <div className="space-y-4 md:space-y-6">
@@ -149,7 +169,7 @@ export const ModernCrediPalDashboard = () => {
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold">Tus Objetivos Financieros</h2>
                   <p className="text-muted-foreground text-sm md:text-base">
-                    {generatedPlan.goals.filter(g => g.progress >= 100 || (g.currentAmount >= g.targetAmount && g.targetAmount > 0)).length} de {generatedPlan.goals.length} completados
+                    {dashboardData.goals.filter(g => g.progress >= 100 || (g.currentAmount >= g.targetAmount && g.targetAmount > 0)).length} de {dashboardData.goals.length} completados
                   </p>
                 </div>
                 <Button variant="outline" size="sm">
@@ -159,7 +179,7 @@ export const ModernCrediPalDashboard = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                {generatedPlan.goals.slice(0, 4).map((goal) => (
+                {dashboardData.goals.slice(0, 4).map((goal) => (
                   <ModernGoalCard key={goal.id} goal={goal} />
                 ))}
               </div>
@@ -169,79 +189,32 @@ export const ModernCrediPalDashboard = () => {
           {/* Right Column - Upcoming & Milestones */}
           <div className="xl:col-span-4 space-y-6 md:space-y-8">
             {/* Upcoming Payments */}
-            <ModernUpcomingPayments />
+            <ModernUpcomingPayments payments={mockPayments} />
             
-            {/* Next Milestones */}
+            {/* CrediPal Message */}
             <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                   <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
                     <Star className="w-4 h-4 text-primary" />
                   </div>
-                  Próximos Hitos
+                  Mensaje de CrediPal
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-3 md:space-y-4">
-                  {generatedPlan.upcomingMilestones.map((milestone) => {
-                    // Usar milestone.progress directamente ya que está disponible en la interfaz
-                    const realProgress = milestone.progress || 0
-                    
-                    return (
-                      <div key={milestone.id} className="group p-3 md:p-4 rounded-lg md:rounded-xl border hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-semibold text-sm md:text-base truncate group-hover:text-primary transition-colors">
-                              {milestone.title}
-                            </h4>
-                            <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {milestone.description}
-                            </p>
-                          </div>
-                          <Badge 
-                            variant="secondary" 
-                            className={cn(
-                              "text-xs flex-shrink-0",
-                              realProgress >= 100 ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                            )}
-                          >
-                            {realProgress >= 100 ? (
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                            ) : (
-                              <Clock className="w-3 h-3 mr-1" />
-                            )}
-                            {realProgress >= 100 ? 'Completado' : 'En progreso'}
-                          </Badge>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs md:text-sm">
-                            <span className="text-muted-foreground">Progreso</span>
-                            <span className="font-medium">{Math.round(realProgress)}%</span>
-                          </div>
-                          <Progress 
-                            value={realProgress} 
-                            className="h-2"
-                          />
-                        </div>
-                        
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            <span>{milestone.targetDate}</span>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                          >
-                            Ver detalles
-                            <ArrowRight className="w-3 h-3 ml-1" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
+                <div className="p-4 md:p-6 bg-primary/5 rounded-xl border border-primary/10">
+                  <p className="text-sm md:text-base text-muted-foreground mb-4">
+                    {dashboardData.crediMessage.text}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-xs">
+                      {dashboardData.crediMessage.type}
+                    </Badge>
+                    <Button size="sm" variant="ghost" className="text-xs">
+                      Más consejos
+                      <ArrowRight className="w-3 h-3 ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
