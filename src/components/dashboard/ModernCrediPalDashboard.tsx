@@ -58,12 +58,12 @@ export const ModernCrediPalDashboard = () => {
     return null
   }
 
-  // Corregir la lógica de progreso
+  // Corregir la lógica de progreso usando las propiedades correctas
   const getProgressPercentage = () => {
     if (!generatedPlan.goals.length) return 0
     const completedGoals = generatedPlan.goals.filter(g => {
-      // Verificar progreso real, no solo status
-      return g.progress >= 100 || (g.current_amount >= g.target_amount && g.target_amount > 0)
+      // Usar propiedades correctas: currentAmount y targetAmount
+      return g.progress >= 100 || (g.currentAmount >= g.targetAmount && g.targetAmount > 0)
     })
     return Math.round((completedGoals.length / generatedPlan.goals.length) * 100)
   }
@@ -192,7 +192,7 @@ export const ModernCrediPalDashboard = () => {
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold">Tus Objetivos Financieros</h2>
                 <p className="text-muted-foreground text-sm sm:text-base">
-                  {generatedPlan.goals.filter(g => g.progress >= 100 || (g.current_amount >= g.target_amount && g.target_amount > 0)).length} de {generatedPlan.goals.length} completados
+                  {generatedPlan.goals.filter(g => g.progress >= 100 || (g.currentAmount >= g.targetAmount && g.targetAmount > 0)).length} de {generatedPlan.goals.length} completados
                 </p>
               </div>
             </div>
@@ -235,8 +235,8 @@ export const ModernCrediPalDashboard = () => {
             <CardContent className="pt-0">
               <div className="space-y-3 sm:space-y-4">
                 {generatedPlan.upcomingMilestones.map((milestone) => {
-                  // Corregir cálculo de progreso real
-                  const realProgress = milestone.target > 0 ? Math.min((milestone.current / milestone.target) * 100, 100) : 0
+                  // Usar milestone.progress directamente ya que está disponible en la interfaz
+                  const realProgress = milestone.progress || 0
                   
                   return (
                     <div key={milestone.id} className="group p-3 sm:p-4 rounded-lg sm:rounded-xl border hover:shadow-md transition-all duration-200 hover:-translate-y-1">
