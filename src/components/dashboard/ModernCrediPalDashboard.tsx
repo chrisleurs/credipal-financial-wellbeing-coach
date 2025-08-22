@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ModernGoalCard } from './ModernGoalCard'
 import { ModernFinancialSummary } from './ModernFinancialSummary'
 import { ModernUpcomingPayments } from './ModernUpcomingPayments'
+import { SmartRecommendations } from './SmartRecommendations'
 import { 
   Sparkles,
   RefreshCw,
@@ -19,7 +20,8 @@ import {
   Bell,
   ArrowRight,
   Settings,
-  CheckCircle
+  CheckCircle,
+  Trophy
 } from 'lucide-react'
 
 export const ModernCrediPalDashboard = () => {
@@ -61,13 +63,44 @@ export const ModernCrediPalDashboard = () => {
   }
 
   const progressPercentage = getProgressPercentage()
+  
+  // Lógica derivada para gamificación
+  const isFirstTime = consolidatedProfile.monthlyIncome === 0 && consolidatedProfile.monthlyExpenses === 0
+  const hasRecentActivity = consolidatedProfile.monthlyIncome > 0 || consolidatedProfile.monthlyExpenses > 0
+  
+  const getWelcomeMessage = () => {
+    if (isFirstTime) {
+      return "Bienvenido. Tu plan financiero ya está listo."
+    }
+    return "Bienvenido 👋. Tu plan financiero ya está listo."
+  }
+
   const getMotivationalMessage = () => {
+    if (isFirstTime) {
+      return "¡Comencemos tu transformación financiera! Agrega tus primeros datos para activar todas las funciones de CrediPal."
+    }
     if (progressPercentage >= 75) return "¡Increíble! Estás muy cerca de cumplir tus metas 🎉"
     if (progressPercentage >= 50) return "¡Vas muy bien! Ya completaste la mitad del camino 🚀"
     if (progressPercentage >= 25) return `¡Vas ${progressPercentage}% de tu meta, sigue así! 💪`
     if (progressPercentage > 0) return "¡Excelente inicio! Cada paso cuenta hacia tu libertad financiera ⭐"
     return "Tu plan financiero está listo. ¡Comencemos tu transformación! 🌟"
   }
+
+  // Detectar logros recientes (derivado en frontend)
+  const getAchievementMessage = () => {
+    if (hasRecentActivity && consolidatedProfile.monthlyIncome > 0 && consolidatedProfile.monthlyExpenses === 0) {
+      return { type: 'first_income', message: '🎉 ¡Primer ingreso registrado! Excelente comienzo.' }
+    }
+    if (hasRecentActivity && consolidatedProfile.monthlyExpenses > 0 && consolidatedProfile.currentSavings === 0) {
+      return { type: 'first_expense', message: '📊 ¡Primer gasto registrado! Ya tienes visibilidad de tu dinero.' }
+    }
+    if (consolidatedProfile.currentSavings > 0) {
+      return { type: 'first_saving', message: '💰 ¡Primera meta de ahorro creada! Tu futuro yo te lo agradecerá.' }
+    }
+    return null
+  }
+
+  const achievement = getAchievementMessage()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
@@ -86,8 +119,8 @@ export const ModernCrediPalDashboard = () => {
                   <Sparkles className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold">Bienvenido 👋</h1>
-                  <p className="text-white/80 text-lg">Tu plan financiero ya está listo</p>
+                  <h1 className="text-3xl font-bold">{getWelcomeMessage()}</h1>
+                  <p className="text-white/80 text-lg">Tu coach financiero personal</p>
                 </div>
               </div>
               <Button 
@@ -114,11 +147,24 @@ export const ModernCrediPalDashboard = () => {
                 </div>
               </div>
             </div>
+
+            {/* Mensaje de logro si existe */}
+            {achievement && (
+              <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+                <div className="flex items-center gap-3">
+                  <Trophy className="h-8 w-8 text-yellow-300" />
+                  <p className="text-white font-medium">{achievement.message}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Resumen Financiero Moderno */}
         <ModernFinancialSummary consolidatedData={consolidatedProfile} />
+
+        {/* Recomendaciones Inteligentes */}
+        <SmartRecommendations consolidatedData={consolidatedProfile} />
 
         {/* Sección de Objetivos con Gamificación */}
         <div className="space-y-6">
@@ -199,46 +245,6 @@ export const ModernCrediPalDashboard = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Recomendaciones Personalizadas Accionables */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Recomendaciones Personalizadas
-              </CardTitle>
-              <Badge variant="outline" className="text-xs">
-                {generatedPlan.recommendations.length} sugerencias
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {generatedPlan.recommendations.map((recommendation, index) => (
-                <div key={index} className="group p-4 rounded-xl bg-gradient-to-br from-muted/30 to-muted/10 border border-muted hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bell className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm leading-relaxed mb-3">{recommendation}</p>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="text-xs h-8">
-                          Aplicar sugerencia
-                          <ArrowRight className="ml-1 h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-xs h-8">
-                          <Settings className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
