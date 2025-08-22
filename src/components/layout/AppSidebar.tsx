@@ -15,6 +15,18 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
+import { 
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar
+} from '@/components/ui/sidebar'
 
 const navigationItems = [
   {
@@ -33,7 +45,7 @@ const navigationItems = [
     icon: CreditCard,
   },
   {
-    name: 'Calendario & Recordatorios',
+    name: 'Calendario',
     href: '/calendar',
     icon: Calendar,
   },
@@ -46,63 +58,82 @@ const navigationItems = [
 
 export const AppSidebar = () => {
   const { signOut } = useAuth()
+  const { open } = useSidebar()
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-gray-200">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-            <PiggyBank className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">CrediPal</h1>
-            <p className="text-xs text-gray-500">Tu coach financiero</p>
+    <Sidebar 
+      className="border-r border-gray-200 bg-white"
+      collapsible="icon"
+    >
+      <SidebarContent>
+        {/* Logo */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <PiggyBank className="h-5 w-5 text-white" />
+            </div>
+            {open && (
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">CrediPal</h1>
+                <p className="text-xs text-gray-500">Tu coach financiero</p>
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {navigationItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200',
-                  isActive
-                    ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        {/* Navigation */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.href}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 w-full',
+                            isActive
+                              ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          )
+                        }
+                      >
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        {open && <span className="truncate">{item.name}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 )
-              }
-            >
-              <Icon className="h-5 w-5" />
-              {item.name}
-            </NavLink>
-          )
-        })}
-      </nav>
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-      {/* Footer Actions */}
-      <div className="p-4 border-t border-gray-200 space-y-2">
-        <Button variant="ghost" className="w-full justify-start" size="sm">
-          <Settings className="h-4 w-4 mr-3" />
-          Configuración
-        </Button>
-        
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" 
-          size="sm"
-          onClick={signOut}
-        >
-          <LogOut className="h-4 w-4 mr-3" />
-          Cerrar Sesión
-        </Button>
-      </div>
-    </div>
+        {/* Footer Actions */}
+        <div className="mt-auto p-4 border-t border-gray-200 space-y-2">
+          <SidebarMenuButton asChild>
+            <Button variant="ghost" className="w-full justify-start" size="sm">
+              <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
+              {open && <span>Configuración</span>}
+            </Button>
+          </SidebarMenuButton>
+          
+          <SidebarMenuButton asChild>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" 
+              size="sm"
+              onClick={signOut}
+            >
+              <LogOut className="h-4 w-4 mr-2 flex-shrink-0" />
+              {open && <span>Cerrar Sesión</span>}
+            </Button>
+          </SidebarMenuButton>
+        </div>
+      </SidebarContent>
+    </Sidebar>
   )
 }

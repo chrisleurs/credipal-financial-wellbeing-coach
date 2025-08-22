@@ -33,7 +33,7 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
     if (consolidatedData.monthlyExpenses === 0) {
       return "Registra tu primer gasto"
     }
-    return "de tus ingresos"
+    return `${expenseRatio.toFixed(1)}% de tus ingresos`
   }
 
   const getSavingsHelperText = () => {
@@ -44,34 +44,34 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
   }
   
   return (
-    <div className="space-y-6">
-      {/* Balance Principal */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Balance Principal Responsive */}
       <Card className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-primary/3 to-primary/5 border-primary/10">
-        <CardContent className="p-8">
+        <CardContent className="p-4 sm:p-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-muted-foreground">Balance Total</span>
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">Balance Total</span>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowBalances(!showBalances)}
-              className="h-8 w-8 p-0"
+              className="h-6 w-6 sm:h-8 sm:w-8 p-0"
             >
-              {showBalances ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              {showBalances ? <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> : <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" />}
             </Button>
           </div>
           <div className="space-y-2">
-            <h2 className="text-4xl font-bold tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight">
               {formatValue(netWorth)}
             </h2>
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {getBalanceHelperText()}
               </p>
               {consolidatedData.monthlyIncome > 0 && (
-                <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-medium">
+                <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-medium w-fit">
                   <ArrowUpRight className="h-3 w-3" />
                   +12.5% este mes
                 </div>
@@ -81,17 +81,17 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
         </CardContent>
       </Card>
 
-      {/* Métricas Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Métricas Principales Responsive */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Ingresos */}
         <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-50 rounded-2xl group-hover:bg-green-100 transition-colors">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-green-50 rounded-xl sm:rounded-2xl group-hover:bg-green-100 transition-colors">
                 {consolidatedData.monthlyIncome === 0 ? (
-                  <Plus className="h-6 w-6 text-green-600" />
+                  <Plus className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
                 ) : (
-                  <TrendingUp className="h-6 w-6 text-green-600" />
+                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
                 )}
               </div>
               {consolidatedData.monthlyIncome > 0 && (
@@ -103,8 +103,8 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
               )}
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Ingresos</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Ingresos</p>
+              <p className="text-lg sm:text-2xl font-bold">
                 {consolidatedData.monthlyIncome === 0 ? "Agregar" : formatValue(consolidatedData.monthlyIncome)}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -116,26 +116,26 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
 
         {/* Gastos */}
         <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-red-50 rounded-2xl group-hover:bg-red-100 transition-colors">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-red-50 rounded-xl sm:rounded-2xl group-hover:bg-red-100 transition-colors">
                 {consolidatedData.monthlyExpenses === 0 ? (
-                  <Plus className="h-6 w-6 text-red-600" />
+                  <Plus className="h-4 w-4 sm:h-6 sm:w-6 text-red-600" />
                 ) : (
-                  <TrendingDown className="h-6 w-6 text-red-600" />
+                  <TrendingDown className="h-4 w-4 sm:h-6 sm:w-6 text-red-600" />
                 )}
               </div>
               {consolidatedData.monthlyExpenses > 0 && consolidatedData.monthlyIncome > 0 && (
                 <div className="text-right">
                   <div className="text-xs text-red-600 font-medium bg-red-50 px-2 py-1 rounded-full">
-                    -{expenseRatio.toFixed(1)}%
+                    {expenseRatio.toFixed(1)}%
                   </div>
                 </div>
               )}
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Gastos</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Gastos</p>
+              <p className="text-lg sm:text-2xl font-bold">
                 {consolidatedData.monthlyExpenses === 0 ? "Registrar" : formatValue(consolidatedData.monthlyExpenses)}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -147,13 +147,13 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
 
         {/* Ahorros */}
         <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-50 rounded-2xl group-hover:bg-blue-100 transition-colors">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-blue-50 rounded-xl sm:rounded-2xl group-hover:bg-blue-100 transition-colors">
                 {consolidatedData.currentSavings === 0 ? (
-                  <Target className="h-6 w-6 text-blue-600" />
+                  <Target className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                 ) : (
-                  <ArrowUpRight className="h-6 w-6 text-blue-600" />
+                  <ArrowUpRight className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                 )}
               </div>
               <div className="text-right">
@@ -163,8 +163,8 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Ahorros</p>
-              <p className="text-2xl font-bold">
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Ahorros</p>
+              <p className="text-lg sm:text-2xl font-bold">
                 {consolidatedData.currentSavings === 0 ? "Meta" : formatValue(consolidatedData.currentSavings)}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -176,10 +176,10 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
 
         {/* Capacidad */}
         <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-50 rounded-2xl group-hover:bg-purple-100 transition-colors">
-                <ArrowUpRight className="h-6 w-6 text-purple-600" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="p-2 sm:p-3 bg-purple-50 rounded-xl sm:rounded-2xl group-hover:bg-purple-100 transition-colors">
+                <ArrowUpRight className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
               </div>
               <div className="text-right">
                 <div className="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-1 rounded-full">
@@ -188,8 +188,8 @@ export const ModernFinancialSummary: React.FC<ModernFinancialSummaryProps> = ({ 
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Disponible</p>
-              <p className="text-2xl font-bold">{formatValue(consolidatedData.savingsCapacity)}</p>
+              <p className="text-xs sm:text-sm font-medium text-muted-foreground">Disponible</p>
+              <p className="text-lg sm:text-2xl font-bold">{formatValue(consolidatedData.savingsCapacity)}</p>
               <p className="text-xs text-muted-foreground">para ahorrar</p>
             </div>
           </CardContent>

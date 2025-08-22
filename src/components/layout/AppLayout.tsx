@@ -11,7 +11,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false} collapsibleWidth="56px">
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
@@ -19,7 +19,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           <AppHeader />
           
           <main className="flex-1 overflow-auto">
-            {children}
+            <div className="w-full">
+              {children}
+            </div>
           </main>
         </div>
 
