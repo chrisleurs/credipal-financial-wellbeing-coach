@@ -17,7 +17,9 @@ import {
   Zap,
   Target,
   Bell,
-  ArrowRight
+  ArrowRight,
+  Settings,
+  CheckCircle
 } from 'lucide-react'
 
 export const ModernCrediPalDashboard = () => {
@@ -53,11 +55,25 @@ export const ModernCrediPalDashboard = () => {
     return null
   }
 
+  const getProgressPercentage = () => {
+    if (!generatedPlan.goals.length) return 0
+    return Math.round((generatedPlan.goals.filter(g => g.status === 'completed').length / generatedPlan.goals.length) * 100)
+  }
+
+  const progressPercentage = getProgressPercentage()
+  const getMotivationalMessage = () => {
+    if (progressPercentage >= 75) return "¡Increíble! Estás muy cerca de cumplir tus metas 🎉"
+    if (progressPercentage >= 50) return "¡Vas muy bien! Ya completaste la mitad del camino 🚀"
+    if (progressPercentage >= 25) return `¡Vas ${progressPercentage}% de tu meta, sigue así! 💪`
+    if (progressPercentage > 0) return "¡Excelente inicio! Cada paso cuenta hacia tu libertad financiera ⭐"
+    return "Tu plan financiero está listo. ¡Comencemos tu transformación! 🌟"
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         
-        {/* Header Moderno */}
+        {/* Header Simplificado */}
         <div className="relative overflow-hidden bg-gradient-to-r from-primary via-primary/90 to-primary/80 rounded-3xl p-8 text-white">
           <div className="absolute inset-0 opacity-20">
             <div className="w-full h-full bg-white/10 bg-[length:20px_20px] bg-[image:radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1)_1px,transparent_1px)]"></div>
@@ -70,8 +86,8 @@ export const ModernCrediPalDashboard = () => {
                   <Sparkles className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold">¡Hola! 👋</h1>
-                  <p className="text-white/80 text-lg">Tu asistente financiero personal está listo</p>
+                  <h1 className="text-3xl font-bold">Bienvenido 👋</h1>
+                  <p className="text-white/80 text-lg">Tu plan financiero ya está listo</p>
                 </div>
               </div>
               <Button 
@@ -88,12 +104,12 @@ export const ModernCrediPalDashboard = () => {
             <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-white" />
+                  {progressPercentage > 0 ? <CheckCircle className="h-6 w-6 text-white" /> : <Zap className="h-6 w-6 text-white" />}
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Mensaje de CrediPal</h3>
                   <p className="text-white/90 leading-relaxed">
-                    {generatedPlan.motivationalMessage}
+                    {getMotivationalMessage()}
                   </p>
                 </div>
               </div>
@@ -104,7 +120,7 @@ export const ModernCrediPalDashboard = () => {
         {/* Resumen Financiero Moderno */}
         <ModernFinancialSummary consolidatedData={consolidatedProfile} />
 
-        {/* Sección de Objetivos Modernizada */}
+        {/* Sección de Objetivos con Gamificación */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -118,10 +134,15 @@ export const ModernCrediPalDashboard = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-muted-foreground">Progreso general:</div>
-              <div className="text-2xl font-bold text-primary">
-                {Math.round((generatedPlan.goals.filter(g => g.status === 'completed').length / generatedPlan.goals.length) * 100)}%
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">Progreso general:</div>
+                <div className="text-2xl font-bold text-primary">
+                  {progressPercentage}%
+                </div>
+              </div>
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                <div className="text-primary font-bold text-lg">{progressPercentage}%</div>
               </div>
             </div>
           </div>
@@ -161,12 +182,17 @@ export const ModernCrediPalDashboard = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       {milestone.description}
                     </p>
-                    <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
+                    <div className="w-full bg-secondary rounded-full h-3 overflow-hidden mb-2">
                       <div 
                         className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-500 ease-out"
                         style={{ width: `${milestone.progress}%` }}
                       />
                     </div>
+                    {milestone.progress > 0 && (
+                      <p className="text-xs text-primary font-medium">
+                        ¡Progreso excelente! Sigue así 🎯
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -174,7 +200,7 @@ export const ModernCrediPalDashboard = () => {
           </Card>
         </div>
 
-        {/* Recomendaciones Modernas */}
+        {/* Recomendaciones Personalizadas Accionables */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -196,11 +222,16 @@ export const ModernCrediPalDashboard = () => {
                       <Bell className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm leading-relaxed">{recommendation}</p>
-                      <Button variant="ghost" size="sm" className="mt-3 p-0 h-auto text-xs text-primary">
-                        Aplicar sugerencia
-                        <ArrowRight className="ml-1 h-3 w-3" />
-                      </Button>
+                      <p className="text-sm leading-relaxed mb-3">{recommendation}</p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="text-xs h-8">
+                          Aplicar sugerencia
+                          <ArrowRight className="ml-1 h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-xs h-8">
+                          <Settings className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
