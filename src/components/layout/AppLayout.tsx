@@ -2,7 +2,6 @@
 import React from 'react'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from './AppSidebar'
-import { AppHeader } from './AppHeader'
 import { ChatBubble } from './ChatBubble'
 
 interface AppLayoutProps {
@@ -16,8 +15,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col min-w-0">
-          <AppHeader />
-          
           <main className="flex-1 overflow-auto">
             <div className="w-full">
               {children}

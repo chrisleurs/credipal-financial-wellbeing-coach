@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +8,7 @@ import { formatCurrency } from '@/utils/helpers'
 import { useFinancialPlan } from '@/hooks/useFinancialPlan'
 import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
 import { useAuth } from '@/hooks/useAuth'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import { 
   PiggyBank,
   TrendingUp,
@@ -21,7 +21,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Sparkles,
-  Wallet
+  Wallet,
+  Settings
 } from 'lucide-react'
 
 export const MobileFirstDashboard = () => {
@@ -98,10 +99,11 @@ export const MobileFirstDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header */}
+      {/* Unified Header - SINGLE instance */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <SidebarTrigger className="md:hidden hover:bg-muted rounded-lg p-2 transition-colors" />
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <PiggyBank className="h-5 w-5 text-white" />
             </div>
@@ -111,13 +113,28 @@ export const MobileFirstDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <Bell className="h-5 w-5 text-gray-400" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-xs text-white font-bold">2</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
+            >
+              <div className="relative">
+                <Bell className="h-4 w-4" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-bold">2</span>
+                </div>
               </div>
-            </div>
-            <Avatar className="h-8 w-8 ml-2">
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+
+            <Avatar className="h-8 w-8 ring-2 ring-primary/20 ml-2">
               <AvatarFallback className="bg-primary text-white text-xs font-bold">
                 {getUserName().slice(0, 2).toUpperCase()}
               </AvatarFallback>
