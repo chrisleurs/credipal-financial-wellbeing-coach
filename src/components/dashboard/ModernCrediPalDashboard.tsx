@@ -9,6 +9,7 @@ import { ModernGoalCard } from './ModernGoalCard'
 import { ModernFinancialSummary } from './ModernFinancialSummary'
 import { ModernUpcomingPayments } from './ModernUpcomingPayments'
 import { SmartRecommendations } from './SmartRecommendations'
+import { CrediPalPlanSection } from './CrediPalPlanSection'
 import { 
   Sparkles,
   RefreshCw,
@@ -162,6 +163,9 @@ export const ModernCrediPalDashboard = () => {
 
         {/* Resumen Financiero Moderno */}
         <ModernFinancialSummary consolidatedData={consolidatedProfile} />
+
+        {/* Plan Financiero CrediPal - Nueva Sección */}
+        <CrediPalPlanSection consolidatedData={consolidatedProfile} />
 
         {/* Recomendaciones Inteligentes */}
         <SmartRecommendations consolidatedData={consolidatedProfile} />
