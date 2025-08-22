@@ -1,25 +1,35 @@
 
 import React, { useState, useRef, useEffect } from 'react'
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { useChatAI } from '@/hooks/useChatAI'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useMotivationalCoach } from '@/hooks/useMotivationalCoach'
+import { QuickActions } from '@/components/chat/QuickActions'
 
 export function ChatBubble() {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('')
-  const { messages, isLoading, sendMessage, addInitialMessage } = useChatAI()
+  const { 
+    messages, 
+    isProcessing, 
+    hasInitialized,
+    processMessage, 
+    handleQuickAction,
+    getQuickActions,
+    initializeCoach
+  } = useMotivationalCoach()
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Initialize with welcome message
+  // Initialize coach when chat opens
   useEffect(() => {
-    if (messages.length === 0) {
-      addInitialMessage('¡Hola! Soy tu asistente financiero personal de Credipal 💰 Puedo ayudarte a agregar gastos, registrar pagos, analizar tus finanzas y mucho más. ¿En qué puedo ayudarte hoy?')
+    if (isOpen && !hasInitialized) {
+      initializeCoach()
     }
-  }, [messages.length, addInitialMessage])
+  }, [isOpen, hasInitialized, initializeCoach])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -31,10 +41,9 @@ export function ChatBubble() {
     }
   }, [messages])
 
-  // Focus input when chat opens and ensure it stays focusable
+  // Focus input when chat opens
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      // Small delay to ensure DOM is ready
       const timeoutId = setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
@@ -44,28 +53,24 @@ export function ChatBubble() {
 
   // Re-focus input after loading state changes
   useEffect(() => {
-    if (!isLoading && isOpen && inputRef.current) {
+    if (!isProcessing && isOpen && inputRef.current) {
       const timeoutId = setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
       return () => clearTimeout(timeoutId)
     }
-  }, [isLoading, isOpen])
+  }, [isProcessing, isOpen])
 
   const handleSendMessage = async () => {
-    if (!message.trim() || isLoading) return
+    if (!message.trim() || isProcessing) return
 
     const messageToSend = message.trim()
-    
-    // Clear input immediately for better UX
     setMessage('')
     
-    // Send message
     try {
-      await sendMessage(messageToSend)
+      await processMessage(messageToSend)
     } catch (error) {
       console.error('Error sending message:', error)
-      // Re-focus input even on error
       setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
@@ -73,7 +78,7 @@ export function ChatBubble() {
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isLoading && message.trim()) {
+    if (e.key === 'Enter' && !e.shiftKey && !isProcessing && message.trim()) {
       e.preventDefault()
       handleSendMessage()
     }
@@ -83,35 +88,25 @@ export function ChatBubble() {
     setMessage(e.target.value)
   }
 
-  const getSuggestions = () => {
-    return [
-      "Agrega un gasto de $150 en comida",
-      "Muéstrame mis gastos de esta semana",
-      "Analiza mis patrones de gasto",
-      "¿Cómo van mis finanzas este mes?"
-    ]
-  }
-
-  const handleSuggestionClick = (suggestion: string) => {
-    if (isLoading) return
-    
-    setMessage(suggestion)
-    // Focus input after setting suggestion
-    setTimeout(() => {
-      inputRef.current?.focus()
-    }, 50)
-  }
-
   if (!isOpen) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={() => setIsOpen(true)}
-          className="h-14 w-14 rounded-full bg-gradient-primary shadow-lg hover:shadow-xl transition-all duration-300 relative"
+          className="h-16 w-16 rounded-full bg-primary shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
           size="icon"
         >
-          <MessageCircle className="h-6 w-6" />
-          <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse" />
+          <div className="relative z-10">
+            <MessageCircle className="h-6 w-6" />
+          </div>
+          
+          {/* Sparkle indicator */}
+          <div className="absolute -top-1 -right-1 h-4 w-4 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
+            <Sparkles className="h-2 w-2 text-yellow-800" />
+          </div>
+          
+          {/* Ripple effect */}
+          <div className="absolute inset-0 rounded-full animate-ping bg-primary/30 opacity-75 group-hover:opacity-0 transition-opacity"></div>
         </Button>
       </div>
     )
@@ -120,11 +115,18 @@ export function ChatBubble() {
   return (
     <div className="fixed bottom-6 right-6 z-[100] w-[380px] h-[600px] max-h-[80vh] max-w-[90vw]">
       <Card className="h-full flex flex-col shadow-2xl border-border bg-background/95 backdrop-blur-sm rounded-2xl overflow-hidden">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-primary" />
-              Credipal AI
+              <Avatar className="h-8 w-8 bg-primary">
+                <AvatarFallback className="bg-primary text-white text-sm">
+                  🤖
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="text-primary">Coach CrediPal</div>
+                <div className="text-xs text-muted-foreground font-normal">Tu asistente financiero</div>
+              </div>
               <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
             </CardTitle>
             <Button
@@ -138,62 +140,74 @@ export function ChatBubble() {
           </div>
         </CardHeader>
         
-        <CardContent className="flex-1 flex flex-col p-3 gap-3">
+        <CardContent className="flex-1 flex flex-col p-4 gap-3">
           <ScrollArea className="flex-1 pr-3" ref={scrollAreaRef}>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] p-3 rounded-lg text-sm ${
-                      msg.isUser
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    } ${msg.functionExecuted ? 'border-l-4 border-green-500' : ''}`}
-                  >
-                    {msg.isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                <div key={msg.id} className="space-y-2">
+                  <div className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                    <div className="flex items-start gap-2 max-w-[85%]">
+                      {!msg.isUser && (
+                        <Avatar className="h-6 w-6 bg-primary flex-shrink-0">
+                          <AvatarFallback className="bg-primary text-white text-xs">
+                            🤖
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      
+                      <div
+                        className={`p-3 rounded-lg text-sm ${
+                          msg.isUser
+                            ? 'bg-primary text-primary-foreground ml-auto'
+                            : 'bg-primary/10 text-foreground'
+                        }`}
+                      >
                         {msg.text}
-                      </div>
-                    ) : (
-                      <>
-                        {msg.text}
-                        {msg.functionExecuted && (
-                          <div className="text-xs mt-1 opacity-75">
-                            ✅ Acción ejecutada
+                        
+                        {msg.achievement && (
+                          <div className="mt-2 p-2 bg-yellow-100 rounded-md border-l-4 border-yellow-400">
+                            <p className="text-xs text-yellow-800 font-medium">
+                              🏆 {msg.achievement}
+                            </p>
                           </div>
                         )}
-                      </>
-                    )}
+                      </div>
+                    </div>
                   </div>
+                  
+                  {/* Quick Actions for coach messages */}
+                  {!msg.isUser && msg.hasQuickActions && (
+                    <div className="ml-8">
+                      <QuickActions 
+                        actions={getQuickActions()}
+                        onActionClick={handleQuickAction}
+                        disabled={isProcessing}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
+              
+              {/* Typing indicator */}
+              {isProcessing && (
+                <div className="flex justify-start">
+                  <div className="flex items-start gap-2">
+                    <Avatar className="h-6 w-6 bg-primary">
+                      <AvatarFallback className="bg-primary text-white text-xs">
+                        🤖
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="bg-primary/10 p-3 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span className="text-sm text-muted-foreground">Coach está escribiendo...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
-
-          {/* Suggestions - only show when conversation is short */}
-          {messages.length <= 2 && (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Prueba preguntando:</p>
-              <div className="flex flex-wrap gap-1">
-                {getSuggestions().slice(0, 2).map((suggestion, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-6 px-2"
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    disabled={isLoading}
-                  >
-                    {suggestion}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
           
           <div className="flex gap-2">
             <Input
@@ -201,19 +215,19 @@ export function ChatBubble() {
               value={message}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              placeholder="Escribe tu mensaje..."
+              placeholder="Cuéntame qué movimiento hiciste..."
               className="flex-1"
-              disabled={isLoading}
+              disabled={isProcessing}
               autoComplete="off"
               autoFocus={false}
             />
             <Button
               onClick={handleSendMessage}
-              disabled={!message.trim() || isLoading}
+              disabled={!message.trim() || isProcessing}
               size="icon"
-              className="bg-gradient-primary"
+              className="bg-primary"
             >
-              {isLoading ? (
+              {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
