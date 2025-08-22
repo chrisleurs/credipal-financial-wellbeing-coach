@@ -20,48 +20,45 @@ export function AppHeader() {
   }
 
   return (
-    <header className="h-20 border-b border-border/60 bg-background/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-40">
-      {/* Left side - Mobile trigger */}
-      <div className="flex items-center gap-6">
-        <SidebarTrigger className="lg:hidden hover:bg-muted rounded-lg p-2 transition-colors" />
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Credipal
+    <header className="h-16 border-b border-border/60 bg-background/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
+      {/* Left side - Mobile trigger only */}
+      <div className="flex items-center gap-3">
+        <SidebarTrigger className="md:hidden hover:bg-muted rounded-lg p-2 transition-colors" />
+        <div className="hidden md:block">
+          <h1 className="text-lg font-semibold text-foreground">
+            {t('dashboard')}
           </h1>
-          <p className="text-sm text-muted-foreground font-medium">
-            {t('bienestar_financiero')}
-          </p>
         </div>
       </div>
 
-      {/* Right side - User actions */}
-      <div className="flex items-center gap-3">
+      {/* Right side - Simplified user actions */}
+      <div className="flex items-center gap-2">
         <LanguageToggle variant="dashboard" />
         
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
         >
-          <Bell className="h-5 w-5" />
+          <Bell className="h-4 w-4" />
         </Button>
         
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
         >
-          <Settings className="h-5 w-5" />
+          <Settings className="h-4 w-4" />
         </Button>
 
-        <div className="flex items-center gap-3 ml-2 pl-4 border-l border-border/60">
-          <Avatar className="h-9 w-9 ring-2 ring-primary/20">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+        <div className="flex items-center gap-2 ml-2 pl-3 border-l border-border/60">
+          <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
               {getUserInitials()}
             </AvatarFallback>
           </Avatar>
-          <div className="hidden md:block">
-            <p className="text-sm font-semibold text-foreground">
+          <div className="hidden sm:block">
+            <p className="text-sm font-medium text-foreground">
               {user?.email?.split('@')[0] || 'Usuario'}
             </p>
             <p className="text-xs text-muted-foreground">
