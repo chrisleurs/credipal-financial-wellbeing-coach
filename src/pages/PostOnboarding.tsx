@@ -2,19 +2,26 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PostOnboardingFlow } from '@/components/onboarding/PostOnboardingFlow'
-import { useOnboardingDataConsolidation } from '@/hooks/useOnboardingDataConsolidation'
+import { useOptimizedOnboardingConsolidation } from '@/hooks/useOptimizedOnboardingConsolidation'
 
 export default function PostOnboarding() {
   const navigate = useNavigate()
-  const { consolidateOnboardingData } = useOnboardingDataConsolidation()
+  const { consolidateData, isConsolidating } = useOptimizedOnboardingConsolidation()
 
   const handleComplete = async () => {
-    // Consolidar datos del onboarding antes de ir al dashboard
-    await consolidateOnboardingData(true)
+    // Use optimized consolidation service
+    consolidateData(true) // Mark as completed
     
-    // Redirigir al dashboard
-    navigate('/dashboard')
+    // Navigate to dashboard after consolidation
+    setTimeout(() => {
+      navigate('/dashboard')
+    }, 1000) // Small delay to show success message
   }
 
-  return <PostOnboardingFlow onComplete={handleComplete} />
+  return (
+    <PostOnboardingFlow 
+      onComplete={handleComplete}
+      isProcessing={isConsolidating}
+    />
+  )
 }
