@@ -9,7 +9,10 @@ import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
 import Debts from './pages/Debts'
 import Profile from './pages/Profile'
+import Onboarding from './pages/Onboarding'
+import PostOnboarding from './pages/PostOnboarding'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
+import { AuthRedirect } from '@/components/auth/AuthRedirect'
 import Plan from './pages/Plan'
 import Progress from './pages/Progress'
 import Coach from './pages/Coach'
@@ -21,12 +24,32 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
+          <AuthRedirect />
           <Routes>
             {/* Auth Routes */}
             <Route path="/auth" element={<Auth />} />
             
             {/* Public Routes */}
             <Route path="/" element={<Auth />} />
+            
+            {/* Onboarding Routes */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute requireAuth>
+                  <Onboarding />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/post-onboarding"
+              element={
+                <ProtectedRoute requireAuth>
+                  <PostOnboarding />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Protected Routes */}
             <Route
@@ -74,7 +97,6 @@ function App() {
               }
             />
             
-            {/* New Routes for Bottom Navigation */}
             <Route
               path="/progress"
               element={
@@ -93,7 +115,7 @@ function App() {
               }
             />
             
-            {/* 404 Route - Redirect to Dashboard */}
+            {/* 404 Route - Redirect to Auth */}
             <Route path="*" element={<Auth />} />
           </Routes>
           <Toaster />

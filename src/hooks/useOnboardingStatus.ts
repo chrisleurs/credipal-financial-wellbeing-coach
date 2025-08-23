@@ -52,7 +52,7 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
       // Usuario existente - usar su estado real
       const completed = data.onboarding_completed === true;
-      console.log('Existing user onboarding status:', completed);
+      console.log('User onboarding status:', completed);
       setOnboardingCompleted(completed);
     } catch (error) {
       console.error('Exception checking onboarding status:', error);

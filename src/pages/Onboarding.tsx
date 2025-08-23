@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFinancialStore } from '@/store/financialStore'
 import { useAuth } from '@/hooks/useAuth'
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
 import Step1Income from '@/components/onboarding/Step1Income'
 import Step2Expenses from '@/components/onboarding/Step2Expenses'
 import Step3Debts from '@/components/onboarding/Step3Debts'
@@ -15,9 +16,18 @@ import { RotateCcw } from 'lucide-react'
 const Onboarding: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { onboardingCompleted } = useOnboardingStatus()
   const { currentStep, setCurrentStep, loadOnboardingProgress, reset } = useFinancialStore()
   const [isLoadingProgress, setIsLoadingProgress] = useState(true)
   const [hasExistingProgress, setHasExistingProgress] = useState(false)
+
+  // Redirect if onboarding is already completed
+  useEffect(() => {
+    if (onboardingCompleted === true) {
+      console.log('Onboarding already completed, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [onboardingCompleted, navigate]);
 
   // Scroll to top on component mount and step changes
   useEffect(() => {
@@ -56,7 +66,6 @@ const Onboarding: React.FC = () => {
 
   const handleNext = () => {
     console.log('handleNext called, currentStep:', currentStep)
-    // New flow: Income (0) → Expenses (1) → Debts (2) → Savings (3) → Goals (4) → Dashboard
     if (currentStep === 0) {
       setCurrentStep(1) // Go to expenses
     } else if (currentStep === 1) {
@@ -66,14 +75,14 @@ const Onboarding: React.FC = () => {
     } else if (currentStep === 3) {
       setCurrentStep(4) // Go to goals
     } else {
-      console.log('Last step reached, navigating to dashboard')
-      navigate('/dashboard', { replace: true })
+      // Last step reached - go to post-onboarding
+      console.log('Last step reached, navigating to post-onboarding')
+      navigate('/post-onboarding', { replace: true })
     }
   }
 
   const handleBack = () => {
     console.log('handleBack called, currentStep:', currentStep)
-    // Handle back navigation
     if (currentStep === 1) {
       setCurrentStep(0) // Go back to income from expenses
     } else if (currentStep === 2) {
@@ -103,16 +112,15 @@ const Onboarding: React.FC = () => {
   if (isLoadingProgress) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
-        <LoadingSpinner size="lg" text="Loading your progress..." />
+        <LoadingSpinner size="lg" text="Cargando tu progreso..." />
       </div>
     )
   }
 
   // Show continuation prompt if there's existing progress
   if (hasExistingProgress) {
-    // Convert internal step to display step for user
     const getDisplayStep = (internalStep: number) => {
-      return internalStep + 1 // Simple 1-based indexing now
+      return internalStep + 1
     }
     
     const displayStep = getDisplayStep(currentStep)
@@ -125,11 +133,11 @@ const Onboarding: React.FC = () => {
               <RotateCcw className="h-8 w-8 text-emerald-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Let's pick up where you left off!
+              ¡Continuemos donde lo dejaste!
             </h1>
             <p className="text-gray-600">
-              We found that you had progressed to step {displayStep} of 5. 
-              Would you like to continue from there or start over?
+              Encontramos que habías progresado hasta el paso {displayStep} de 5. 
+              ¿Te gustaría continuar desde ahí o empezar de nuevo?
             </p>
           </div>
 
@@ -138,7 +146,7 @@ const Onboarding: React.FC = () => {
               onClick={handleContinue}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-3 rounded-xl"
             >
-              Continue from step {displayStep}
+              Continuar desde el paso {displayStep}
             </Button>
             
             <Button 
@@ -146,7 +154,7 @@ const Onboarding: React.FC = () => {
               variant="outline"
               className="w-full border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl"
             >
-              Start fresh
+              Empezar de nuevo
             </Button>
           </div>
         </div>
