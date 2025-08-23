@@ -38,8 +38,8 @@ export const useBottomNavigation = () => {
       const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000)
       
       return debts.filter(debt => {
-        if (!debt.next_payment_date) return false
-        const paymentDate = new Date(debt.next_payment_date)
+        if (!debt.due_date) return false
+        const paymentDate = new Date(debt.due_date)
         return paymentDate <= in48Hours && paymentDate >= now
       }).length
     })(),
