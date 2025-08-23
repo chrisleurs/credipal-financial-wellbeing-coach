@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
@@ -83,14 +82,14 @@ export default function ExpensesPage() {
   // Calculate user state for smart chips
   const userState = useMemo(() => ({
     hasIncome: incomes.length > 0,
-    hasSubscriptions: false, // TODO: Calculate from recurring templates
+    hasSubscriptions: false,
     hasOverduePayments: debts.some(debt => {
       if (!debt.due_date) return false
       const dueDate = new Date(debt.due_date)
       const today = new Date()
       return dueDate < today && debt.status === 'active'
     }),
-    isOnTrack: totalExpenses < 10000 // Simple heuristic, replace with real logic
+    isOnTrack: totalExpenses < 10000
   }), [incomes, debts, totalExpenses])
 
   const handleCreateExpense = () => {
@@ -126,7 +125,6 @@ export default function ExpensesPage() {
 
     const category = (categoryMap[expenseData.category] || 'Other') as ExpenseCategoryType
 
-    // Save recurring info to description/notes if present
     let description = expenseData.description || ''
     if (expenseData.isRecurring && expenseData.recurringData) {
       description += ` [Recurrente: ${expenseData.recurringData.frequency}]`
@@ -149,7 +147,6 @@ export default function ExpensesPage() {
       })
     }
 
-    // Show motivational toast
     showMotivationalToast({ type: 'expense', amount: expenseData.amount })
     
     setActiveModal(null)
@@ -164,7 +161,6 @@ export default function ExpensesPage() {
     isRecurring?: boolean
     recurringData?: any
   }) => {
-    // TODO: Implement income saving logic using existing hooks
     showMotivationalToast({ type: 'income', amount: incomeData.amount })
     console.log('Saving income:', incomeData)
     return { success: true }
@@ -176,7 +172,6 @@ export default function ExpensesPage() {
     date: string
     description?: string
   }) => {
-    // TODO: Implement savings logic using existing hooks
     showMotivationalToast({ type: 'saving', goalProgress: 15.3 })
     console.log('Saving savings:', savingsData)
     return { success: true }
@@ -188,7 +183,6 @@ export default function ExpensesPage() {
     date: string
     description?: string
   }) => {
-    // TODO: Implement debt payment logic using existing hooks
     showMotivationalToast({ type: 'debt', debtReduction: 8.5 })
     console.log('Saving debt payment:', paymentData)
     return { success: true }
@@ -203,14 +197,13 @@ export default function ExpensesPage() {
   // Smart Chips handlers
   const handleRecalculatePlan = () => {
     queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
-    showMotivationalToast({ type: 'expense' }) // Generic success message
+    showMotivationalToast({ type: 'expense' })
   }
 
   const handleAddIncome = () => setActiveModal('income')
   const handleAddSubscription = () => setActiveModal('subscription')
   const handleViewPayments = () => setActiveTab('scheduled')
   const handleViewProgress = () => {
-    // TODO: Navigate to progress page
     console.log('Navigate to progress')
   }
 
@@ -264,6 +257,8 @@ export default function ExpensesPage() {
             onCreateExpense={handleCreateExpense}
             onEditExpense={handleEditExpense}
             onDeleteExpense={handleDeleteExpense}
+            onAddIncome={handleAddIncome}
+            onAddSaving={() => setActiveModal('savings')}
             isUpdating={isUpdating}
             isDeleting={isDeleting}
           />

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, CreditCard, Edit, Trash2 } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
 import { ExpenseFilters } from './ExpenseFilters'
+import { QuickActionButtons } from './QuickActionButtons'
 import { Badge } from '@/components/ui/badge'
 import { Expense } from '@/domains/expenses/types/expense.types'
 
@@ -19,6 +20,8 @@ interface TransactionsTabProps {
   onCreateExpense: () => void
   onEditExpense: (expense: Expense) => void
   onDeleteExpense: (expense: Expense) => void
+  onAddIncome: () => void
+  onAddSaving: () => void
   isUpdating: boolean
   isDeleting: boolean
 }
@@ -30,6 +33,8 @@ export const TransactionsTab: React.FC<TransactionsTabProps> = ({
   onCreateExpense,
   onEditExpense,
   onDeleteExpense,
+  onAddIncome,
+  onAddSaving,
   isUpdating,
   isDeleting
 }) => {
@@ -54,6 +59,13 @@ export const TransactionsTab: React.FC<TransactionsTabProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Quick Action Buttons */}
+      <QuickActionButtons
+        onAddIncome={onAddIncome}
+        onAddExpense={onCreateExpense}
+        onAddSaving={onAddSaving}
+      />
+
       {/* Filters */}
       <ExpenseFilters
         filters={filters}
@@ -69,7 +81,7 @@ export const TransactionsTab: React.FC<TransactionsTabProps> = ({
               <h3 className="text-lg font-medium mb-2">Sin movimientos aún</h3>
               <p className="text-muted-foreground mb-4">
                 {expenses.length === 0 
-                  ? 'Usa el botón + para comenzar a registrar tus gastos'
+                  ? 'Usa los botones de arriba para comenzar a registrar tus finanzas'
                   : 'No hay movimientos que coincidan con los filtros seleccionados.'
                 }
               </p>
