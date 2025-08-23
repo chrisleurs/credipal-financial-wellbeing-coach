@@ -1,7 +1,5 @@
 
 import React from 'react'
-import { SidebarProvider } from '@/components/ui/sidebar'
-import { AppSidebar } from './AppSidebar'
 import { ChatBubble } from './ChatBubble'
 import { BottomNavigation } from '../navigation/BottomNavigation'
 import { useLocation } from 'react-router-dom'
@@ -17,26 +15,18 @@ export function AppLayout({ children }: AppLayoutProps) {
   const showChatBubble = location.pathname !== '/coach'
   
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
-        
-        <div className="flex-1 flex flex-col min-w-0">
-          <main className="flex-1 overflow-auto">
-            <div className="w-full">
-              {children}
-            </div>
-          </main>
+    <div className="min-h-screen flex flex-col w-full bg-background">
+      <main className="flex-1 overflow-auto">
+        <div className="w-full">
+          {children}
         </div>
+      </main>
 
-        {/* Chat bubble - only show when not on coach page */}
-        {showChatBubble && <ChatBubble />}
-        
-        {/* Bottom Navigation - mobile only */}
-        <div className="md:hidden">
-          <BottomNavigation />
-        </div>
-      </div>
-    </SidebarProvider>
+      {/* Chat bubble - only show when not on coach page */}
+      {showChatBubble && <ChatBubble />}
+      
+      {/* Bottom Navigation - always visible now */}
+      <BottomNavigation />
+    </div>
   )
 }

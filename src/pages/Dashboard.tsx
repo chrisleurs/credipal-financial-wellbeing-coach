@@ -6,7 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 export default function Dashboard() {
   return (
     <AppLayout>
-      <div className="relative min-h-screen">
+      <div className="relative min-h-screen pb-16"> {/* Added bottom padding for navigation */}
         <MobileFirstDashboard />
       </div>
     </AppLayout>
