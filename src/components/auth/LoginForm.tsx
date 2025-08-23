@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -13,6 +14,7 @@ interface LoginFormProps {
 
 export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
   const { login, loading } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -22,13 +24,34 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos",
+        variant: "destructive"
+      });
       return;
     }
 
-    await login(formData.email, formData.password);
+    console.log('Attempting login for:', formData.email);
+    const result = await login(formData.email, formData.password);
     
-    if (onSuccess) {
-      onSuccess();
+    if (result.error) {
+      console.error('Login failed:', result.error);
+      toast({
+        title: "Error de inicio de sesión",
+        description: result.error.message || "Credenciales inválidas",
+        variant: "destructive"
+      });
+    } else {
+      console.log('Login successful, calling onSuccess');
+      toast({
+        title: "¡Bienvenido!",
+        description: "Has iniciado sesión correctamente",
+      });
+      
+      if (onSuccess) {
+        onSuccess();
+      }
     }
   };
 

@@ -12,7 +12,15 @@ export const AuthRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Don't do anything if still loading
+    console.log('AuthRedirect - Current state:', {
+      user: user?.email,
+      authLoading,
+      onboardingCompleted,
+      onboardingLoading,
+      currentPath: location.pathname
+    });
+
+    // Don't do anything if still loading authentication
     if (authLoading) {
       console.log('AuthRedirect - Auth still loading');
       return;
@@ -24,13 +32,11 @@ export const AuthRedirect = () => {
       return;
     }
 
-    // If loading onboarding status, wait
+    // If user exists but onboarding status is still loading, wait
     if (onboardingLoading) {
       console.log('AuthRedirect - Onboarding status loading');
       return;
     }
-
-    console.log('AuthRedirect - User:', user.email, 'Onboarding completed:', onboardingCompleted, 'Current path:', location.pathname);
 
     const currentPath = location.pathname;
     

@@ -13,12 +13,18 @@ const Index = () => {
   const { onboardingCompleted, isLoading: onboardingLoading } = useOnboardingStatus();
   const navigate = useNavigate();
 
+  console.log('Index page - Current state:', {
+    user: user?.email,
+    loading,
+    onboardingCompleted,
+    onboardingLoading
+  });
+
   const handleSignOut = async () => {
     await logout();
   };
 
-  // Si hay un usuario autenticado, el AuthRedirect se encarga de la lógica de redirección
-  // Este componente solo maneja el caso cuando NO hay usuario
+  // Show loading while authentication is being determined
   if (loading || (user && onboardingLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
@@ -27,26 +33,40 @@ const Index = () => {
     );
   }
 
-  // Si hay usuario autenticado, AuthRedirect manejará la redirección
-  // Pero si por alguna razón llegamos aquí con usuario, mostramos el dashboard
+  // If user is authenticated, AuthRedirect will handle navigation
+  // But if we're still here with a user, show appropriate content
   if (user) {
-    return (
-      <>
-        <div className="absolute top-4 right-4 z-50">
-          <Button 
-            onClick={handleSignOut}
-            variant="outline"
-            className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-          >
-            Cerrar Sesión
-          </Button>
+    // If onboarding is completed, show dashboard
+    if (onboardingCompleted === true) {
+      return (
+        <>
+          <div className="absolute top-4 right-4 z-50">
+            <Button 
+              onClick={handleSignOut}
+              variant="outline"
+              className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+            >
+              Cerrar Sesión
+            </Button>
+          </div>
+          <FinancialDashboard />
+        </>
+      );
+    }
+    
+    // If onboarding is not completed, AuthRedirect should handle this
+    // But if we're still here, redirect manually
+    if (onboardingCompleted === false) {
+      navigate('/onboarding', { replace: true });
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
+          <LoadingSpinner size="lg" text="Redirigiendo..." />
         </div>
-        <FinancialDashboard />
-      </>
-    );
+      );
+    }
   }
 
-  // Si no hay usuario, mostrar Welcome
+  // If no user, show Welcome page
   return <Welcome />;
 };
 
