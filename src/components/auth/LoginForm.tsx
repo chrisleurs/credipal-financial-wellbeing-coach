@@ -19,6 +19,7 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
     email: '',
     password: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +33,9 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
       return;
     }
 
+    setIsSubmitting(true);
     console.log('LoginForm - attempting login for:', formData.email);
+    
     const result = await signIn(formData.email, formData.password);
     
     if (result?.error) {
@@ -47,6 +50,10 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
         errorMessage = 'Debes confirmar tu email antes de iniciar sesión';
       } else if (result.error.message?.includes('Too many requests')) {
         errorMessage = 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo';
+      } else if (result.error.message?.includes('Invalid email')) {
+        errorMessage = 'El formato del email no es válido';
+      } else {
+        errorMessage = result.error.message || 'Error desconocido al iniciar sesión';
       }
       
       toast({
@@ -65,6 +72,8 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
         onSuccess();
       }
     }
+    
+    setIsSubmitting(false);
   };
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +94,7 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
           value={formData.email}
           onChange={handleChange('email')}
           required
-          disabled={loading}
+          disabled={loading || isSubmitting}
         />
       </div>
 
@@ -101,7 +110,7 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
           value={formData.password}
           onChange={handleChange('password')}
           required
-          disabled={loading}
+          disabled={loading || isSubmitting}
         />
       </div>
 
@@ -110,7 +119,7 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
           type="button"
           onClick={onForgotPassword}
           className="text-sm text-primary hover:underline"
-          disabled={loading}
+          disabled={loading || isSubmitting}
         >
           ¿Olvidaste tu contraseña?
         </button>
@@ -119,9 +128,9 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-primary hover:bg-primary-light"
-        disabled={loading || !formData.email || !formData.password}
+        disabled={loading || isSubmitting || !formData.email || !formData.password}
       >
-        {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+        {isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
       </Button>
     </form>
   );

@@ -24,6 +24,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
     lastName: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -57,7 +58,9 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
       return;
     }
 
+    setIsSubmitting(true);
     console.log('SignUpForm - attempting sign up for:', formData.email);
+    
     const result = await signUp(formData.email, formData.password, formData.firstName, formData.lastName);
     
     if (result?.error) {
@@ -74,6 +77,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           description: errorMessage,
           variant: 'destructive'
         });
+        setIsSubmitting(false);
         return;
       }
       
@@ -81,6 +85,10 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         errorMessage = 'El formato del email no es válido';
       } else if (result.error.message?.includes('Password')) {
         errorMessage = 'La contraseña no cumple con los requisitos mínimos';
+      } else if (result.error.message?.includes('weak password')) {
+        errorMessage = 'La contraseña es muy débil. Debe tener al menos 6 caracteres';
+      } else {
+        errorMessage = result.error.message || 'Error desconocido al crear la cuenta';
       }
       
       toast({
@@ -88,19 +96,30 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         description: errorMessage,
         variant: 'destructive'
       });
-      return;
+    } else {
+      // Success case
+      console.log('SignUp successful');
+      
+      // Check if user was created but needs email confirmation
+      if (result?.data?.user && !result.data.session) {
+        toast({
+          title: '¡Cuenta creada!',
+          description: 'Revisa tu email para confirmar tu cuenta antes de iniciar sesión.',
+          variant: 'default'
+        });
+      } else {
+        toast({
+          title: '¡Cuenta creada exitosamente!',
+          description: 'Bienvenido a CrediPal. Ya puedes comenzar a usar la aplicación.'
+        });
+      }
+      
+      if (onSuccess) {
+        onSuccess();
+      }
     }
     
-    // Success case
-    console.log('SignUp successful');
-    toast({
-      title: '¡Cuenta creada exitosamente!',
-      description: 'Bienvenido a CrediPal. Ya puedes comenzar a usar la aplicación.'
-    });
-    
-    if (onSuccess) {
-      onSuccess();
-    }
+    setIsSubmitting(false);
   };
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,7 +145,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
             placeholder="Juan"
             value={formData.firstName}
             onChange={handleChange('firstName')}
-            disabled={loading}
+            disabled={loading || isSubmitting}
           />
         </div>
 
@@ -138,7 +157,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
             placeholder="Pérez"
             value={formData.lastName}
             onChange={handleChange('lastName')}
-            disabled={loading}
+            disabled={loading || isSubmitting}
           />
         </div>
       </div>
@@ -155,7 +174,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           value={formData.email}
           onChange={handleChange('email')}
           required
-          disabled={loading}
+          disabled={loading || isSubmitting}
         />
         {errors.email && (
           <p className="text-sm text-destructive">{errors.email}</p>
@@ -174,7 +193,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           value={formData.password}
           onChange={handleChange('password')}
           required
-          disabled={loading}
+          disabled={loading || isSubmitting}
         />
         {errors.password && (
           <p className="text-sm text-destructive">{errors.password}</p>
@@ -190,7 +209,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           value={formData.confirmPassword}
           onChange={handleChange('confirmPassword')}
           required
-          disabled={loading}
+          disabled={loading || isSubmitting}
         />
         {errors.confirmPassword && (
           <p className="text-sm text-destructive">{errors.confirmPassword}</p>
@@ -200,9 +219,9 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-secondary hover:bg-secondary-light"
-        disabled={loading}
+        disabled={loading || isSubmitting}
       >
-        {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+        {isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta'}
       </Button>
 
       <div className="text-center text-sm text-muted-foreground">
@@ -211,6 +230,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           type="button"
           onClick={onSwitchToLogin}
           className="text-primary hover:underline font-medium"
+          disabled={loading || isSubmitting}
         >
           Inicia sesión aquí
         </button>

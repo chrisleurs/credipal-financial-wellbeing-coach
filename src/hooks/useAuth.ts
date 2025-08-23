@@ -7,55 +7,45 @@ interface AuthState {
   user: SupabaseUser | null
   session: Session | null
   loading: boolean
-  error: string | null
 }
 
 export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
     user: null,
     session: null,
-    loading: true,
-    error: null
+    loading: true
   })
 
   useEffect(() => {
     console.log('useAuth: Setting up auth state listener')
     
-    // Set up the auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        console.log('Initial session:', session?.user?.email || 'No session')
         setState({
           session,
           user: session?.user ?? null,
-          loading: false,
-          error: null
+          loading: false
+        })
+      } catch (error) {
+        console.error('Error getting initial session:', error)
+        setState(prev => ({ ...prev, loading: false }))
+      }
+    }
+    
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email || 'No session')
+        setState({
+          session,
+          user: session?.user ?? null,
+          loading: false
         })
       }
     )
-
-    // Check for existing session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) {
-          console.error('Error getting session:', error)
-          setState(prev => ({ ...prev, error: error.message, loading: false }))
-          return
-        }
-        
-        console.log('Initial session:', session?.user?.email)
-        setState({
-          session,
-          user: session?.user ?? null,
-          loading: false,
-          error: null
-        })
-      } catch (error: any) {
-        console.error('Error in getInitialSession:', error)
-        setState(prev => ({ ...prev, error: error.message, loading: false }))
-      }
-    }
 
     getInitialSession()
 
@@ -67,7 +57,6 @@ export const useAuth = () => {
 
   const signIn = async (email: string, password: string) => {
     console.log('Attempting sign in for:', email)
-    setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -77,7 +66,6 @@ export const useAuth = () => {
       
       if (error) {
         console.error('Sign in error:', error)
-        setState(prev => ({ ...prev, error: error.message, loading: false }))
         return { error }
       }
 
@@ -85,14 +73,12 @@ export const useAuth = () => {
       return { data, error: null }
     } catch (error: any) {
       console.error('Sign in exception:', error)
-      setState(prev => ({ ...prev, error: error.message, loading: false }))
-      return { error }
+      return { error: { message: error.message } }
     }
   }
 
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     console.log('Attempting sign up for:', email)
-    setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -109,42 +95,37 @@ export const useAuth = () => {
       
       if (error) {
         console.error('Sign up error:', error)
-        setState(prev => ({ ...prev, error: error.message, loading: false }))
         return { error }
       }
 
-      console.log('Sign up successful:', data.user?.email)
+      console.log('Sign up result:', data)
       return { data, error: null }
     } catch (error: any) {
       console.error('Sign up exception:', error)
-      setState(prev => ({ ...prev, error: error.message, loading: false }))
-      return { error }
+      return { error: { message: error.message } }
     }
   }
 
   const signOut = async () => {
     console.log('Attempting sign out')
-    setState(prev => ({ ...prev, loading: true }))
     
     try {
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('Sign out error:', error)
-        setState(prev => ({ ...prev, error: error.message, loading: false }))
-        return
+        return { error }
       }
       
       console.log('Sign out successful')
-      setState({ user: null, session: null, loading: false, error: null })
+      return { error: null }
     } catch (error: any) {
       console.error('Sign out exception:', error)
-      setState(prev => ({ ...prev, error: error.message, loading: false }))
+      return { error: { message: error.message } }
     }
   }
 
   const resetPassword = async (email: string) => {
     console.log('Attempting password reset for:', email)
-    setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -153,24 +134,16 @@ export const useAuth = () => {
       
       if (error) {
         console.error('Reset password error:', error)
-        setState(prev => ({ ...prev, error: error.message, loading: false }))
         return { error }
       }
 
       console.log('Password reset email sent successfully')
-      setState(prev => ({ ...prev, loading: false }))
       return { data, error: null }
     } catch (error: any) {
       console.error('Reset password exception:', error)
-      setState(prev => ({ ...prev, error: error.message, loading: false }))
-      return { error }
+      return { error: { message: error.message } }
     }
   }
-
-  // Aliases for backward compatibility
-  const login = signIn
-  const register = signUp
-  const logout = signOut
 
   return {
     ...state,
@@ -178,8 +151,9 @@ export const useAuth = () => {
     signUp,
     signOut,
     resetPassword,
-    login,
-    register,
-    logout
+    // Aliases for backward compatibility
+    login: signIn,
+    register: signUp,
+    logout: signOut
   }
 }
