@@ -145,7 +145,12 @@ export const useAuth = () => {
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
-      const redirectUrl = `${window.location.origin}/auth?reset=true`
+      // Use the current window location for redirect
+      const currentUrl = window.location.href
+      const baseUrl = currentUrl.split('#')[0].split('?')[0]
+      const redirectUrl = `${baseUrl}#access_token=reset`
+      
+      console.log('Reset redirect URL:', redirectUrl)
       
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl
