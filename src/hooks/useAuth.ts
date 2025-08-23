@@ -21,21 +21,20 @@ export const useAuth = () => {
   useEffect(() => {
     console.log('useAuth: Setting up auth state listener')
     
-    // First, set up the auth state change listener
+    // Set up the auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
-        setState(prev => ({
-          ...prev,
+        setState({
           session,
           user: session?.user ?? null,
           loading: false,
           error: null
-        }))
+        })
       }
     )
 
-    // Then check for existing session
+    // Check for existing session
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
@@ -46,13 +45,12 @@ export const useAuth = () => {
         }
         
         console.log('Initial session:', session?.user?.email)
-        setState(prev => ({
-          ...prev,
+        setState({
           session,
           user: session?.user ?? null,
           loading: false,
           error: null
-        }))
+        })
       } catch (error: any) {
         console.error('Error in getInitialSession:', error)
         setState(prev => ({ ...prev, error: error.message, loading: false }))
@@ -66,17 +64,6 @@ export const useAuth = () => {
       subscription.unsubscribe()
     }
   }, [])
-
-  const clearAuthData = () => {
-    console.log('Clearing auth data from localStorage')
-    // Clear specific Supabase data
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('sb-rvyvqgtwlwbaurcooypk-auth-token')) {
-        localStorage.removeItem(key);
-      }
-    });
-  }
 
   const signIn = async (email: string, password: string) => {
     console.log('Attempting sign in for:', email)
@@ -107,17 +94,12 @@ export const useAuth = () => {
     console.log('Attempting sign up for:', email)
     setState(prev => ({ ...prev, loading: true, error: null }))
     
-    // Clear previous auth data before attempting to register
-    clearAuthData()
-    
     try {
-      const redirectUrl = `${window.location.origin}/`
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             first_name: firstName,
             last_name: lastName,
@@ -140,20 +122,33 @@ export const useAuth = () => {
     }
   }
 
+  const signOut = async () => {
+    console.log('Attempting sign out')
+    setState(prev => ({ ...prev, loading: true }))
+    
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Sign out error:', error)
+        setState(prev => ({ ...prev, error: error.message, loading: false }))
+        return
+      }
+      
+      console.log('Sign out successful')
+      setState({ user: null, session: null, loading: false, error: null })
+    } catch (error: any) {
+      console.error('Sign out exception:', error)
+      setState(prev => ({ ...prev, error: error.message, loading: false }))
+    }
+  }
+
   const resetPassword = async (email: string) => {
     console.log('Attempting password reset for:', email)
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
-      // Use the current window location for redirect
-      const currentUrl = window.location.href
-      const baseUrl = currentUrl.split('#')[0].split('?')[0]
-      const redirectUrl = `${baseUrl}#access_token=reset`
-      
-      console.log('Reset redirect URL:', redirectUrl)
-      
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl
+        redirectTo: `${window.location.origin}/auth`
       })
       
       if (error) {
@@ -172,28 +167,7 @@ export const useAuth = () => {
     }
   }
 
-  const signOut = async () => {
-    console.log('Attempting sign out')
-    setState(prev => ({ ...prev, loading: true }))
-    
-    try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Sign out error:', error)
-        setState(prev => ({ ...prev, error: error.message, loading: false }))
-        return
-      }
-      
-      console.log('Sign out successful')
-      clearAuthData()
-      setState({ user: null, session: null, loading: false, error: null })
-    } catch (error: any) {
-      console.error('Sign out exception:', error)
-      setState(prev => ({ ...prev, error: error.message, loading: false }))
-    }
-  }
-
-  // Add backward compatibility aliases
+  // Aliases for backward compatibility
   const login = signIn
   const register = signUp
   const logout = signOut
@@ -206,7 +180,6 @@ export const useAuth = () => {
     resetPassword,
     login,
     register,
-    logout,
-    clearAuthData
+    logout
   }
 }

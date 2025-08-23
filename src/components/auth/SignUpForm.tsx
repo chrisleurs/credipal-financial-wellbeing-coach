@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ToastAction } from '@/components/ui/toast';
 import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { validateEmail } from '@/utils/helpers';
@@ -58,41 +57,45 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
       return;
     }
 
-    console.log('Auth - attempting sign up for:', formData.email);
+    console.log('SignUpForm - attempting sign up for:', formData.email);
     const result = await signUp(formData.email, formData.password, formData.firstName, formData.lastName);
     
     if (result?.error) {
       console.log('SignUp error detected:', result.error);
       
-      // Si el usuario ya existe, mostrar mensaje y opción de ir a login
-      if (result.error.message?.includes('User already registered') || 
-          result.error.message?.includes('already registered') ||
-          result.error.code === 'user_already_exists') {
-        
+      let errorMessage = 'Hubo un problema al crear tu cuenta';
+      
+      // Handle specific error cases
+      if (result.error.message?.includes('already registered') || 
+          result.error.message?.includes('User already registered')) {
+        errorMessage = 'Este email ya está registrado. Puedes iniciar sesión con tu cuenta existente.';
         toast({
-          title: 'Este email ya está registrado',
-          description: 'Puedes iniciar sesión con tu cuenta existente',
-          action: onSwitchToLogin ? (
-            <ToastAction altText="Ir a Login" onClick={onSwitchToLogin}>
-              Ir a Login
-            </ToastAction>
-          ) : undefined
+          title: 'Email ya registrado',
+          description: errorMessage,
+          variant: 'destructive'
         });
         return;
       }
       
-      // Otros errores
+      if (result.error.message?.includes('Invalid email')) {
+        errorMessage = 'El formato del email no es válido';
+      } else if (result.error.message?.includes('Password')) {
+        errorMessage = 'La contraseña no cumple con los requisitos mínimos';
+      }
+      
       toast({
         title: 'Error al crear cuenta',
-        description: result.error.message || 'Hubo un problema al crear tu cuenta'
+        description: errorMessage,
+        variant: 'destructive'
       });
       return;
     }
     
-    // Éxito en registro
+    // Success case
+    console.log('SignUp successful');
     toast({
-      title: 'Cuenta creada exitosamente',
-      description: 'Bienvenido a CrediPal. Comencemos con tu onboarding.'
+      title: '¡Cuenta creada exitosamente!',
+      description: 'Bienvenido a CrediPal. Ya puedes comenzar a usar la aplicación.'
     });
     
     if (onSuccess) {

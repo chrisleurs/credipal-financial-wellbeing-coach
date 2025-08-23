@@ -26,48 +26,63 @@ export const AuthRedirect = () => {
       return;
     }
 
-    // If no user, don't auto redirect
-    if (!user) {
-      console.log('AuthRedirect - No user found');
+    // If no user and we're not on auth page, redirect to auth
+    if (!user && location.pathname !== '/auth') {
+      console.log('AuthRedirect - No user, redirecting to auth');
+      navigate('/auth', { replace: true });
       return;
     }
 
     // If user exists but onboarding status is still loading, wait
-    if (onboardingLoading) {
-      console.log('AuthRedirect - Onboarding status loading');
+    if (user && onboardingLoading) {
+      console.log('AuthRedirect - User found, onboarding status loading');
       return;
     }
 
-    const currentPath = location.pathname;
-    
-    // Routes that require completed onboarding
-    const protectedRoutes = ['/dashboard', '/expenses', '/debts', '/plan', '/profile', '/calendar'];
-    const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
-    
-    // If user completed onboarding, never allow returning to /onboarding
-    if (onboardingCompleted === true && currentPath === '/onboarding') {
-      console.log('AuthRedirect - User completed onboarding but trying to access /onboarding, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-    
-    // If user is on protected route but hasn't completed onboarding
-    if (isProtectedRoute && onboardingCompleted === false) {
-      console.log('AuthRedirect - User in protected route but onboarding incomplete, redirecting to onboarding');
-      navigate('/onboarding', { replace: true });
-      return;
-    }
-    
-    // Redirect from entry pages for authenticated users
-    if (currentPath === '/auth' || currentPath === '/') {
-      if (onboardingCompleted === false) {
-        console.log('AuthRedirect - Authenticated user needs onboarding, redirecting to onboarding');
-        navigate('/onboarding', { replace: true });
-      } else if (onboardingCompleted === true) {
-        console.log('AuthRedirect - Authenticated user with completed onboarding, redirecting to dashboard');
-        navigate('/dashboard', { replace: true });
+    // If user is authenticated, handle navigation based on onboarding status
+    if (user) {
+      const currentPath = location.pathname;
+      
+      // If on auth page and authenticated, redirect based on onboarding status
+      if (currentPath === '/auth') {
+        if (onboardingCompleted === false) {
+          console.log('AuthRedirect - Authenticated user needs onboarding');
+          navigate('/onboarding', { replace: true });
+        } else if (onboardingCompleted === true) {
+          console.log('AuthRedirect - Authenticated user with completed onboarding');
+          navigate('/dashboard', { replace: true });
+        }
+        return;
       }
-      return;
+
+      // Handle root path
+      if (currentPath === '/') {
+        if (onboardingCompleted === false) {
+          console.log('AuthRedirect - Root redirect to onboarding');
+          navigate('/onboarding', { replace: true });
+        } else if (onboardingCompleted === true) {
+          console.log('AuthRedirect - Root redirect to dashboard');
+          navigate('/dashboard', { replace: true });
+        }
+        return;
+      }
+
+      // Protected routes that require completed onboarding
+      const protectedRoutes = ['/dashboard', '/expenses', '/debts', '/plan', '/profile'];
+      const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
+      
+      if (isProtectedRoute && onboardingCompleted === false) {
+        console.log('AuthRedirect - Protected route but onboarding incomplete');
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+      
+      // Prevent access to onboarding if already completed
+      if (currentPath === '/onboarding' && onboardingCompleted === true) {
+        console.log('AuthRedirect - Onboarding completed, redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
+        return;
+      }
     }
   }, [user, onboardingCompleted, authLoading, onboardingLoading, navigate, location.pathname]);
 

@@ -13,7 +13,7 @@ interface LoginFormProps {
 }
 
 export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
-  const { login, loading } = useAuth();
+  const { signIn, loading } = useAuth();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
@@ -25,28 +25,40 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
     
     if (!formData.email || !formData.password) {
       toast({
-        title: "Error",
+        title: "Campos requeridos",
         description: "Por favor completa todos los campos",
         variant: "destructive"
       });
       return;
     }
 
-    console.log('Attempting login for:', formData.email);
-    const result = await login(formData.email, formData.password);
+    console.log('LoginForm - attempting login for:', formData.email);
+    const result = await signIn(formData.email, formData.password);
     
-    if (result.error) {
+    if (result?.error) {
       console.error('Login failed:', result.error);
+      
+      let errorMessage = 'Error al iniciar sesión';
+      
+      if (result.error.message?.includes('Invalid login credentials') || 
+          result.error.message?.includes('invalid_credentials')) {
+        errorMessage = 'Email o contraseña incorrectos';
+      } else if (result.error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Debes confirmar tu email antes de iniciar sesión';
+      } else if (result.error.message?.includes('Too many requests')) {
+        errorMessage = 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo';
+      }
+      
       toast({
         title: "Error de inicio de sesión",
-        description: result.error.message || "Credenciales inválidas",
+        description: errorMessage,
         variant: "destructive"
       });
     } else {
-      console.log('Login successful, calling onSuccess');
+      console.log('Login successful');
       toast({
         title: "¡Bienvenido!",
-        description: "Has iniciado sesión correctamente",
+        description: "Has iniciado sesión correctamente"
       });
       
       if (onSuccess) {
