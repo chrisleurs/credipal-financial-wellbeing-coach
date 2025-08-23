@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ToastAction } from '@/components/ui/toast';
 import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { validateEmail } from '@/utils/helpers';
@@ -71,10 +72,11 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         toast({
           title: 'Este email ya está registrado',
           description: 'Puedes iniciar sesión con tu cuenta existente',
-          action: {
-            label: 'Ir a Login',
-            onClick: () => onSwitchToLogin?.()
-          }
+          action: onSwitchToLogin ? (
+            <ToastAction altText="Ir a Login" onClick={onSwitchToLogin}>
+              Ir a Login
+            </ToastAction>
+          ) : undefined
         });
         return;
       }
