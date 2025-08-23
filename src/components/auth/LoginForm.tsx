@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -15,6 +16,7 @@ interface LoginFormProps {
 export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
   const { signIn, loading } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -49,6 +51,8 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
           errorMessage = 'Debes confirmar tu email antes de iniciar sesión';
         } else if (result.error.message?.includes('Too many requests')) {
           errorMessage = 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo';
+        } else if (result.error.message) {
+          errorMessage = result.error.message;
         }
         
         setError(errorMessage);
@@ -58,11 +62,16 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
           variant: "destructive"
         });
       } else {
-        console.log('Login successful');
+        console.log('Login successful, redirecting...');
         toast({
           title: "¡Bienvenido!",
           description: "Has iniciado sesión correctamente"
         });
+        
+        // Force navigation to dashboard after successful login
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 500);
         
         if (onSuccess) {
           onSuccess();
@@ -84,13 +93,13 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
-    if (error) setError(null); // Clear error when user starts typing
+    if (error) setError(null);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
           {error}
         </div>
       )}

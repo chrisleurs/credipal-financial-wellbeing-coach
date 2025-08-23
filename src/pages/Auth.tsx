@@ -8,22 +8,25 @@ import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Limpiar localStorage y sessionStorage al entrar a auth
+  // Redirect authenticated users
   useEffect(() => {
-    console.log('Auth page - clearing storage');
-    // Limpiar cualquier dato de sesión anterior
-    localStorage.removeItem('sb-rvyvqgtwlwbaurcooypk-auth-token');
-    sessionStorage.clear();
-  }, []);
+    if (!loading && user) {
+      console.log('Auth - User is authenticated, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const handleAuthSuccess = () => {
-    console.log('Auth success, user should be redirected automatically');
+    console.log('Auth success, redirecting to dashboard...');
+    navigate('/dashboard', { replace: true });
   };
 
   const switchToLogin = () => {
@@ -43,6 +46,18 @@ const Auth = () => {
   const handleBackFromForgotPassword = () => {
     setShowForgotPassword(false);
   };
+
+  // Don't render if loading or user is authenticated
+  if (loading || user) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
