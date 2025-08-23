@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { validateEmail } from '@/utils/helpers';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface SignUpFormProps {
   onSuccess?: () => void;
@@ -14,7 +14,8 @@ interface SignUpFormProps {
 }
 
 export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
-  const { register, loading } = useAuth();
+  const { signUp, loading } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -56,8 +57,8 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
       return;
     }
 
-    console.log('Auth - attempting sign up');
-    const result = await register(formData.email, formData.password, formData.firstName, formData.lastName);
+    console.log('Auth - attempting sign up for:', formData.email);
+    const result = await signUp(formData.email, formData.password, formData.firstName, formData.lastName);
     
     if (result?.error) {
       console.log('SignUp error detected:', result.error);
@@ -67,7 +68,8 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           result.error.message?.includes('already registered') ||
           result.error.code === 'user_already_exists') {
         
-        toast.error('Este email ya está registrado', {
+        toast({
+          title: 'Este email ya está registrado',
           description: 'Puedes iniciar sesión con tu cuenta existente',
           action: {
             label: 'Ir a Login',
@@ -78,11 +80,18 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
       }
       
       // Otros errores
-      toast.error('Error al crear cuenta', {
+      toast({
+        title: 'Error al crear cuenta',
         description: result.error.message || 'Hubo un problema al crear tu cuenta'
       });
       return;
     }
+    
+    // Éxito en registro
+    toast({
+      title: 'Cuenta creada exitosamente',
+      description: 'Bienvenido a CrediPal. Comencemos con tu onboarding.'
+    });
     
     if (onSuccess) {
       onSuccess();
@@ -191,7 +200,6 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
       </Button>
 
-      {/* Opción de cambiar a login si el email ya existe */}
       <div className="text-center text-sm text-muted-foreground">
         ¿Ya tienes cuenta?{' '}
         <button 

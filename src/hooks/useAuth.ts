@@ -69,7 +69,7 @@ export const useAuth = () => {
 
   const clearAuthData = () => {
     console.log('Clearing auth data from localStorage')
-    // Limpiar datos específicos de Supabase
+    // Clear specific Supabase data
     const keys = Object.keys(localStorage);
     keys.forEach(key => {
       if (key.startsWith('sb-rvyvqgtwlwbaurcooypk-auth-token')) {
@@ -107,7 +107,7 @@ export const useAuth = () => {
     console.log('Attempting sign up for:', email)
     setState(prev => ({ ...prev, loading: true, error: null }))
     
-    // Limpiar datos de auth anteriores antes de intentar registrarse
+    // Clear previous auth data before attempting to register
     clearAuthData()
     
     try {

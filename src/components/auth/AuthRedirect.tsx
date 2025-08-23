@@ -12,19 +12,19 @@ export const AuthRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // No hacer nada si aún estamos cargando
+    // Don't do anything if still loading
     if (authLoading) {
       console.log('AuthRedirect - Auth still loading');
       return;
     }
 
-    // Si no hay usuario, no hacer redirect automático
+    // If no user, don't auto redirect
     if (!user) {
       console.log('AuthRedirect - No user found');
       return;
     }
 
-    // Si estamos cargando el estado de onboarding, esperar
+    // If loading onboarding status, wait
     if (onboardingLoading) {
       console.log('AuthRedirect - Onboarding status loading');
       return;
@@ -34,25 +34,25 @@ export const AuthRedirect = () => {
 
     const currentPath = location.pathname;
     
-    // Rutas que requieren onboarding completado
+    // Routes that require completed onboarding
     const protectedRoutes = ['/dashboard', '/expenses', '/debts', '/plan', '/profile', '/calendar'];
     const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
     
-    // Si el usuario completó el onboarding, nunca permitir regresar a /onboarding
+    // If user completed onboarding, never allow returning to /onboarding
     if (onboardingCompleted === true && currentPath === '/onboarding') {
       console.log('AuthRedirect - User completed onboarding but trying to access /onboarding, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
       return;
     }
     
-    // Si el usuario está en una ruta protegida pero no ha completado onboarding
+    // If user is on protected route but hasn't completed onboarding
     if (isProtectedRoute && onboardingCompleted === false) {
       console.log('AuthRedirect - User in protected route but onboarding incomplete, redirecting to onboarding');
       navigate('/onboarding', { replace: true });
       return;
     }
     
-    // Redirección desde páginas de entrada para usuarios autenticados
+    // Redirect from entry pages for authenticated users
     if (currentPath === '/auth' || currentPath === '/') {
       if (onboardingCompleted === false) {
         console.log('AuthRedirect - Authenticated user needs onboarding, redirecting to onboarding');
@@ -65,7 +65,7 @@ export const AuthRedirect = () => {
     }
   }, [user, onboardingCompleted, authLoading, onboardingLoading, navigate, location.pathname]);
 
-  // Mostrar spinner mientras se cargan los estados críticos
+  // Show spinner while loading critical states
   if (authLoading || (user && onboardingLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
