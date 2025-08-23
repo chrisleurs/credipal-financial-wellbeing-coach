@@ -47,10 +47,12 @@ export const RecurringMovements: React.FC = () => {
     const activeTemplates = templates.filter(t => t.isActive)
     const totalMonthly = activeTemplates.reduce((sum, template) => {
       // Convert all frequencies to monthly amount
-      switch (template.frequency) {
+      const frequency = template.frequency as string
+      switch (frequency) {
         case 'weekly': return sum + (template.amount * 4)
         case 'biweekly': return sum + (template.amount * 2)
         case 'yearly': return sum + (template.amount / 12)
+        case 'monthly':
         default: return sum + template.amount
       }
     }, 0)
