@@ -124,11 +124,33 @@ export const useAuth = () => {
     }
   }
 
+  const resetPassword = async (email: string) => {
+    console.log('Attempting password reset for:', email)
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      })
+      
+      if (error) {
+        console.error('Password reset error:', error)
+        return { error }
+      }
+
+      console.log('Password reset email sent successfully')
+      return { error: null }
+    } catch (error: any) {
+      console.error('Password reset exception:', error)
+      return { error }
+    }
+  }
+
   return {
     ...state,
     signIn,
     signUp,
     signOut,
+    resetPassword,
     // Aliases for backward compatibility
     login: signIn,
     register: signUp,
