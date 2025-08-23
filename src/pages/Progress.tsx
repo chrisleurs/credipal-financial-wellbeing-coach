@@ -30,6 +30,10 @@ export default function ProgressPage() {
   const totalSavedAmount = activeGoals.reduce((sum, goal) => sum + goal.current_amount, 0)
   const overallGoalProgress = totalGoalAmount > 0 ? (totalSavedAmount / totalGoalAmount) * 100 : 0
 
+  const handleDeleteDebt = (debt: any) => {
+    deleteDebt(debt.id)
+  }
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6 pb-20">
@@ -97,7 +101,7 @@ export default function ProgressPage() {
             <DebtsList 
               debts={debts}
               onEdit={() => {}}
-              onDelete={deleteDebt}
+              onDelete={handleDeleteDebt}
               onMakePayment={() => {}}
               onCreate={() => {}}
               isUpdating={isUpdating}
@@ -125,7 +129,7 @@ export default function ProgressPage() {
                     <Card key={goal.id}>
                       <CardHeader>
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{goal.name}</CardTitle>
+                          <CardTitle className="text-lg">{goal.title}</CardTitle>
                           <span className="text-sm text-muted-foreground">
                             {progress.toFixed(1)}%
                           </span>

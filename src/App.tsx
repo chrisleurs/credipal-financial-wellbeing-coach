@@ -1,7 +1,8 @@
+
 import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { ErrorBoundary } from 'react-error-boundary'
-import { QueryClient } from '@tanstack/react-query'
+import { ErrorBoundary } from './components/shared/ErrorBoundary'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
@@ -12,11 +13,13 @@ import Plan from './pages/Plan'
 import Progress from './pages/Progress'
 import Coach from './pages/Coach'
 
+const queryClient = new QueryClient()
+
 function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <QueryClient>
+        <QueryClientProvider client={queryClient}>
           <Routes>
             {/* Auth Routes */}
             <Route path="/auth" element={<Auth />} />
@@ -92,7 +95,7 @@ function App() {
             {/* 404 Route - Redirect to Dashboard */}
             <Route path="*" element={<Auth />} />
           </Routes>
-        </QueryClient>
+        </QueryClientProvider>
       </ErrorBoundary>
     </BrowserRouter>
   )
