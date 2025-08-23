@@ -25,6 +25,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [generalError, setGeneralError] = useState<string | null>(null);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -53,6 +54,7 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setGeneralError(null);
     
     if (!validateForm()) {
       return;
@@ -61,62 +63,58 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
     setIsSubmitting(true);
     console.log('SignUpForm - attempting sign up for:', formData.email);
     
-    const result = await signUp(formData.email, formData.password, formData.firstName, formData.lastName);
-    
-    if (result?.error) {
-      console.log('SignUp error detected:', result.error);
+    try {
+      const result = await signUp(formData.email, formData.password, formData.firstName, formData.lastName);
       
-      let errorMessage = 'Hubo un problema al crear tu cuenta';
-      
-      // Handle specific error cases
-      if (result.error.message?.includes('already registered') || 
-          result.error.message?.includes('User already registered')) {
-        errorMessage = 'Este email ya está registrado. Puedes iniciar sesión con tu cuenta existente.';
+      if (result?.error) {
+        console.log('SignUp error detected:', result.error);
+        
+        let errorMessage = 'Hubo un problema al crear tu cuenta';
+        
+        if (result.error.message?.includes('already registered') || 
+            result.error.message?.includes('User already registered')) {
+          errorMessage = 'Este email ya está registrado. Puedes iniciar sesión con tu cuenta existente.';
+        } else if (result.error.message?.includes('Invalid email')) {
+          errorMessage = 'El formato del email no es válido';
+        } else if (result.error.message?.includes('weak password')) {
+          errorMessage = 'La contraseña es muy débil. Debe tener al menos 6 caracteres';
+        }
+        
+        setGeneralError(errorMessage);
         toast({
-          title: 'Email ya registrado',
+          title: 'Error al crear cuenta',
           description: errorMessage,
           variant: 'destructive'
         });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (result.error.message?.includes('Invalid email')) {
-        errorMessage = 'El formato del email no es válido';
-      } else if (result.error.message?.includes('Password')) {
-        errorMessage = 'La contraseña no cumple con los requisitos mínimos';
-      } else if (result.error.message?.includes('weak password')) {
-        errorMessage = 'La contraseña es muy débil. Debe tener al menos 6 caracteres';
       } else {
-        errorMessage = result.error.message || 'Error desconocido al crear la cuenta';
+        console.log('SignUp successful');
+        
+        if (result?.data?.user && !result.data.session) {
+          toast({
+            title: '¡Cuenta creada!',
+            description: 'Revisa tu email para confirmar tu cuenta antes de iniciar sesión.',
+            variant: 'default'
+          });
+        } else {
+          toast({
+            title: '¡Cuenta creada exitosamente!',
+            description: 'Bienvenido a CrediPal. Ya puedes comenzar a usar la aplicación.'
+          });
+        }
+        
+        if (onSuccess) {
+          onSuccess();
+        }
       }
-      
+    } catch (error: any) {
+      console.error('SignUp exception:', error);
+      const errorMessage = 'Error inesperado al crear la cuenta';
+      setGeneralError(errorMessage);
       toast({
-        title: 'Error al crear cuenta',
+        title: 'Error',
         description: errorMessage,
         variant: 'destructive'
       });
-    } else {
-      // Success case
-      console.log('SignUp successful');
-      
-      // Check if user was created but needs email confirmation
-      if (result?.data?.user && !result.data.session) {
-        toast({
-          title: '¡Cuenta creada!',
-          description: 'Revisa tu email para confirmar tu cuenta antes de iniciar sesión.',
-          variant: 'default'
-        });
-      } else {
-        toast({
-          title: '¡Cuenta creada exitosamente!',
-          description: 'Bienvenido a CrediPal. Ya puedes comenzar a usar la aplicación.'
-        });
-      }
-      
-      if (onSuccess) {
-        onSuccess();
-      }
     }
     
     setIsSubmitting(false);
@@ -125,14 +123,23 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
     
-    // Clear error when user starts typing
+    // Clear errors when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    if (generalError) {
+      setGeneralError(null);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {generalError && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
+          {generalError}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="signup-firstname" className="flex items-center gap-2">

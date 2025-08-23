@@ -20,57 +20,63 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
     password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!formData.email || !formData.password) {
-      toast({
-        title: "Campos requeridos",
-        description: "Por favor completa todos los campos",
-        variant: "destructive"
-      });
+      setError('Por favor completa todos los campos');
       return;
     }
 
     setIsSubmitting(true);
     console.log('LoginForm - attempting login for:', formData.email);
     
-    const result = await signIn(formData.email, formData.password);
-    
-    if (result?.error) {
-      console.error('Login failed:', result.error);
+    try {
+      const result = await signIn(formData.email, formData.password);
       
-      let errorMessage = 'Error al iniciar sesión';
-      
-      if (result.error.message?.includes('Invalid login credentials') || 
-          result.error.message?.includes('invalid_credentials')) {
-        errorMessage = 'Email o contraseña incorrectos';
-      } else if (result.error.message?.includes('Email not confirmed')) {
-        errorMessage = 'Debes confirmar tu email antes de iniciar sesión';
-      } else if (result.error.message?.includes('Too many requests')) {
-        errorMessage = 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo';
-      } else if (result.error.message?.includes('Invalid email')) {
-        errorMessage = 'El formato del email no es válido';
+      if (result?.error) {
+        console.error('Login failed:', result.error);
+        
+        let errorMessage = 'Error al iniciar sesión';
+        
+        if (result.error.message?.includes('Invalid login credentials') || 
+            result.error.message?.includes('invalid_credentials')) {
+          errorMessage = 'Email o contraseña incorrectos';
+        } else if (result.error.message?.includes('Email not confirmed')) {
+          errorMessage = 'Debes confirmar tu email antes de iniciar sesión';
+        } else if (result.error.message?.includes('Too many requests')) {
+          errorMessage = 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo';
+        }
+        
+        setError(errorMessage);
+        toast({
+          title: "Error de inicio de sesión",
+          description: errorMessage,
+          variant: "destructive"
+        });
       } else {
-        errorMessage = result.error.message || 'Error desconocido al iniciar sesión';
+        console.log('Login successful');
+        toast({
+          title: "¡Bienvenido!",
+          description: "Has iniciado sesión correctamente"
+        });
+        
+        if (onSuccess) {
+          onSuccess();
+        }
       }
-      
+    } catch (error: any) {
+      console.error('Login exception:', error);
+      const errorMessage = 'Error inesperado al iniciar sesión';
+      setError(errorMessage);
       toast({
-        title: "Error de inicio de sesión",
+        title: "Error",
         description: errorMessage,
         variant: "destructive"
       });
-    } else {
-      console.log('Login successful');
-      toast({
-        title: "¡Bienvenido!",
-        description: "Has iniciado sesión correctamente"
-      });
-      
-      if (onSuccess) {
-        onSuccess();
-      }
     }
     
     setIsSubmitting(false);
@@ -78,10 +84,17 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    if (error) setError(null); // Clear error when user starts typing
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="signin-email" className="flex items-center gap-2">
           <Mail className="h-4 w-4" />

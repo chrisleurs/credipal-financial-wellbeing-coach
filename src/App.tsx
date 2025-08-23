@@ -3,6 +3,7 @@ import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from '@/components/ui/toaster'
 import Auth from './pages/Auth'
 import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
@@ -95,6 +96,7 @@ function App() {
             {/* 404 Route - Redirect to Dashboard */}
             <Route path="*" element={<Auth />} />
           </Routes>
+          <Toaster />
         </QueryClientProvider>
       </ErrorBoundary>
     </BrowserRouter>
