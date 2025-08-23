@@ -3,6 +3,8 @@ import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import { useExpenses } from '@/hooks/useExpenses'
+import { useDebts } from '@/hooks/useDebts'
+import { useIncomes } from '@/hooks/useIncomes'
 import { EnhancedExpenseModal } from '@/components/expenses/EnhancedExpenseModal'
 import { IncomeModal } from '@/components/expenses/IncomeModal'
 import { SavingsModal } from '@/components/expenses/SavingsModal'
@@ -16,7 +18,10 @@ import { ScheduledMovements } from '@/components/expenses/ScheduledMovements'
 import { RecurringMovements } from '@/components/expenses/RecurringMovements'
 import { FAB } from '@/components/ui/fab'
 import { ActionSheet, createActionSheetOptions } from '@/components/expenses/ActionSheet'
+import { SmartChips } from '@/components/expenses/SmartChips'
 import { useActionSheet } from '@/hooks/useActionSheet'
+import { useCoachToast } from '@/components/expenses/CoachToast'
+import { useQueryClient } from '@tanstack/react-query'
 
 type TabValue = 'transactions' | 'scheduled' | 'recurring'
 type ModalType = 'expense' | 'income' | 'savings' | 'debt' | 'subscription' | null
@@ -39,6 +44,11 @@ export default function ExpensesPage() {
     isUpdating,
     isDeleting 
   } = useExpenses()
+
+  const { debts } = useDebts()
+  const { incomes } = useIncomes()
+  const queryClient = useQueryClient()
+  const { showMotivationalToast } = useCoachToast()
 
   const [activeTab, setActiveTab] = useState<TabValue>('transactions')
   const [activeModal, setActiveModal] = useState<ModalType>(null)
@@ -69,6 +79,19 @@ export default function ExpensesPage() {
     
     return { totalThisMonth, dailyAverage, transactionCount }
   }, [expenses])
+
+  // Calculate user state for smart chips
+  const userState = useMemo(() => ({
+    hasIncome: incomes.length > 0,
+    hasSubscriptions: false, // TODO: Calculate from recurring templates
+    hasOverduePayments: debts.some(debt => {
+      if (!debt.due_date) return false
+      const dueDate = new Date(debt.due_date)
+      const today = new Date()
+      return dueDate < today && debt.status === 'active'
+    }),
+    isOnTrack: totalExpenses < 10000 // Simple heuristic, replace with real logic
+  }), [incomes, debts, totalExpenses])
 
   const handleCreateExpense = () => {
     setEditingExpense(null)
@@ -125,6 +148,10 @@ export default function ExpensesPage() {
         is_recurring: expenseData.isRecurring || false
       })
     }
+
+    // Show motivational toast
+    showMotivationalToast({ type: 'expense', amount: expenseData.amount })
+    
     setActiveModal(null)
     return { success: true }
   }
@@ -138,6 +165,7 @@ export default function ExpensesPage() {
     recurringData?: any
   }) => {
     // TODO: Implement income saving logic using existing hooks
+    showMotivationalToast({ type: 'income', amount: incomeData.amount })
     console.log('Saving income:', incomeData)
     return { success: true }
   }
@@ -149,6 +177,7 @@ export default function ExpensesPage() {
     description?: string
   }) => {
     // TODO: Implement savings logic using existing hooks
+    showMotivationalToast({ type: 'saving', goalProgress: 15.3 })
     console.log('Saving savings:', savingsData)
     return { success: true }
   }
@@ -160,6 +189,7 @@ export default function ExpensesPage() {
     description?: string
   }) => {
     // TODO: Implement debt payment logic using existing hooks
+    showMotivationalToast({ type: 'debt', debtReduction: 8.5 })
     console.log('Saving debt payment:', paymentData)
     return { success: true }
   }
@@ -168,6 +198,20 @@ export default function ExpensesPage() {
     if (window.confirm('¿Estás seguro de que quieres eliminar este movimiento?')) {
       deleteExpense(expense.id)
     }
+  }
+
+  // Smart Chips handlers
+  const handleRecalculatePlan = () => {
+    queryClient.invalidateQueries({ queryKey: ['consolidated-financial-data'] })
+    showMotivationalToast({ type: 'expense' }) // Generic success message
+  }
+
+  const handleAddIncome = () => setActiveModal('income')
+  const handleAddSubscription = () => setActiveModal('subscription')
+  const handleViewPayments = () => setActiveTab('scheduled')
+  const handleViewProgress = () => {
+    // TODO: Navigate to progress page
+    console.log('Navigate to progress')
   }
 
   const exportExpenses = () => {
@@ -237,8 +281,8 @@ export default function ExpensesPage() {
     <AppLayout>
       <div className="p-6 space-y-6 pb-24">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
             <h1 className="text-3xl font-bold">Movimientos</h1>
             <p className="text-muted-foreground">Controla y categoriza tus gastos e ingresos</p>
           </div>
@@ -255,6 +299,16 @@ export default function ExpensesPage() {
           totalThisMonth={currentMonthMetrics.totalThisMonth}
           dailyAverage={currentMonthMetrics.dailyAverage}
           transactionCount={currentMonthMetrics.transactionCount}
+        />
+
+        {/* Smart Chips */}
+        <SmartChips
+          userState={userState}
+          onRecalculatePlan={handleRecalculatePlan}
+          onAddIncome={handleAddIncome}
+          onAddSubscription={handleAddSubscription}
+          onViewPayments={handleViewPayments}
+          onViewProgress={handleViewProgress}
         />
 
         {/* Segmented Control */}
