@@ -17,7 +17,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const showChatBubble = location.pathname !== '/coach'
   
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         

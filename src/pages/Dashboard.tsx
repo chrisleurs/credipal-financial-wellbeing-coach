@@ -1,11 +1,14 @@
 
 import React from 'react'
 import { MobileFirstDashboard } from '@/components/dashboard/MobileFirstDashboard'
+import { AppLayout } from '@/components/layout/AppLayout'
 
 export default function Dashboard() {
   return (
-    <div className="relative min-h-screen">
-      <MobileFirstDashboard />
-    </div>
+    <AppLayout>
+      <div className="relative min-h-screen">
+        <MobileFirstDashboard />
+      </div>
+    </AppLayout>
   )
 }
