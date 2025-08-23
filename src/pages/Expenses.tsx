@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Download } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { useExpenses } from '@/hooks/useExpenses'
 import { ExpenseModal } from '@/components/expenses/ExpenseModal'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -11,6 +11,9 @@ import { MovementsMetrics } from '@/components/expenses/MovementsMetrics'
 import { TransactionsTab } from '@/components/expenses/TransactionsTab'
 import { ScheduledMovements } from '@/components/expenses/ScheduledMovements'
 import { RecurringMovements } from '@/components/expenses/RecurringMovements'
+import { FAB } from '@/components/ui/fab'
+import { ActionSheet, createActionSheetOptions } from '@/components/expenses/ActionSheet'
+import { useActionSheet } from '@/hooks/useActionSheet'
 
 type TabValue = 'transactions' | 'scheduled' | 'recurring'
 
@@ -41,6 +44,9 @@ export default function ExpensesPage() {
     dateFrom: '',
     dateTo: ''
   })
+
+  // Action Sheet state
+  const actionSheet = useActionSheet()
 
   // Calculate metrics for current month
   const currentMonthMetrics = useMemo(() => {
@@ -135,6 +141,27 @@ export default function ExpensesPage() {
     window.URL.revokeObjectURL(url)
   }
 
+  // Action Sheet handlers
+  const actionSheetOptions = useMemo(() => createActionSheetOptions({
+    onAddExpense: handleCreateExpense,
+    onAddIncome: () => {
+      // TODO: Implement income modal
+      console.log('Add income clicked')
+    },
+    onPayDebt: () => {
+      // TODO: Implement debt payment modal
+      console.log('Pay debt clicked')
+    },
+    onAddSaving: () => {
+      // TODO: Implement saving modal
+      console.log('Add saving clicked')
+    },
+    onAddSubscription: () => {
+      // TODO: Implement subscription modal
+      console.log('Add subscription clicked')
+    }
+  }), [])
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -171,7 +198,7 @@ export default function ExpensesPage() {
 
   return (
     <AppLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 pb-24">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -182,10 +209,6 @@ export default function ExpensesPage() {
             <Button variant="outline" onClick={exportExpenses}>
               <Download className="mr-2 h-4 w-4" />
               Exportar
-            </Button>
-            <Button onClick={handleCreateExpense} disabled={isCreating}>
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar
             </Button>
           </div>
         </div>
@@ -210,7 +233,17 @@ export default function ExpensesPage() {
         {/* Tab Content */}
         {renderTabContent()}
 
-        {/* Modal */}
+        {/* FAB */}
+        <FAB onClick={actionSheet.open} />
+
+        {/* Action Sheet */}
+        <ActionSheet
+          isOpen={actionSheet.isOpen}
+          onClose={actionSheet.close}
+          options={actionSheetOptions}
+        />
+
+        {/* Expense Modal */}
         <ExpenseModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
