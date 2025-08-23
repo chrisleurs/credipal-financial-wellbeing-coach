@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SignUpForm } from '@/components/auth/SignUpForm';
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 const Auth = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('login');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Limpiar localStorage y sessionStorage al entrar a auth
   useEffect(() => {
@@ -26,10 +28,20 @@ const Auth = () => {
 
   const switchToLogin = () => {
     setActiveTab('login');
+    setShowForgotPassword(false);
   };
 
   const switchToSignUp = () => {
     setActiveTab('signup');
+    setShowForgotPassword(false);
+  };
+
+  const handleForgotPassword = () => {
+    setShowForgotPassword(true);
+  };
+
+  const handleBackFromForgotPassword = () => {
+    setShowForgotPassword(false);
   };
 
   return (
@@ -54,49 +66,66 @@ const Auth = () => {
         </div>
 
         <Card className="backdrop-blur-sm bg-background/80 border-white/20">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="signup">Crear Cuenta</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
+          {showForgotPassword ? (
+            <>
               <CardHeader>
-                <CardTitle>Bienvenido de vuelta</CardTitle>
+                <CardTitle>Recuperar contraseña</CardTitle>
                 <CardDescription>
-                  Ingresa tus credenciales para acceder a tu cuenta
+                  Te ayudaremos a recuperar el acceso a tu cuenta
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <LoginForm onSuccess={handleAuthSuccess} />
-                
-                <div className="text-center text-sm text-muted-foreground mt-4">
-                  ¿No tienes cuenta?{' '}
-                  <button 
-                    onClick={switchToSignUp}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    Regístrate aquí
-                  </button>
-                </div>
+                <ForgotPasswordForm onBack={handleBackFromForgotPassword} />
               </CardContent>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <CardHeader>
-                <CardTitle>Crear tu cuenta</CardTitle>
-                <CardDescription>
-                  Completa el formulario para comenzar tu journey financiero
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SignUpForm 
-                  onSuccess={handleAuthSuccess} 
-                  onSwitchToLogin={switchToLogin}
-                />
-              </CardContent>
-            </TabsContent>
-          </Tabs>
+            </>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
+                <TabsTrigger value="signup">Crear Cuenta</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <CardHeader>
+                  <CardTitle>Bienvenido de vuelta</CardTitle>
+                  <CardDescription>
+                    Ingresa tus credenciales para acceder a tu cuenta
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <LoginForm 
+                    onSuccess={handleAuthSuccess}
+                    onForgotPassword={handleForgotPassword}
+                  />
+                  
+                  <div className="text-center text-sm text-muted-foreground mt-4">
+                    ¿No tienes cuenta?{' '}
+                    <button 
+                      onClick={switchToSignUp}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Regístrate aquí
+                    </button>
+                  </div>
+                </CardContent>
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <CardHeader>
+                  <CardTitle>Crear tu cuenta</CardTitle>
+                  <CardDescription>
+                    Completa el formulario para comenzar tu journey financiero
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SignUpForm 
+                    onSuccess={handleAuthSuccess} 
+                    onSwitchToLogin={switchToLogin}
+                  />
+                </CardContent>
+              </TabsContent>
+            </Tabs>
+          )}
         </Card>
       </div>
     </div>

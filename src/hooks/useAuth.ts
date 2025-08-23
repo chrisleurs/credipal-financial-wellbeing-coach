@@ -140,6 +140,33 @@ export const useAuth = () => {
     }
   }
 
+  const resetPassword = async (email: string) => {
+    console.log('Attempting password reset for:', email)
+    setState(prev => ({ ...prev, loading: true, error: null }))
+    
+    try {
+      const redirectUrl = `${window.location.origin}/auth?reset=true`
+      
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      })
+      
+      if (error) {
+        console.error('Reset password error:', error)
+        setState(prev => ({ ...prev, error: error.message, loading: false }))
+        return { error }
+      }
+
+      console.log('Password reset email sent successfully')
+      setState(prev => ({ ...prev, loading: false }))
+      return { data, error: null }
+    } catch (error: any) {
+      console.error('Reset password exception:', error)
+      setState(prev => ({ ...prev, error: error.message, loading: false }))
+      return { error }
+    }
+  }
+
   const signOut = async () => {
     console.log('Attempting sign out')
     setState(prev => ({ ...prev, loading: true }))
@@ -171,6 +198,7 @@ export const useAuth = () => {
     signIn,
     signUp,
     signOut,
+    resetPassword,
     login,
     register,
     logout,

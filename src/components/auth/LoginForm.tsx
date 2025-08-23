@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +8,10 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface LoginFormProps {
   onSuccess?: () => void;
+  onForgotPassword?: () => void;
 }
 
-export const LoginForm = ({ onSuccess }: LoginFormProps) => {
+export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
   const { login, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -66,6 +68,17 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           required
           disabled={loading}
         />
+      </div>
+
+      <div className="text-right">
+        <button
+          type="button"
+          onClick={onForgotPassword}
+          className="text-sm text-primary hover:underline"
+          disabled={loading}
+        >
+          ¿Olvidaste tu contraseña?
+        </button>
       </div>
 
       <Button 
