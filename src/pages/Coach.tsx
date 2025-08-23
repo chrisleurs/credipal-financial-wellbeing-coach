@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Send, Loader2, ArrowLeft } from 'lucide-react'
+import { Send, Loader2, ArrowLeft, TrendingUp, Receipt, RotateCcw } from 'lucide-react'
 import { useMotivationalCoach } from '@/hooks/useMotivationalCoach'
 import { QuickActions } from '@/components/chat/QuickActions'
 import { useNavigate } from 'react-router-dom'
@@ -76,6 +76,29 @@ export default function CoachPage() {
     }
   }
 
+  const handleQuickActionClick = (action: string) => {
+    switch (action) {
+      case 'expense':
+        navigate('/expenses')
+        break
+      case 'progress':
+        navigate('/progress')
+        break
+      case 'payments':
+        navigate('/progress')
+        break
+      default:
+        handleQuickAction(action)
+    }
+  }
+
+  // Enhanced quick actions with better navigation
+  const getEnhancedQuickActions = () => [
+    { label: "Registrar gasto 💸", action: "expense" },
+    { label: "Ver próximos pagos ⏰", action: "payments" },
+    { label: "Recalcular plan ♻️", action: "recalculate" }
+  ]
+
   return (
     <AppLayout>
       <div className="flex flex-col h-screen bg-gradient-to-b from-primary/5 to-background pb-20">
@@ -112,6 +135,30 @@ export default function CoachPage() {
         <div className="flex-1 flex flex-col p-4">
           <ScrollArea className="flex-1 pr-3" ref={scrollAreaRef}>
             <div className="space-y-6 max-w-4xl mx-auto">
+              {/* Welcome message if no messages yet */}
+              {messages.length === 0 && !hasInitialized && (
+                <div className="text-center py-8">
+                  <Avatar className="h-16 w-16 bg-primary mx-auto mb-4">
+                    <AvatarFallback className="bg-primary text-white text-2xl">
+                      🤖
+                    </AvatarFallback>
+                  </Avatar>
+                  <h3 className="text-lg font-semibold mb-2">¡Bienvenido a CrediPal Coach!</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    Soy tu asistente financiero personal. Puedo ayudarte a registrar gastos, 
+                    revisar tu progreso y mantener tu plan financiero al día.
+                  </p>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">Prueba alguna de estas acciones:</p>
+                    <QuickActions 
+                      actions={getEnhancedQuickActions()}
+                      onActionClick={handleQuickActionClick}
+                      disabled={isProcessing}
+                    />
+                  </div>
+                </div>
+              )}
+
               {messages.map((msg) => (
                 <div key={msg.id} className="space-y-3">
                   <div className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
@@ -148,8 +195,8 @@ export default function CoachPage() {
                   {!msg.isUser && msg.hasQuickActions && (
                     <div className="ml-11 max-w-[80%]">
                       <QuickActions 
-                        actions={getQuickActions()}
-                        onActionClick={handleQuickAction}
+                        actions={getEnhancedQuickActions()}
+                        onActionClick={handleQuickActionClick}
                         disabled={isProcessing}
                       />
                     </div>
