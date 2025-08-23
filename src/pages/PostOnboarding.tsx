@@ -21,7 +21,6 @@ export default function PostOnboarding() {
   return (
     <PostOnboardingFlow 
       onComplete={handleComplete}
-      isProcessing={isConsolidating}
     />
   )
 }

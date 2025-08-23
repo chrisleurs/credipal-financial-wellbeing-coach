@@ -49,13 +49,13 @@ export const useFinancialPlanOptimized = () => {
       // Generate plan using CrediPal service
       const generatedPlan = CrediPalPlanGenerator.generateCompletePlan(financialData)
       
-      // Save to database
+      // Save to database - cast to Json to satisfy Supabase type
       const { data, error } = await supabase
         .from('financial_plans')
         .insert({
           user_id: user.id,
           plan_type: 'credipal-3-2-1',
-          plan_data: generatedPlan,
+          plan_data: generatedPlan as any, // Cast to Json
           status: 'active'
         })
         .select()
@@ -89,7 +89,7 @@ export const useFinancialPlanOptimized = () => {
       const { data, error } = await supabase
         .from('financial_plans')
         .update({
-          plan_data: updates,
+          plan_data: updates as any, // Cast to Json
           updated_at: new Date().toISOString()
         })
         .eq('id', activePlan.data.id)
