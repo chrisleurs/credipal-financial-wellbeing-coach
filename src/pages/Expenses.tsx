@@ -3,7 +3,10 @@ import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import { useExpenses } from '@/hooks/useExpenses'
-import { ExpenseModal } from '@/components/expenses/ExpenseModal'
+import { EnhancedExpenseModal } from '@/components/expenses/EnhancedExpenseModal'
+import { IncomeModal } from '@/components/expenses/IncomeModal'
+import { SavingsModal } from '@/components/expenses/SavingsModal'
+import { DebtPaymentModal } from '@/components/expenses/DebtPaymentModal'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Expense, ExpenseCategoryType } from '@/domains/expenses/types/expense.types'
 import { SegmentedControl } from '@/components/ui/segmented-control'
@@ -16,6 +19,7 @@ import { ActionSheet, createActionSheetOptions } from '@/components/expenses/Act
 import { useActionSheet } from '@/hooks/useActionSheet'
 
 type TabValue = 'transactions' | 'scheduled' | 'recurring'
+type ModalType = 'expense' | 'income' | 'savings' | 'debt' | 'subscription' | null
 
 const TAB_OPTIONS = [
   { value: 'transactions' as TabValue, label: 'Transacciones' },
@@ -37,7 +41,7 @@ export default function ExpensesPage() {
   } = useExpenses()
 
   const [activeTab, setActiveTab] = useState<TabValue>('transactions')
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [activeModal, setActiveModal] = useState<ModalType>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [filters, setFilters] = useState({
     category: 'all',
@@ -68,12 +72,12 @@ export default function ExpensesPage() {
 
   const handleCreateExpense = () => {
     setEditingExpense(null)
-    setIsModalOpen(true)
+    setActiveModal('expense')
   }
 
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense)
-    setIsModalOpen(true)
+    setActiveModal('expense')
   }
 
   const handleSaveExpense = async (expenseData: {
@@ -81,6 +85,8 @@ export default function ExpensesPage() {
     category: string
     description: string
     date: string
+    isRecurring?: boolean
+    recurringData?: any
   }) => {
     // Map category to ExpenseCategoryType
     const categoryMap: Record<string, ExpenseCategoryType> = {
@@ -97,21 +103,64 @@ export default function ExpensesPage() {
 
     const category = (categoryMap[expenseData.category] || 'Other') as ExpenseCategoryType
 
+    // Save recurring info to description/notes if present
+    let description = expenseData.description || ''
+    if (expenseData.isRecurring && expenseData.recurringData) {
+      description += ` [Recurrente: ${expenseData.recurringData.frequency}]`
+    }
+
     if (editingExpense) {
       updateExpense({ 
         ...expenseData, 
         id: editingExpense.id,
         category,
-        is_recurring: false
+        description,
+        is_recurring: expenseData.isRecurring || false
       })
     } else {
       createExpense({ 
         ...expenseData, 
         category,
-        is_recurring: false
+        description,
+        is_recurring: expenseData.isRecurring || false
       })
     }
-    setIsModalOpen(false)
+    setActiveModal(null)
+    return { success: true }
+  }
+
+  const handleSaveIncome = async (incomeData: {
+    amount: number
+    source: string
+    date: string
+    description?: string
+    isRecurring?: boolean
+    recurringData?: any
+  }) => {
+    // TODO: Implement income saving logic using existing hooks
+    console.log('Saving income:', incomeData)
+    return { success: true }
+  }
+
+  const handleSaveSavings = async (savingsData: {
+    amount: number
+    goalId?: string
+    date: string
+    description?: string
+  }) => {
+    // TODO: Implement savings logic using existing hooks
+    console.log('Saving savings:', savingsData)
+    return { success: true }
+  }
+
+  const handleSaveDebtPayment = async (paymentData: {
+    debtId: string
+    amount: number
+    date: string
+    description?: string
+  }) => {
+    // TODO: Implement debt payment logic using existing hooks
+    console.log('Saving debt payment:', paymentData)
     return { success: true }
   }
 
@@ -144,22 +193,10 @@ export default function ExpensesPage() {
   // Action Sheet handlers
   const actionSheetOptions = useMemo(() => createActionSheetOptions({
     onAddExpense: handleCreateExpense,
-    onAddIncome: () => {
-      // TODO: Implement income modal
-      console.log('Add income clicked')
-    },
-    onPayDebt: () => {
-      // TODO: Implement debt payment modal
-      console.log('Pay debt clicked')
-    },
-    onAddSaving: () => {
-      // TODO: Implement saving modal
-      console.log('Add saving clicked')
-    },
-    onAddSubscription: () => {
-      // TODO: Implement subscription modal
-      console.log('Add subscription clicked')
-    }
+    onAddIncome: () => setActiveModal('income'),
+    onPayDebt: () => setActiveModal('debt'),
+    onAddSaving: () => setActiveModal('savings'),
+    onAddSubscription: () => setActiveModal('subscription')
   }), [])
 
   if (isLoading) {
@@ -243,14 +280,40 @@ export default function ExpensesPage() {
           options={actionSheetOptions}
         />
 
-        {/* Expense Modal */}
-        <ExpenseModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+        {/* Enhanced Expense Modal */}
+        <EnhancedExpenseModal
+          isOpen={activeModal === 'expense'}
+          onClose={() => setActiveModal(null)}
           onSubmit={handleSaveExpense}
           expense={editingExpense}
           title={editingExpense ? 'Editar Movimiento' : 'Agregar Movimiento'}
         />
+
+        {/* Income Modal */}
+        <IncomeModal
+          isOpen={activeModal === 'income'}
+          onClose={() => setActiveModal(null)}
+          onSubmit={handleSaveIncome}
+        />
+
+        {/* Savings Modal */}
+        <SavingsModal
+          isOpen={activeModal === 'savings'}
+          onClose={() => setActiveModal(null)}
+          onSubmit={handleSaveSavings}
+        />
+
+        {/* Debt Payment Modal */}
+        <DebtPaymentModal
+          isOpen={activeModal === 'debt'}
+          onClose={() => setActiveModal(null)}
+          onSubmit={handleSaveDebtPayment}
+        />
+
+        {/* TODO: Subscription Modal */}
+        {activeModal === 'subscription' && (
+          <div>Subscription modal coming soon...</div>
+        )}
       </div>
     </AppLayout>
   )

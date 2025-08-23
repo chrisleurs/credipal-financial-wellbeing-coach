@@ -1,27 +1,15 @@
 
 import React from 'react'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { 
-  Wallet, 
-  DollarSign, 
-  CreditCard, 
-  PiggyBank, 
-  Repeat 
-} from 'lucide-react'
+import { Wallet, TrendingUp, CreditCard, PiggyBank, Repeat } from 'lucide-react'
 
-interface ActionSheetOption {
+export interface ActionSheetOption {
   id: string
   title: string
   description: string
-  icon: React.ComponentType<{ className?: string }>
-  action: () => void
+  icon: React.ReactNode
+  onClick: () => void
 }
 
 interface ActionSheetProps {
@@ -35,51 +23,46 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
   onClose,
   options
 }) => {
-  const handleOptionClick = (action: () => void) => {
-    onClose()
-    // Small delay to allow sheet to close smoothly before opening next modal
-    setTimeout(action, 200)
-  }
-
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="rounded-t-[20px] border-t">
-        <SheetHeader className="text-center pb-4">
-          <SheetTitle>¿Qué quieres registrar?</SheetTitle>
-          <SheetDescription>
-            Selecciona el tipo de movimiento que deseas añadir
-          </SheetDescription>
+      <SheetContent side="bottom" className="rounded-t-[20px] border-0">
+        <SheetHeader className="pb-4">
+          <SheetTitle className="text-center">¿Qué quieres registrar?</SheetTitle>
         </SheetHeader>
         
         <div className="space-y-3 pb-6">
-          {options.map((option) => {
-            const IconComponent = option.icon
-            return (
-              <Button
-                key={option.id}
-                variant="outline"
-                onClick={() => handleOptionClick(option.action)}
-                className="w-full h-auto p-4 justify-start text-left hover:bg-emerald-50 hover:border-emerald-300"
-              >
-                <div className="flex items-center w-full">
-                  <div className="bg-emerald-100 p-2 rounded-full mr-4">
-                    <IconComponent className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{option.title}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{option.description}</p>
-                  </div>
-                </div>
-              </Button>
-            )
-          })}
+          {options.map((option) => (
+            <Button
+              key={option.id}
+              variant="ghost"
+              className="w-full h-auto p-4 flex items-start gap-4 justify-start text-left hover:bg-muted/50"
+              onClick={() => {
+                option.onClick()
+                onClose()
+              }}
+            >
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                {option.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-foreground">{option.title}</div>
+                <div className="text-sm text-muted-foreground mt-1">{option.description}</div>
+              </div>
+            </Button>
+          ))}
         </div>
       </SheetContent>
     </Sheet>
   )
 }
 
-export const createActionSheetOptions = (handlers: {
+export const createActionSheetOptions = ({
+  onAddExpense,
+  onAddIncome,
+  onPayDebt,
+  onAddSaving,
+  onAddSubscription
+}: {
   onAddExpense: () => void
   onAddIncome: () => void
   onPayDebt: () => void
@@ -90,35 +73,35 @@ export const createActionSheetOptions = (handlers: {
     id: 'expense',
     title: 'Registrar Gasto 💸',
     description: 'Añadir un gasto realizado',
-    icon: Wallet,
-    action: handlers.onAddExpense
+    icon: <Wallet className="h-5 w-5 text-primary" />,
+    onClick: onAddExpense
   },
   {
     id: 'income',
     title: 'Registrar Ingreso 💵',
     description: 'Registrar dinero recibido',
-    icon: DollarSign,
-    action: handlers.onAddIncome
+    icon: <TrendingUp className="h-5 w-5 text-green-600" />,
+    onClick: onAddIncome
   },
   {
     id: 'debt',
     title: 'Pagar Deuda 💳',
     description: 'Registrar pago de deuda',
-    icon: CreditCard,
-    action: handlers.onPayDebt
+    icon: <CreditCard className="h-5 w-5 text-blue-600" />,
+    onClick: onPayDebt
   },
   {
     id: 'saving',
     title: 'Registrar Ahorro 🏦',
     description: 'Mover dinero a ahorros',
-    icon: PiggyBank,
-    action: handlers.onAddSaving
+    icon: <PiggyBank className="h-5 w-5 text-purple-600" />,
+    onClick: onAddSaving
   },
   {
     id: 'subscription',
     title: 'Añadir Suscripción 🔁',
     description: 'Crear pago recurrente',
-    icon: Repeat,
-    action: handlers.onAddSubscription
+    icon: <Repeat className="h-5 w-5 text-orange-600" />,
+    onClick: onAddSubscription
   }
 ]
