@@ -1,412 +1,378 @@
 
-import React from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import React, { useState } from 'react'
+import { useFinancialPlanGenerator } from '@/hooks/useFinancialPlanGenerator'
+import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
+import { DataConsolidationButton } from '@/components/onboarding/DataConsolidationButton'
 import { Button } from '@/components/ui/button'
-import { useDebts } from '@/hooks/useDebts'
-import { useGoals } from '@/hooks/useGoals'
-import { useFinancialPlan } from '@/hooks/useFinancialPlan'
-import { TrendingUp, Target, CreditCard, PiggyBank, Plus, Trophy, Calendar, BarChart3 } from 'lucide-react'
-import { AppLayout } from '@/components/layout/AppLayout'
-import { DebtSummaryCards } from '@/components/debts/DebtSummaryCards'
-import { DebtsList } from '@/components/debts/DebtsList'
-import { EmptyState } from '@/components/shared/EmptyState'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { useBottomNavigation } from '@/hooks/useBottomNavigation'
-import { useNavigate } from 'react-router-dom'
+import { 
+  TrendingUp, 
+  Target, 
+  Calendar, 
+  CheckCircle2, 
+  RefreshCw,
+  AlertCircle,
+  BarChart3
+} from 'lucide-react'
 
-// Import the new financial plan components with correct imports
+// Import dashboard components
+import { PresupuestoMensual } from '@/components/dashboard/PresupuestoMensual'
+import { PlanPagoDeuda } from '@/components/dashboard/PlanPagoDeuda'
 import { FondoEmergencia } from '@/components/dashboard/FondoEmergencia'
-import PlanPagoDeuda from '@/components/dashboard/PlanPagoDeuda'
 import { CrecimientoPatrimonial } from '@/components/dashboard/CrecimientoPatrimonial'
 import { RoadmapTrimestral } from '@/components/dashboard/RoadmapTrimestral'
 import { MetasCortoPlazo } from '@/components/dashboard/MetasCortoPlazo'
 import { RoadmapAccion } from '@/components/dashboard/RoadmapAccion'
 
-export default function ProgressPage() {
-  const navigate = useNavigate()
+// Types for the plan components
+interface PresupuestoMensualData {
+  necesidades: { porcentaje: number; cantidad: number }
+  estiloVida: { porcentaje: number; cantidad: number }
+  ahorro: { porcentaje: number; cantidad: number }
+}
+
+interface PlanPagoDeudaData {
+  deuda: string
+  balanceActual: number
+  fechaLiquidacion: string
+  pagoMensual: number
+  interesesAhorrados: number
+}
+
+interface FondoEmergenciaData {
+  metaTotal: number
+  progresoActual: number
+  ahorroMensual: number
+  fechaCompletion: string
+}
+
+interface CrecimientoPatrimonialData {
+  año1: number
+  año3: number
+  año5: number
+  inversionMensual: number
+  rendimientoEsperado: number
+}
+
+interface RoadmapTrimestralData {
+  trimestres: Array<{
+    trimestre: string
+    ahorroAcumulado: number
+    deudaPendiente: number
+    avance: number
+  }>
+  metaAnual: number
+}
+
+interface MetaData {
+  id: string
+  titulo: string
+  meta: number
+  progreso: number
+  tipo: 'ahorro' | 'gasto' | 'ingreso'
+  completada: boolean
+  fechaLimite?: string
+}
+
+interface MetasCortoPlazoData {
+  semanales: MetaData[]
+  mensuales: MetaData[]
+}
+
+interface RoadmapAccionData {
+  pasos: Array<{
+    paso: number
+    titulo: string
+    fechaObjetivo: string
+    completado: boolean
+  }>
+  progreso: number
+  siguientePaso: {
+    titulo: string
+    descripcion: string
+    dificultad: 'facil' | 'medio' | 'dificil'
+  }
+}
+
+export default function Progress() {
+  const [activeTab, setActiveTab] = useState('overview')
   const { 
-    debts, 
-    totalDebt, 
-    totalMonthlyPayments,
-    updateDebt,
-    deleteDebt,
-    isUpdating,
-    isDeleting
-  } = useDebts()
+    consolidatedProfile, 
+    hasCompleteData, 
+    isLoading: isDataLoading,
+    generatePlan, 
+    isGenerating, 
+    generatedPlan 
+  } = useFinancialPlanGenerator()
   
-  const { goals } = useGoals()
-  const { emptyStates } = useBottomNavigation()
-  
-  // Get financial plan data
-  const { 
-    plan, 
-    loading: planLoading, 
-    error: planError,
-    hasPlan 
-  } = useFinancialPlan()
+  const { data: unifiedData, isLoading: isUnifiedLoading } = useUnifiedFinancialData()
 
-  const activeDebts = debts.filter(debt => debt.status === 'active')
-  const activeGoals = goals.filter(goal => goal.status === 'active')
+  // Show data consolidation button if user has no financial data but completed onboarding
+  const showConsolidationButton = unifiedData?.isOnboardingComplete && !unifiedData?.hasFinancialData
 
-  // Cálculos para mostrar progreso general
-  const totalGoalAmount = activeGoals.reduce((sum, goal) => sum + goal.target_amount, 0)
-  const totalSavedAmount = activeGoals.reduce((sum, goal) => sum + goal.current_amount, 0)
-  const overallGoalProgress = totalGoalAmount > 0 ? (totalSavedAmount / totalGoalAmount) * 100 : 0
-
-  const handleDeleteDebt = (debt: any) => {
-    deleteDebt(debt.id)
+  if (isDataLoading || isUnifiedLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Cargando tu progreso financiero..." />
+      </div>
+    )
   }
 
-  const handleCreateDebt = () => {
-    navigate('/debts')
+  if (!hasCompleteData && !showConsolidationButton) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <Card className="max-w-2xl mx-auto text-center">
+            <CardHeader>
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <BarChart3 className="h-8 w-8 text-blue-600" />
+              </div>
+              <CardTitle>Completa tu perfil financiero</CardTitle>
+              <CardDescription>
+                Para generar tu plan de progreso personalizado, necesitamos que completes 
+                tu información financiera básica.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.href = '/onboarding'}>
+                Completar Onboarding
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
-  const handleCreateGoal = () => {
-    navigate('/plan')
+  // Create mock data that matches the expected interfaces
+  const mockPlan = generatedPlan || {
+    presupuestoMensual: {
+      necesidades: { porcentaje: 50, cantidad: unifiedData?.monthlyIncome ? unifiedData.monthlyIncome * 0.5 : 2500 },
+      estiloVida: { porcentaje: 30, cantidad: unifiedData?.monthlyIncome ? unifiedData.monthlyIncome * 0.3 : 1500 },
+      ahorro: { porcentaje: 20, cantidad: unifiedData?.monthlyIncome ? unifiedData.monthlyIncome * 0.2 : 1000 }
+    } as PresupuestoMensualData,
+    
+    planPagoDeuda: unifiedData?.debts?.slice(0, 3).map(debt => ({
+      deuda: debt.creditor,
+      balanceActual: debt.amount,
+      fechaLiquidacion: '2025-12-31',
+      pagoMensual: debt.monthlyPayment,
+      interesesAhorrados: debt.amount * 0.1
+    })) || [] as PlanPagoDeudaData[],
+    
+    fondoEmergencia: {
+      metaTotal: (unifiedData?.monthlyExpenses || 3000) * 6,
+      progresoActual: unifiedData?.currentSavings || 0,
+      ahorroMensual: unifiedData?.monthlySavingsCapacity || 500,
+      fechaCompletion: '2026-06-30'
+    } as FondoEmergenciaData,
+    
+    crecimientoPatrimonial: {
+      año1: (unifiedData?.currentSavings || 0) + ((unifiedData?.monthlySavingsCapacity || 500) * 12),
+      año3: (unifiedData?.currentSavings || 0) + ((unifiedData?.monthlySavingsCapacity || 500) * 36 * 1.05),
+      año5: (unifiedData?.currentSavings || 0) + ((unifiedData?.monthlySavingsCapacity || 500) * 60 * 1.08),
+      inversionMensual: (unifiedData?.monthlySavingsCapacity || 500) * 0.7,
+      rendimientoEsperado: 8.5
+    } as CrecimientoPatrimonialData,
+    
+    roadmapTrimestral: {
+      trimestres: [
+        { trimestre: 'Q1 2025', ahorroAcumulado: 3000, deudaPendiente: 8000, avance: 25 },
+        { trimestre: 'Q2 2025', ahorroAcumulado: 6000, deudaPendiente: 6000, avance: 50 },
+        { trimestre: 'Q3 2025', ahorroAcumulado: 9000, deudaPendiente: 4000, avance: 75 },
+        { trimestre: 'Q4 2025', ahorroAcumulado: 12000, deudaPendiente: 2000, avance: 100 }
+      ],
+      metaAnual: 12000
+    } as RoadmapTrimestralData,
+    
+    metasCortoPlazo: {
+      semanales: [
+        {
+          id: '1',
+          titulo: 'Revisar gastos diarios',
+          meta: 7,
+          progreso: 5,
+          tipo: 'gasto' as const,
+          completada: false,
+          fechaLimite: '2025-01-05'
+        },
+        {
+          id: '2',
+          titulo: 'Ahorrar $100 esta semana',
+          meta: 100,
+          progreso: 60,
+          tipo: 'ahorro' as const,
+          completada: false,
+          fechaLimite: '2025-01-05'
+        }
+      ],
+      mensuales: [
+        {
+          id: '3',
+          titulo: 'Reducir gastos en entretenimiento',
+          meta: 300,
+          progreso: 150,
+          tipo: 'gasto' as const,
+          completada: false,
+          fechaLimite: '2025-01-31'
+        },
+        {
+          id: '4',
+          titulo: 'Aumentar ingresos extras',
+          meta: 500,
+          progreso: 200,
+          tipo: 'ingreso' as const,
+          completada: false,
+          fechaLimite: '2025-01-31'
+        }
+      ]
+    } as MetasCortoPlazoData,
+    
+    roadmapAccion: {
+      pasos: [
+        { paso: 1, titulo: 'Establecer fondo de emergencia básico', fechaObjetivo: '2025-03-31', completado: false },
+        { paso: 2, titulo: 'Reducir deuda de tarjetas de crédito', fechaObjetivo: '2025-06-30', completado: false },
+        { paso: 3, titulo: 'Aumentar inversiones mensuales', fechaObjetivo: '2025-09-30', completado: false },
+        { paso: 4, titulo: 'Completar fondo de emergencia', fechaObjetivo: '2025-12-31', completado: false }
+      ],
+      progreso: 15,
+      siguientePaso: {
+        titulo: 'Crear presupuesto detallado',
+        descripcion: 'Analiza todos tus gastos del mes pasado y crea categorías específicas',
+        dificultad: 'medio' as const
+      }
+    } as RoadmapAccionData
   }
 
   return (
-    <AppLayout>
-      <div className="p-6 space-y-6 pb-20">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Mi Progreso</h1>
-          <p className="text-muted-foreground">Seguimiento completo de tu situación financiera</p>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Mi Progreso Financiero</h1>
+          <p className="text-muted-foreground">
+            Sigue tu avance hacia la libertad financiera
+          </p>
         </div>
 
-        {/* Show empty state if no data */}
-        {!emptyStates.progress.hasData && !hasPlan ? (
-          <EmptyState
-            icon={<Trophy className="h-16 w-16" />}
-            title={emptyStates.progress.title}
-            message={emptyStates.progress.message}
-            actionLabel={emptyStates.progress.actionLabel}
-            onAction={handleCreateGoal}
-            className="mt-8"
-          />
-        ) : (
-          <>
-            {/* Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Deuda Total</CardTitle>
-                  <CreditCard className="h-4 w-4 text-destructive" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-destructive">
-                    ${totalDebt.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {activeDebts.length} deuda{activeDebts.length !== 1 ? 's' : ''} activa{activeDebts.length !== 1 ? 's' : ''}
-                  </p>
-                </CardContent>
-              </Card>
+        {/* Show consolidation button if needed */}
+        {showConsolidationButton && <DataConsolidationButton />}
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Progreso Metas</CardTitle>
-                  <PiggyBank className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-primary">
-                    {activeGoals.length > 0 ? `${overallGoalProgress.toFixed(1)}%` : '0%'}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {activeGoals.length} meta{activeGoals.length !== 1 ? 's' : ''} activa{activeGoals.length !== 1 ? 's' : ''}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Tabs Content */}
-            <Tabs defaultValue="plan" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="plan" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Plan
-                </TabsTrigger>
-                <TabsTrigger value="debts" className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  Deudas
-                </TabsTrigger>
-                <TabsTrigger value="goals" className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Metas
-                </TabsTrigger>
-                <TabsTrigger value="roadmap" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Roadmap
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="plan" className="space-y-6">
-                {planLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <LoadingSpinner size="lg" text="Cargando plan financiero..." />
-                  </div>
-                ) : planError ? (
-                  <Card className="p-6 text-center">
-                    <p className="text-muted-foreground mb-4">Error al cargar el plan financiero</p>
-                    <Button onClick={() => window.location.reload()}>
-                      Reintentar
-                    </Button>
-                  </Card>
-                ) : !plan ? (
-                  <EmptyState
-                    icon={<BarChart3 className="h-12 w-12" />}
-                    title="No hay plan financiero disponible"
-                    message="Completa tu onboarding para generar tu plan financiero personalizado."
-                    actionLabel="Ir al Plan"
-                    onAction={() => navigate('/plan')}
-                  />
-                ) : (
-                  <div className="space-y-6">
-                    {/* Emergency Fund */}
-                    {plan.fondoEmergencia ? (
-                      <FondoEmergencia data={plan.fondoEmergencia} />
-                    ) : (
-                      <FondoEmergencia data={{
-                        metaTotal: 15000,
-                        progresoActual: 5500,
-                        ahorroMensual: 800,
-                        fechaCompletion: "2024-12-15"
-                      }} />
-                    )}
-
-                    {/* Debt Payment Plan */}
-                    {plan.planPagoDeuda && plan.planPagoDeuda.length > 0 ? (
-                      <PlanPagoDeuda data={plan.planPagoDeuda} />
-                    ) : (
-                      <PlanPagoDeuda data={[
-                        {
-                          deuda: "Tarjeta de Crédito",
-                          balanceActual: 8500,
-                          pagoMensual: 350,
-                          fechaLiquidacion: "2025-03-15",
-                          interesesAhorrados: 1200
-                        }
-                      ]} />
-                    )}
-
-                    {/* Wealth Growth - Fixed with all required properties */}
-                    {plan.crecimientoPatrimonial ? (
-                      <CrecimientoPatrimonial data={plan.crecimientoPatrimonial} />
-                    ) : (
-                      <CrecimientoPatrimonial data={{
-                        año1: 12000,
-                        año3: 42000,
-                        año5: 78000,
-                        inversionMensual: 800,
-                        rendimientoEsperado: 8
-                      }} />
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="debts" className="space-y-4">
-                {activeDebts.length === 0 ? (
-                  <EmptyState
-                    icon={<CreditCard className="h-12 w-12" />}
-                    title="No tienes deudas registradas"
-                    message="Registra tus deudas para crear un plan de pago efectivo y hacer seguimiento de tu progreso."
-                    actionLabel="Registrar Deuda"
-                    onAction={handleCreateDebt}
-                  />
+        {/* Generate Plan Section */}
+        {!generatedPlan && hasCompleteData && (
+          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Target className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-blue-900">Genera tu Plan Personalizado</CardTitle>
+                  <CardDescription className="text-blue-700">
+                    Crea un plan de progreso basado en tu situación financiera actual
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={generatePlan}
+                disabled={isGenerating}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generando Plan...
+                  </>
                 ) : (
                   <>
-                    <DebtSummaryCards 
-                      totalDebt={totalDebt}
-                      totalMonthlyPayments={totalMonthlyPayments}
-                      activeDebtsCount={activeDebts.length}
-                      onAnalyzeClick={() => {}}
-                      canAnalyze={activeDebts.length > 0}
-                    />
-                    
-                    <DebtsList 
-                      debts={debts}
-                      onEdit={() => {}}
-                      onDelete={handleDeleteDebt}
-                      onMakePayment={() => {}}
-                      onCreate={() => {}}
-                      isUpdating={isUpdating}
-                      isDeleting={isDeleting}
-                    />
+                    <Target className="h-4 w-4 mr-2" />
+                    Generar Mi Plan
                   </>
                 )}
-              </TabsContent>
-
-              <TabsContent value="goals" className="space-y-4">
-                {activeGoals.length === 0 ? (
-                  <EmptyState
-                    icon={<Target className="h-12 w-12" />}
-                    title="No tienes metas activas"
-                    message="Crea tus primeras metas financieras para empezar a hacer seguimiento de tu progreso."
-                    actionLabel="Crear Meta"
-                    onAction={handleCreateGoal}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {activeGoals.map((goal) => {
-                      const progress = (goal.current_amount / goal.target_amount) * 100
-                      
-                      return (
-                        <Card key={goal.id} className="hover:shadow-md transition-shadow">
-                          <CardHeader>
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg">{goal.title}</CardTitle>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground">
-                                  {progress.toFixed(1)}%
-                                </span>
-                                {progress >= 100 && (
-                                  <Trophy className="h-4 w-4 text-yellow-500" />
-                                )}
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-3">
-                              <div className="flex justify-between text-sm">
-                                <span>Progreso</span>
-                                <span>${goal.current_amount.toLocaleString()} / ${goal.target_amount.toLocaleString()}</span>
-                              </div>
-                              
-                              <div className="w-full bg-muted rounded-full h-2">
-                                <div 
-                                  className="bg-primary h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${Math.min(progress, 100)}%` }}
-                                />
-                              </div>
-                              
-                              {goal.description && (
-                                <p className="text-sm text-muted-foreground">
-                                  {goal.description}
-                                </p>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="roadmap" className="space-y-6">
-                {planLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <LoadingSpinner size="lg" text="Cargando roadmap..." />
-                  </div>
-                ) : !plan ? (
-                  <EmptyState
-                    icon={<Calendar className="h-12 w-12" />}
-                    title="No hay roadmap disponible"
-                    message="Genera tu plan financiero para ver tu roadmap personalizado."
-                    actionLabel="Generar Plan"
-                    onAction={() => navigate('/plan')}
-                  />
-                ) : (
-                  <div className="space-y-6">
-                    {/* Quarterly Roadmap - Fixed with proper structure */}
-                    {plan.roadmapTrimestral ? (
-                      <RoadmapTrimestral data={plan.roadmapTrimestral} />
-                    ) : (
-                      <RoadmapTrimestral data={{
-                        trimestres: [
-                          {
-                            trimestre: "Q1 2024",
-                            ahorroObjetivo: 3000,
-                            ahorroAcumulado: 2400,
-                            deudaPendiente: 8500,
-                            porcentajeAvance: 80,
-                            hitos: ["Establecer fondo emergencia", "Pagar tarjeta crédito"],
-                            completado: false
-                          },
-                          {
-                            trimestre: "Q2 2024",
-                            ahorroObjetivo: 6000,
-                            ahorroAcumulado: 4800,
-                            deudaPendiente: 6000,
-                            porcentajeAvance: 80,
-                            hitos: ["Aumentar inversiones", "Reducir gastos"],
-                            completado: false
-                          }
-                        ],
-                        metaAnual: 24000
-                      }} />
-                    )}
-
-                    {/* Short-term Goals - Fixed with all required properties */}
-                    {plan.metasCortoPlazo ? (
-                      <MetasCortoPlazo data={plan.metasCortoPlazo} />
-                    ) : (
-                      <MetasCortoPlazo data={{
-                        semanales: [
-                          {
-                            id: "1",
-                            titulo: "Ahorrar $200 esta semana",
-                            meta: 200,
-                            progreso: 150,
-                            tipo: "ahorro" as const,
-                            completada: false,
-                            fechaLimite: "2024-09-01"
-                          }
-                        ],
-                        mensuales: [
-                          {
-                            id: "2",
-                            titulo: "Reducir gastos de entretenimiento",
-                            meta: 500,
-                            progreso: 320,
-                            tipo: "gasto" as const,
-                            completada: false,
-                            fechaLimite: "2024-09-30"
-                          }
-                        ]
-                      }} />
-                    )}
-
-                    {/* Action Roadmap - Fixed with proper structure */}
-                    {plan.roadmapAccion ? (
-                      <RoadmapAccion data={plan.roadmapAccion} />
-                    ) : (
-                      <RoadmapAccion data={{
-                        pasos: [
-                          {
-                            paso: 1,
-                            titulo: "Establecer presupuesto mensual",
-                            descripcion: "Definir categorías y límites de gasto",
-                            fechaObjetivo: "2024-09-15",
-                            completado: true,
-                            enProgreso: false,
-                            impactoFinanciero: 500,
-                            dificultad: "facil" as const
-                          },
-                          {
-                            paso: 2,
-                            titulo: "Crear fondo de emergencia",
-                            descripcion: "Ahorrar 3 meses de gastos básicos",
-                            fechaObjetivo: "2024-12-31",
-                            completado: false,
-                            enProgreso: true,
-                            impactoFinanciero: 15000,
-                            dificultad: "medio" as const
-                          }
-                        ],
-                        progreso: 25,
-                        siguientePaso: 2
-                      }} />
-                    )}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </>
+              </Button>
+            </CardContent>
+          </Card>
         )}
+
+        {/* Plan Content */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Resumen</TabsTrigger>
+            <TabsTrigger value="budget">Presupuesto</TabsTrigger>
+            <TabsTrigger value="wealth">Patrimonio</TabsTrigger>
+            <TabsTrigger value="actions">Acciones</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Monthly Budget */}
+              {mockPlan.presupuestoMensual && (
+                <PresupuestoMensual data={mockPlan.presupuestoMensual} />
+              )}
+
+              {/* Emergency Fund */}
+              {mockPlan.fondoEmergencia && (
+                <FondoEmergencia data={mockPlan.fondoEmergencia} />
+              )}
+            </div>
+
+            {/* Debt Payment Plan */}
+            {mockPlan.planPagoDeuda && mockPlan.planPagoDeuda.length > 0 && (
+              <PlanPagoDeuda data={mockPlan.planPagoDeuda} />
+            )}
+          </TabsContent>
+
+          {/* Budget Tab */}
+          <TabsContent value="budget" className="space-y-6">
+            <div className="grid gap-6">
+              {/* Monthly Budget Detail */}
+              {mockPlan.presupuestoMensual && (
+                <PresupuestoMensual data={mockPlan.presupuestoMensual} />
+              )}
+
+              {/* Emergency Fund Progress */}
+              {mockPlan.fondoEmergencia && (
+                <FondoEmergencia data={mockPlan.fondoEmergencia} />
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Wealth Tab */}
+          <TabsContent value="wealth" className="space-y-6">
+            <div className="space-y-6">
+              {/* Wealth Growth - Fixed with all required properties */}
+              {mockPlan.crecimientoPatrimonial && (
+                <CrecimientoPatrimonial data={mockPlan.crecimientoPatrimonial} />
+              )}
+
+              {/* Quarterly Roadmap - Fixed with proper structure */}
+              {mockPlan.roadmapTrimestral && (
+                <RoadmapTrimestral data={mockPlan.roadmapTrimestral} />
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Actions Tab */}
+          <TabsContent value="actions" className="space-y-6">
+            <div className="space-y-6">
+              {/* Short-term Goals - Fixed with all required properties */}
+              {mockPlan.metasCortoPlazo && (
+                <MetasCortoPlazo data={mockPlan.metasCortoPlazo} />
+              )}
+
+              {/* Action Roadmap - Fixed with proper structure */}
+              {mockPlan.roadmapAccion && (
+                <RoadmapAccion data={mockPlan.roadmapAccion} />
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
-    </AppLayout>
+    </div>
   )
 }
