@@ -1,6 +1,5 @@
-
 import React, { Suspense } from 'react'
-import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
+import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
 import { useFinancialPlan } from '@/hooks/useFinancialPlan'
 import { useAuth } from '@/hooks/useAuth'
 import { HeroCoachCard } from './HeroCoachCard'
@@ -368,7 +367,7 @@ const QuickActionsSection = ({ userId }: { userId: string }) => {
 // Main Dashboard Component
 export const OptimizedFinancialDashboard = () => {
   const { user } = useAuth()
-  const { data: financialData, isLoading: financialLoading, error: financialError } = useOptimizedFinancialData()
+  const { data: financialData, isLoading: financialLoading, error: financialError } = useUnifiedFinancialData()
   
   const {
     aiPlan,
@@ -423,6 +422,19 @@ export const OptimizedFinancialDashboard = () => {
 
   const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Usuario'
 
+  // Convertir datos unificados al formato esperado por ModernFinancialSummary
+  const consolidatedData = financialData ? {
+    monthlyIncome: financialData.totalMonthlyIncome,
+    monthlyExpenses: financialData.monthlyExpenses,
+    currentSavings: financialData.currentSavings,
+    savingsCapacity: financialData.monthlySavingsCapacity
+  } : {
+    monthlyIncome: 0,
+    monthlyExpenses: 0,
+    currentSavings: 0,
+    savingsCapacity: 0
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <StickyNavigation />
@@ -470,12 +482,7 @@ export const OptimizedFinancialDashboard = () => {
         {/* 4. Financial Summary */}
         <section id="summary">
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando resumen..." />}>
-            <ModernFinancialSummary consolidatedData={financialData || {
-              monthlyIncome: 0,
-              monthlyExpenses: 0,
-              currentSavings: 0,
-              savingsCapacity: 0
-            }} />
+            <ModernFinancialSummary consolidatedData={consolidatedData} />
           </Suspense>
         </section>
 
