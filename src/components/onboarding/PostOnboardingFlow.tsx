@@ -1,22 +1,25 @@
 
 import React, { useState } from 'react'
 import { PostOnboardingWelcome } from './PostOnboardingWelcome'
-import { PostOnboardingLoading } from './PostOnboardingLoading'
+import { PostOnboardingAIGeneration } from './PostOnboardingAIGeneration'
+import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
 
 interface PostOnboardingFlowProps {
   onComplete: () => void
 }
 
-type FlowStep = 'welcome' | 'loading'
+type FlowStep = 'welcome' | 'generating'
 
 export const PostOnboardingFlow: React.FC<PostOnboardingFlowProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState<FlowStep>('welcome')
+  const { consolidatedData } = useConsolidatedFinancialData()
 
   const handleCreatePlan = () => {
-    setCurrentStep('loading')
+    setCurrentStep('generating')
   }
 
-  const handleLoadingComplete = () => {
+  const handlePlanGenerated = (plan: any) => {
+    console.log('Plan generado exitosamente:', plan)
     onComplete()
   }
 
@@ -25,8 +28,11 @@ export const PostOnboardingFlow: React.FC<PostOnboardingFlowProps> = ({ onComple
       {currentStep === 'welcome' && (
         <PostOnboardingWelcome onCreatePlan={handleCreatePlan} />
       )}
-      {currentStep === 'loading' && (
-        <PostOnboardingLoading onComplete={handleLoadingComplete} />
+      {currentStep === 'generating' && (
+        <PostOnboardingAIGeneration 
+          consolidatedData={consolidatedData}
+          onPlanGenerated={handlePlanGenerated}
+        />
       )}
     </>
   )
