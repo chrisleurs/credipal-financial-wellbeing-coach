@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import type { AIGeneratedFinancialPlan } from '@/types/aiPlan'
 
 export const useAIFinancialPlan = () => {
   const { user } = useAuth()
@@ -32,13 +33,31 @@ export const useAIFinancialPlan = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  // Parse plan data helper
-  const parsedPlan = activePlan.data?.plan_data ? 
-    (typeof activePlan.data.plan_data === 'object' ? activePlan.data.plan_data : null) : null
+  // Parse plan data helper with proper typing
+  const parsedPlan: AIGeneratedFinancialPlan | null = (() => {
+    if (!activePlan.data?.plan_data) return null
+    
+    try {
+      // Handle both object and string cases
+      const planData = typeof activePlan.data.plan_data === 'string' 
+        ? JSON.parse(activePlan.data.plan_data) 
+        : activePlan.data.plan_data
+      
+      // Type guard to ensure it's an object
+      if (typeof planData === 'object' && planData !== null && !Array.isArray(planData)) {
+        return planData as AIGeneratedFinancialPlan
+      }
+      
+      return null
+    } catch (error) {
+      console.error('Error parsing plan data:', error)
+      return null
+    }
+  })()
 
   // Update plan progress mutation
   const updateProgressMutation = useMutation({
-    mutationFn: async (updates: any) => {
+    mutationFn: async (updates: Partial<AIGeneratedFinancialPlan>) => {
       if (!activePlan.data?.id) throw new Error('No active plan found')
 
       const updatedPlanData = {
@@ -81,9 +100,9 @@ export const useAIFinancialPlan = () => {
   const markGoalCompleted = (goalId: string) => {
     if (!parsedPlan?.goals) return
 
-    const updatedGoals = parsedPlan.goals.map((goal: any) => 
+    const updatedGoals = parsedPlan.goals.map((goal) => 
       goal.id === goalId 
-        ? { ...goal, status: 'completed', progress: 100, completedAt: new Date().toISOString() }
+        ? { ...goal, status: 'completed' as const, progress: 100, completedAt: new Date().toISOString() }
         : goal
     )
 
@@ -94,12 +113,12 @@ export const useAIFinancialPlan = () => {
   const updateGoalProgress = (goalId: string, newProgress: number) => {
     if (!parsedPlan?.goals) return
 
-    const updatedGoals = parsedPlan.goals.map((goal: any) => 
+    const updatedGoals = parsedPlan.goals.map((goal) => 
       goal.id === goalId 
         ? { 
             ...goal, 
             progress: Math.min(newProgress, 100),
-            status: newProgress >= 100 ? 'completed' : 'in_progress',
+            status: newProgress >= 100 ? 'completed' as const : 'in_progress' as const,
             lastUpdated: new Date().toISOString()
           }
         : goal

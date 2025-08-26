@@ -159,7 +159,7 @@ export const AIGeneratedPlanDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {parsedPlan.goals?.map((goal: any, index: number) => (
+                {parsedPlan.goals?.map((goal, index: number) => (
                   <div key={goal.id || index} className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -227,7 +227,7 @@ export const AIGeneratedPlanDashboard = () => {
         )}
 
         {/* Acciones Prioritarias */}
-        {parsedPlan.priorityActions && (
+        {parsedPlan.priorityActions && parsedPlan.priorityActions.length > 0 && (
           <Card className="mt-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -237,7 +237,7 @@ export const AIGeneratedPlanDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {parsedPlan.priorityActions.map((action: any, index: number) => (
+                {parsedPlan.priorityActions.map((action, index: number) => (
                   <div key={index} className="p-4 border rounded-lg">
                     <h4 className="font-medium mb-2">{action.action}</h4>
                     <p className="text-sm text-gray-600 mb-2">{action.impact}</p>
