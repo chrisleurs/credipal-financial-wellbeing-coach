@@ -31,11 +31,11 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   const buttonVariants = {
     tap: shouldReduceMotion ? {} : { 
       scale: 0.95,
-      transition: { duration: 0.1, ease: 'easeInOut' }
+      transition: { duration: 0.1, ease: "easeInOut" as const }
     },
     hover: shouldReduceMotion ? {} : {
       scale: pulseOnHover ? 1.05 : 1.02,
-      transition: { duration: 0.2, ease: 'easeOut' }
+      transition: { duration: 0.2, ease: "easeOut" as const }
     }
   }
 
@@ -80,7 +80,7 @@ export const FloatingActionButton: React.FC<{
         transition: {
           duration: 2,
           repeat: Infinity,
-          ease: 'easeInOut'
+          ease: "easeInOut" as const
         }
       }}
       style={{ willChange: 'transform' }}

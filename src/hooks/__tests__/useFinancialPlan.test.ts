@@ -51,7 +51,7 @@ describe('useFinancialPlan', () => {
       await result.current.updateBigGoal('goal-1', { progress: 50 })
     })
     
-    expect(mockSupabase.from).toHaveBeenCalledWith('big_goals')
+    expect(mockSupabase.from).toHaveBeenCalledWith('financial_plans')
   })
 
   it('should handle completeMiniGoal correctly', async () => {
@@ -61,7 +61,7 @@ describe('useFinancialPlan', () => {
       await result.current.completeMiniGoal('mini-goal-1')
     })
     
-    expect(mockSupabase.from).toHaveBeenCalledWith('mini_goals')
+    expect(mockSupabase.from).toHaveBeenCalledWith('financial_plans')
   })
 
   it('should refresh plan data', async () => {

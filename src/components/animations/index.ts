@@ -9,7 +9,7 @@ export { PageTransition, StaggerContainer } from './PageTransition'
 export { AnimatedButton, FloatingActionButton } from './ButtonAnimations'
 
 // Animation Hooks
-export { useAnimations, useCountingAnimation } from '../hooks/useAnimations'
+export { useAnimations, useCountingAnimation } from '../../hooks/useAnimations'
 
 // Animation Utilities
 export const createSpringConfig = (stiffness = 300, damping = 30, mass = 1) => ({

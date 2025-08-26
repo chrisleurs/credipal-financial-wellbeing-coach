@@ -33,7 +33,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
       transition: {
         duration: shouldReduceMotion ? 0 : 0.4,
         delay: shouldReduceMotion ? 0 : delay,
-        ease: 'easeOut'
+        ease: "easeOut" as const
       }
     }
   }
@@ -43,7 +43,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
     y: -4,
     transition: {
       duration: 0.2,
-      ease: 'easeOut'
+      ease: "easeOut" as const
     }
   } : {}
 
