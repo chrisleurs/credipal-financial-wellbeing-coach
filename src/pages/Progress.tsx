@@ -76,8 +76,8 @@ export default function Progress() {
     )
   }
 
-  // Create mock data that matches the component interfaces exactly
-  const mockPlan = generatedPlan || {
+  // Create properly structured mock data that matches component interfaces exactly
+  const mockPlan = {
     presupuestoMensual: {
       necesidades: { porcentaje: 50, cantidad: unifiedData?.monthlyIncome ? unifiedData.monthlyIncome * 0.5 : 2500 },
       estiloVida: { porcentaje: 30, cantidad: unifiedData?.monthlyIncome ? unifiedData.monthlyIncome * 0.3 : 1500 },
@@ -305,14 +305,10 @@ export default function Progress() {
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
               {/* Monthly Budget */}
-              {mockPlan.presupuestoMensual && (
-                <PresupuestoMensual data={mockPlan.presupuestoMensual} />
-              )}
+              <PresupuestoMensual data={mockPlan.presupuestoMensual} />
 
               {/* Emergency Fund */}
-              {mockPlan.fondoEmergencia && (
-                <FondoEmergencia data={mockPlan.fondoEmergencia} />
-              )}
+              <FondoEmergencia data={mockPlan.fondoEmergencia} />
             </div>
 
             {/* Debt Payment Plan */}
@@ -325,14 +321,10 @@ export default function Progress() {
           <TabsContent value="budget" className="space-y-6">
             <div className="grid gap-6">
               {/* Monthly Budget Detail */}
-              {mockPlan.presupuestoMensual && (
-                <PresupuestoMensual data={mockPlan.presupuestoMensual} />
-              )}
+              <PresupuestoMensual data={mockPlan.presupuestoMensual} />
 
               {/* Emergency Fund Progress */}
-              {mockPlan.fondoEmergencia && (
-                <FondoEmergencia data={mockPlan.fondoEmergencia} />
-              )}
+              <FondoEmergencia data={mockPlan.fondoEmergencia} />
             </div>
           </TabsContent>
 
@@ -340,14 +332,10 @@ export default function Progress() {
           <TabsContent value="wealth" className="space-y-6">
             <div className="space-y-6">
               {/* Wealth Growth */}
-              {mockPlan.crecimientoPatrimonial && (
-                <CrecimientoPatrimonial data={mockPlan.crecimientoPatrimonial} />
-              )}
+              <CrecimientoPatrimonial data={mockPlan.crecimientoPatrimonial} />
 
               {/* Quarterly Roadmap */}
-              {mockPlan.roadmapTrimestral && (
-                <RoadmapTrimestral data={mockPlan.roadmapTrimestral} />
-              )}
+              <RoadmapTrimestral data={mockPlan.roadmapTrimestral} />
             </div>
           </TabsContent>
 
@@ -355,14 +343,10 @@ export default function Progress() {
           <TabsContent value="actions" className="space-y-6">
             <div className="space-y-6">
               {/* Short-term Goals */}
-              {mockPlan.metasCortoPlazo && (
-                <MetasCortoPlazo data={mockPlan.metasCortoPlazo} />
-              )}
+              <MetasCortoPlazo data={mockPlan.metasCortoPlazo} />
 
               {/* Action Roadmap */}
-              {mockPlan.roadmapAccion && (
-                <RoadmapAccion data={mockPlan.roadmapAccion} />
-              )}
+              <RoadmapAccion data={mockPlan.roadmapAccion} />
             </div>
           </TabsContent>
         </Tabs>
