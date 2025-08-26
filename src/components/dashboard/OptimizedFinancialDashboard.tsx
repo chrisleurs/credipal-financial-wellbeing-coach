@@ -8,6 +8,7 @@ import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MetricCard } from './MetricCard'
+import { HeroCoachCard } from '@/components/coach/HeroCoachCard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { formatCurrency } from '@/utils/helpers'
 import { 
@@ -70,28 +71,22 @@ export const OptimizedFinancialDashboard = () => {
     )
   }
 
+  const handlePlanGenerated = (planData: any) => {
+    console.log('Plan generado:', planData)
+    // Aquí puedes manejar la respuesta del plan generado
+    // Por ejemplo, mostrar un modal, navegar a otra página, etc.
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header with data freshness indicator */}
+        {/* Hero Coach Card - Reemplaza el header básico */}
         <div className="mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                Dashboard Financiero
-              </h1>
-              <p className="text-muted-foreground">
-                Datos actualizados {financialData.lastCalculated ? 
-                  new Date(financialData.lastCalculated).toLocaleString() : 
-                  'recientemente'
-                }
-              </p>
-            </div>
-            <Button onClick={() => refetch()} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar
-            </Button>
-          </div>
+          <HeroCoachCard 
+            userData={financialData}
+            onGeneratePlan={handlePlanGenerated}
+            onRefresh={refetch}
+          />
         </div>
 
         {/* Tabs */}
