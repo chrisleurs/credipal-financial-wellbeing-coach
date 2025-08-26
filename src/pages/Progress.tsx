@@ -17,14 +17,14 @@ import {
   BarChart3
 } from 'lucide-react'
 
-// Import dashboard components with default imports
+// Import dashboard components - using correct import types based on their exports
 import PresupuestoMensual from '@/components/dashboard/PresupuestoMensual'
 import PlanPagoDeuda from '@/components/dashboard/PlanPagoDeuda'
-import FondoEmergencia from '@/components/dashboard/FondoEmergencia'
-import CrecimientoPatrimonial from '@/components/dashboard/CrecimientoPatrimonial'
-import RoadmapTrimestral from '@/components/dashboard/RoadmapTrimestral'
-import MetasCortoPlazo from '@/components/dashboard/MetasCortoPlazo'
-import RoadmapAccion from '@/components/dashboard/RoadmapAccion'
+import { FondoEmergencia } from '@/components/dashboard/FondoEmergencia'
+import { CrecimientoPatrimonial } from '@/components/dashboard/CrecimientoPatrimonial'
+import { RoadmapTrimestral } from '@/components/dashboard/RoadmapTrimestral'
+import { MetasCortoPlazo } from '@/components/dashboard/MetasCortoPlazo'
+import { RoadmapAccion } from '@/components/dashboard/RoadmapAccion'
 
 export default function Progress() {
   const [activeTab, setActiveTab] = useState('overview')
