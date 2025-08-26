@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
@@ -11,6 +10,10 @@ import { debounce } from 'lodash'
 interface AIPlan {
   id: string
   version: number
+  weekNumber: number
+  totalWeeks: number
+  overallProgress: number
+  methodology: string
   bigGoals: Array<{
     id: string
     title: string
@@ -28,6 +31,10 @@ interface AIPlan {
     points: number
     isCompleted: boolean
     completedAt?: string
+    emoji: string
+    currentValue: number
+    targetValue: number
+    unit: string
   }>
   immediateAction: {
     id: string
@@ -36,6 +43,8 @@ interface AIPlan {
     impact: string
     isCompleted: boolean
     completedAt?: string
+    emoji: string
+    estimatedMinutes: number
   }
   coachMessage: {
     text: string
@@ -49,6 +58,7 @@ interface AIPlan {
     completedActions: number
     totalPoints: number
     streakDays: number
+    streak: number // Backward compatibility alias
   }
   createdAt: string
   updatedAt: string
@@ -71,6 +81,10 @@ interface UseFinancialPlanReturn {
     isUpdatingGoal: boolean
     isGeneratingPlan: boolean
     isRefreshingData: boolean
+    refreshing: boolean // Backward compatibility
+    updatingBigGoal: boolean // Backward compatibility
+    updatingMiniGoal: boolean // Backward compatibility
+    completingAction: boolean // Backward compatibility
   }
   
   // Methods
@@ -83,7 +97,7 @@ interface UseFinancialPlanReturn {
   
   // Metadata
   lastSyncTime: Date | null
-  lastUpdated: Date | null // Alias for backward compatibility
+  lastUpdated: string | null // Backward compatibility alias
   isStale: boolean
   error: string | null
 }
@@ -149,14 +163,33 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
     return {
       id: dbPlan.id,
       version: dbPlan.version || 1,
-      bigGoals: planData.bigGoals || [],
-      miniGoals: planData.miniGoals || [],
-      immediateAction: planData.immediateAction || {
+      weekNumber: planData.weekNumber || 1,
+      totalWeeks: planData.totalWeeks || 12,
+      overallProgress: planData.overallProgress || 0,
+      methodology: planData.methodology || '3-2-1',
+      bigGoals: (planData.bigGoals || []).map((goal: any) => ({
+        ...goal,
+        emoji: goal.emoji || '🎯'
+      })),
+      miniGoals: (planData.miniGoals || []).map((goal: any) => ({
+        ...goal,
+        emoji: goal.emoji || '⭐',
+        currentValue: goal.currentValue || 0,
+        targetValue: goal.targetValue || 1,
+        unit: goal.unit || 'tareas'
+      })),
+      immediateAction: {
+        ...planData.immediateAction,
+        emoji: planData.immediateAction?.emoji || '⚡',
+        estimatedMinutes: planData.immediateAction?.estimatedMinutes || 15
+      } || {
         id: 'default',
         title: 'Revisar gastos mensuales',
         description: 'Identifica oportunidades de ahorro',
         impact: 'Medio',
-        isCompleted: false
+        isCompleted: false,
+        emoji: '⚡',
+        estimatedMinutes: 15
       },
       coachMessage: planData.coachMessage || {
         text: '¡Bienvenido a tu journey financiero!',
@@ -164,12 +197,16 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
         personalizedGreeting: `¡Hola ${user?.user_metadata?.first_name || 'Usuario'}!`,
         nextStepSuggestion: 'Comencemos organizando tus finanzas'
       },
-      stats: planData.stats || {
+      stats: {
+        ...planData.stats,
+        streak: planData.stats?.streakDays || planData.stats?.streak || 0
+      } || {
         completedBigGoals: 0,
         completedMiniGoals: 0,
         completedActions: 0,
         totalPoints: 0,
-        streakDays: 0
+        streakDays: 0,
+        streak: 0
       },
       createdAt: dbPlan.created_at,
       updatedAt: dbPlan.updated_at
@@ -183,6 +220,10 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
     const basicPlan: AIPlan = {
       id: `basic-${userId}`,
       version: 1,
+      weekNumber: 1,
+      totalWeeks: 12,
+      overallProgress: 0,
+      methodology: '3-2-1',
       bigGoals: [
         {
           id: 'goal-1',
@@ -221,14 +262,22 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
           title: 'Revisar gastos de la semana',
           description: 'Analiza dónde va tu dinero',
           points: 10,
-          isCompleted: false
+          isCompleted: false,
+          emoji: '📊',
+          currentValue: 0,
+          targetValue: 1,
+          unit: 'revisión'
         },
         {
           id: 'mini-2',
           title: 'Separar dinero para ahorro',
           description: 'Aparta al menos $500 esta semana',
           points: 20,
-          isCompleted: false
+          isCompleted: false,
+          emoji: '💰',
+          currentValue: 0,
+          targetValue: 500,
+          unit: 'pesos'
         }
       ],
       immediateAction: {
@@ -236,7 +285,9 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
         title: 'Revisar gastos del mes pasado',
         description: 'Identifica tus 3 gastos más grandes',
         impact: 'Alto',
-        isCompleted: false
+        isCompleted: false,
+        emoji: '⚡',
+        estimatedMinutes: 15
       },
       coachMessage: {
         text: '¡Perfecto momento para tomar control de tus finanzas!',
@@ -249,7 +300,8 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
         completedMiniGoals: 0,
         completedActions: 0,
         totalPoints: 0,
-        streakDays: 1
+        streakDays: 1,
+        streak: 1
       },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -462,6 +514,10 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
       const aiPlan: AIPlan = {
         id: `ai-${Date.now()}`,
         version: Date.now(),
+        weekNumber: 1,
+        totalWeeks: 12,
+        overallProgress: 0,
+        methodology: '3-2-1',
         bigGoals: data.bigGoals || [],
         miniGoals: data.miniGoals || [],
         immediateAction: data.immediateAction || {},
@@ -476,7 +532,8 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
           completedMiniGoals: 0,
           completedActions: 0,
           totalPoints: 0,
-          streakDays: 1
+          streakDays: 1,
+          streak: 1
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -592,7 +649,11 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
     loadingStates: {
       isUpdatingGoal,
       isGeneratingPlan,
-      isRefreshingData
+      isRefreshingData,
+      refreshing: isRefreshingData, // Backward compatibility
+      updatingBigGoal: isUpdatingGoal, // Backward compatibility
+      updatingMiniGoal: isUpdatingGoal, // Backward compatibility
+      completingAction: isUpdatingGoal, // Backward compatibility
     },
     
     // Methods
@@ -605,7 +666,7 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
     
     // Metadata
     lastSyncTime,
-    lastUpdated: lastSyncTime, // Backward compatibility alias
+    lastUpdated: lastSyncTime?.toISOString() || null, // Backward compatibility alias
     isStale: aiPlanQuery.isStale || false,
     error: optimizedData.error?.message || aiPlanQuery.error?.message || null
   }
