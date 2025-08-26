@@ -114,6 +114,8 @@ export const useUnifiedFinancialData = () => {
         throw profileError
       }
 
+      console.log('👤 Profile data:', profile)
+
       // 2. Obtener préstamo de Kueski
       console.log('🏦 Fetching Kueski loan...')
       const { data: kueskiLoanData } = await supabase
@@ -150,7 +152,7 @@ export const useUnifiedFinancialData = () => {
       // 6. Extraer datos del onboarding
       const onboardingData: OnboardingData = (profile?.onboarding_data as OnboardingData) || {}
       
-      console.log('📊 Onboarding data:', onboardingData)
+      console.log('📊 Raw onboarding data:', onboardingData)
 
       // 7. Procesar datos financieros básicos
       const monthlyIncome = onboardingData.monthlyIncome || 0
@@ -161,31 +163,56 @@ export const useUnifiedFinancialData = () => {
       const currentSavings = onboardingData.currentSavings || 0
       const monthlySavingsCapacity = onboardingData.monthlySavingsCapacity || 0
 
-      // 8. Procesar deudas combinadas
+      // 8. Procesar deudas combinadas con MEJOR LOGGING
       const combinedDebts = []
 
-      // Deudas del onboarding (del JSON)
-      if (onboardingData.debts && onboardingData.debts.length > 0) {
-        onboardingData.debts.forEach((debt: any) => {
-          combinedDebts.push({
-            id: debt.id || `onboarding-${Math.random()}`,
-            name: debt.name || debt.creditor || 'Deuda',
-            creditor: debt.name || debt.creditor || 'Deuda',
+      console.log('💰 Processing debts...')
+
+      // DEUDAS DEL ONBOARDING JSON (las más importantes)
+      if (onboardingData.debts && Array.isArray(onboardingData.debts) && onboardingData.debts.length > 0) {
+        console.log('📋 Found onboarding debts in JSON:', onboardingData.debts)
+        onboardingData.debts.forEach((debt: any, index: number) => {
+          console.log(`Processing onboarding debt ${index + 1}:`, debt)
+          
+          const debtEntry = {
+            id: debt.id || `onboarding-debt-${index}`,
+            name: debt.name || debt.creditor || 'Deuda del Onboarding',
+            creditor: debt.creditor || debt.name || 'Acreedor',
             amount: debt.amount || debt.current_balance || 0,
             monthlyPayment: debt.monthlyPayment || debt.monthly_payment || 0,
             source: 'onboarding' as const,
             isKueski: false
-          })
+          }
+          
+          console.log('✅ Added onboarding debt:', debtEntry)
+          combinedDebts.push(debtEntry)
         })
+      } else {
+        console.log('❌ No debts found in onboarding JSON data')
       }
 
-      // Deudas de onboarding_expenses (gastos que podrían ser deudas)
+      // DEUDAS DE ONBOARDING_EXPENSES (gastos categorizados como deudas)
       if (onboardingExpenses && onboardingExpenses.length > 0) {
+        console.log('💳 Found onboarding expenses:', onboardingExpenses.length)
         onboardingExpenses.forEach(expense => {
-          // Solo incluir si es una categoría que represente deudas
-          const debtCategories = ['Deudas', 'Tarjetas de Crédito', 'Préstamos', 'Créditos']
-          if (debtCategories.includes(expense.category)) {
-            combinedDebts.push({
+          // Categorías que consideramos deudas
+          const debtCategories = [
+            'Bills & Services', 
+            'Deudas', 
+            'Tarjetas de Crédito', 
+            'Préstamos', 
+            'Créditos',
+            'Credit Cards',
+            'Loans'
+          ]
+          
+          const isDebtCategory = debtCategories.some(cat => 
+            expense.category.toLowerCase().includes(cat.toLowerCase()) ||
+            expense.subcategory?.toLowerCase().includes(cat.toLowerCase())
+          )
+          
+          if (isDebtCategory) {
+            const debtEntry = {
               id: `onboarding-expense-${expense.id}`,
               name: expense.subcategory || expense.category,
               creditor: expense.subcategory || expense.category,
@@ -193,13 +220,17 @@ export const useUnifiedFinancialData = () => {
               monthlyPayment: expense.amount, // Asumimos que es un pago mensual
               source: 'onboarding' as const,
               isKueski: false
-            })
+            }
+            
+            console.log('✅ Added expense as debt:', debtEntry)
+            combinedDebts.push(debtEntry)
           }
         })
       }
 
       // Préstamo Kueski como deuda
       if (kueskiLoanData) {
+        console.log('🏦 Adding Kueski loan as debt:', kueskiLoanData)
         combinedDebts.push({
           id: kueskiLoanData.id,
           name: 'Préstamo Kueski',
@@ -213,6 +244,7 @@ export const useUnifiedFinancialData = () => {
 
       // Otras deudas de la BD
       if (dbDebts && dbDebts.length > 0) {
+        console.log('💾 Adding database debts:', dbDebts.length)
         dbDebts.forEach(debt => {
           combinedDebts.push({
             id: debt.id,
@@ -226,10 +258,13 @@ export const useUnifiedFinancialData = () => {
         })
       }
 
-      console.log('💳 Combined debts:', combinedDebts)
+      console.log('💳 FINAL Combined debts:', combinedDebts)
 
       const totalDebtBalance = combinedDebts.reduce((sum, debt) => sum + debt.amount, 0)
       const totalMonthlyDebtPayments = combinedDebts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
+
+      console.log('💰 Total debt balance:', totalDebtBalance)
+      console.log('💸 Total monthly payments:', totalMonthlyDebtPayments)
 
       // 9. Procesar metas financieras combinadas
       const combinedGoals = []
@@ -272,7 +307,7 @@ export const useUnifiedFinancialData = () => {
       // 11. Verificar si hay datos reales del onboarding
       const hasFinancialData = monthlyIncome > 0 || monthlyExpenses > 0 || combinedDebts.length > 0 || currentSavings > 0
 
-      return {
+      const result = {
         userId: user.id,
         userProfile: {
           firstName: profile?.first_name || user.user_metadata?.first_name || null,
@@ -316,6 +351,9 @@ export const useUnifiedFinancialData = () => {
         
         lastUpdated: profile?.updated_at || null
       }
+
+      console.log('🎉 FINAL unified financial data:', result)
+      return result
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutos
