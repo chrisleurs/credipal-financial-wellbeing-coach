@@ -58,6 +58,7 @@ interface UseFinancialPlanReturn {
   // Core data
   financialData: any
   aiPlan: AIPlan | null
+  plan: AIPlan | null // Alias for backward compatibility
   
   // Loading states
   loading: boolean
@@ -65,15 +66,25 @@ interface UseFinancialPlanReturn {
   isGeneratingPlan: boolean
   isRefreshingData: boolean
   
+  // Loading states object for backward compatibility
+  loadingStates: {
+    isUpdatingGoal: boolean
+    isGeneratingPlan: boolean
+    isRefreshingData: boolean
+  }
+  
   // Methods
   updateBigGoal: (goalId: string, updates: any) => Promise<void>
   completeMiniGoal: (goalId: string) => Promise<void>
   completeAction: (actionId: string) => Promise<void>
   generateNewPlan: () => Promise<void>
   refreshAll: () => Promise<void>
+  refreshPlan: () => Promise<void> // Alias for backward compatibility
   
   // Metadata
   lastSyncTime: Date | null
+  lastUpdated: Date | null // Alias for backward compatibility
+  isStale: boolean
   error: string | null
 }
 
@@ -244,13 +255,13 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
       updatedAt: new Date().toISOString()
     }
 
-    // Save basic plan to database
+    // Save basic plan to database - cast to any to avoid Json type issues
     await supabase
       .from('financial_plans')
       .insert({
         user_id: userId,
         plan_type: 'basic-3-2-1',
-        plan_data: basicPlan,
+        plan_data: basicPlan as any,
         status: 'active',
         version: 1
       })
@@ -276,7 +287,7 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
       const { error } = await supabase
         .from('financial_plans')
         .update({
-          plan_data: updatedPlan,
+          plan_data: updatedPlan as any,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', effectiveUserId)
@@ -352,7 +363,7 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
       const { error } = await supabase
         .from('financial_plans')
         .update({
-          plan_data: updatedPlan,
+          plan_data: updatedPlan as any,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', effectiveUserId)
@@ -403,7 +414,7 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
       const { error } = await supabase
         .from('financial_plans')
         .update({
-          plan_data: updatedPlan,
+          plan_data: updatedPlan as any,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', effectiveUserId)
@@ -471,13 +482,13 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
         updatedAt: new Date().toISOString()
       }
       
-      // Save to financial_plans table
+      // Save to financial_plans table - cast to any to avoid Json type issues
       await supabase
         .from('financial_plans')
         .upsert({
           user_id: effectiveUserId,
           plan_type: 'ai-3-2-1',
-          plan_data: aiPlan,
+          plan_data: aiPlan as any,
           status: 'active',
           version: Date.now()
         })
@@ -559,10 +570,17 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
     }
   }, [optimizedData, queryClient, effectiveUserId, toast])
 
+  const refreshPlan = useCallback(async () => {
+    await refreshAll()
+  }, [refreshAll])
+
+  const currentPlan = aiPlanQuery.data
+
   return {
     // Core data
     financialData: optimizedData.data,
-    aiPlan: aiPlanQuery.data || null,
+    aiPlan: currentPlan,
+    plan: currentPlan, // Backward compatibility alias
     
     // Loading states
     loading: optimizedData.isLoading || aiPlanQuery.isLoading,
@@ -570,15 +588,25 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
     isGeneratingPlan,
     isRefreshingData,
     
+    // Loading states object for backward compatibility
+    loadingStates: {
+      isUpdatingGoal,
+      isGeneratingPlan,
+      isRefreshingData
+    },
+    
     // Methods
     updateBigGoal,
     completeMiniGoal,
     completeAction,
     generateNewPlan,
     refreshAll,
+    refreshPlan, // Backward compatibility alias
     
     // Metadata
     lastSyncTime,
+    lastUpdated: lastSyncTime, // Backward compatibility alias
+    isStale: aiPlanQuery.isStale || false,
     error: optimizedData.error?.message || aiPlanQuery.error?.message || null
   }
 }
