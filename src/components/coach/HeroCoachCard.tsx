@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AnimatedProgressRing } from '@/components/animations/AnimatedProgressRing'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { OptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
 import { 
@@ -30,6 +31,7 @@ export const HeroCoachCard: React.FC<HeroCoachCardProps> = ({
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedMessage, setGeneratedMessage] = useState<string>('')
   const { toast } = useToast()
+  const { user } = useAuth()
 
   // Calcular health score basado en situación financiera
   const calculateHealthScore = (): number => {
@@ -64,7 +66,7 @@ export const HeroCoachCard: React.FC<HeroCoachCardProps> = ({
   const generateCoachMessage = (): string => {
     if (generatedMessage) return generatedMessage
     
-    const firstName = userData.user?.first_name || 'Usuario'
+    const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Usuario'
     const { savingsCapacity, totalDebtBalance, monthlyIncome } = userData
     
     // Situación: Excelente capacidad de ahorro
@@ -116,9 +118,9 @@ export const HeroCoachCard: React.FC<HeroCoachCardProps> = ({
     try {
       const { data, error } = await supabase.functions.invoke('generate-financial-plan', {
         body: {
-          userId: userData.user?.id,
+          userId: user?.id,
           financialData: {
-            name: `${userData.user?.first_name} ${userData.user?.last_name}`,
+            name: `${user?.user_metadata?.first_name || ''} ${user?.user_metadata?.last_name || ''}`.trim() || user?.email || 'Usuario',
             monthlyIncome: userData.monthlyIncome,
             monthlyExpenses: userData.monthlyExpenses,
             debts: userData.activeDebts.map(debt => ({
@@ -166,7 +168,7 @@ export const HeroCoachCard: React.FC<HeroCoachCardProps> = ({
 
   const mood = getCoachMood()
   const healthScore = calculateHealthScore()
-  const firstName = userData.user?.first_name || 'Usuario'
+  const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Usuario'
 
   return (
     <Card className={`relative overflow-hidden border-0 shadow-xl bg-gradient-to-br ${mood.color} text-white`}>
