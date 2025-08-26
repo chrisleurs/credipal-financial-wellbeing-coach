@@ -43,8 +43,8 @@ export const AuthRedirect = () => {
     if (user) {
       const currentPath = location.pathname;
       
-      // If on auth page and authenticated, redirect based on onboarding status
-      if (currentPath === '/auth') {
+      // Only redirect from auth page after we have onboarding status
+      if (currentPath === '/auth' && onboardingCompleted !== null) {
         if (onboardingCompleted === false) {
           console.log('AuthRedirect - Authenticated user needs onboarding');
           navigate('/onboarding', { replace: true });
@@ -56,7 +56,7 @@ export const AuthRedirect = () => {
       }
 
       // Handle root path
-      if (currentPath === '/') {
+      if (currentPath === '/' && onboardingCompleted !== null) {
         if (onboardingCompleted === false) {
           console.log('AuthRedirect - Root redirect to onboarding');
           navigate('/onboarding', { replace: true });
@@ -86,8 +86,8 @@ export const AuthRedirect = () => {
     }
   }, [user, onboardingCompleted, authLoading, onboardingLoading, navigate, location.pathname]);
 
-  // Show spinner while loading critical states
-  if (authLoading || (user && onboardingLoading)) {
+  // Only show spinner on auth page while determining where to redirect
+  if (user && location.pathname === '/auth' && (authLoading || onboardingLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">

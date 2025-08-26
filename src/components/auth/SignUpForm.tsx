@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface SignUpFormProps {
   onSuccess?: () => void;
@@ -16,7 +15,6 @@ interface SignUpFormProps {
 export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
   const { signUp, loading } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -33,6 +31,13 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
     
     if (!formData.email || !formData.password || !formData.firstName) {
       setError('Por favor completa todos los campos obligatorios');
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Por favor ingresa un email válido');
       return;
     }
 
@@ -82,14 +87,10 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
         console.log('Signup successful');
         toast({
           title: "¡Cuenta creada!",
-          description: "Tu cuenta ha sido creada exitosamente"
+          description: "Tu cuenta ha sido creada exitosamente. Revisa tu email para confirmar tu cuenta."
         });
         
-        // Navigate to dashboard after successful signup
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 500);
-        
+        // Don't force navigation - let AuthRedirect handle it based on onboarding status
         if (onSuccess) {
           onSuccess();
         }

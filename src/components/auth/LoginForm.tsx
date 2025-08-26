@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -16,7 +15,6 @@ interface LoginFormProps {
 export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
   const { signIn, loading } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -30,6 +28,13 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
     
     if (!formData.email || !formData.password) {
       setError('Por favor completa todos los campos');
+      return;
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Por favor ingresa un email válido');
       return;
     }
 
@@ -48,7 +53,7 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
             result.error.message?.includes('invalid_credentials')) {
           errorMessage = 'Email o contraseña incorrectos';
         } else if (result.error.message?.includes('Email not confirmed')) {
-          errorMessage = 'Debes confirmar tu email antes de iniciar sesión';
+          errorMessage = 'Debes confirmar tu email antes de iniciar sesión. Revisa tu bandeja de entrada';
         } else if (result.error.message?.includes('Too many requests')) {
           errorMessage = 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo';
         } else if (result.error.message) {
@@ -62,17 +67,13 @@ export const LoginForm = ({ onSuccess, onForgotPassword }: LoginFormProps) => {
           variant: "destructive"
         });
       } else {
-        console.log('Login successful, redirecting...');
+        console.log('Login successful');
         toast({
           title: "¡Bienvenido!",
           description: "Has iniciado sesión correctamente"
         });
         
-        // Force navigation to dashboard after successful login
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 500);
-        
+        // Don't force navigation - let AuthRedirect handle it based on onboarding status
         if (onSuccess) {
           onSuccess();
         }
