@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { formatCurrency } from '@/utils/helpers'
-import { CreditCard, AlertTriangle, Building, User } from 'lucide-react'
+import { CreditCard, AlertTriangle, Building, User, FileText } from 'lucide-react'
 
 interface DebtsSectionProps {
   debts: Array<{
@@ -29,7 +29,7 @@ export const DebtsSection: React.FC<DebtsSectionProps> = ({
     if (isKueski) return <Building className="h-4 w-4 text-blue-600" />
     switch (source) {
       case 'onboarding':
-        return <User className="h-4 w-4 text-purple-600" />
+        return <FileText className="h-4 w-4 text-purple-600" />
       case 'kueski':
         return <Building className="h-4 w-4 text-blue-600" />
       default:
@@ -87,6 +87,14 @@ export const DebtsSection: React.FC<DebtsSectionProps> = ({
     )
   }
 
+  // Agrupar deudas por fuente para mejor organización
+  const debtsBySource = debts.reduce((acc, debt) => {
+    const key = debt.isKueski ? 'kueski' : debt.source
+    if (!acc[key]) acc[key] = []
+    acc[key].push(debt)
+    return acc
+  }, {} as Record<string, typeof debts>)
+
   return (
     <div className="space-y-6">
       {/* Resumen de deudas */}
@@ -111,6 +119,20 @@ export const DebtsSection: React.FC<DebtsSectionProps> = ({
               <p className="text-2xl font-bold text-orange-700">
                 {formatCurrency(totalMonthlyPayments)}
               </p>
+            </div>
+          </div>
+
+          {/* Distribución por fuente */}
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-sm font-medium text-gray-700 mb-2">Fuentes de datos:</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.keys(debtsBySource).map(source => (
+                <Badge key={source} variant="outline" className="text-xs">
+                  {source === 'kueski' ? '🏦 Kueski' : 
+                   source === 'onboarding' ? '📋 Onboarding' : 
+                   '💳 Sistema'}: {debtsBySource[source].length}
+                </Badge>
+              ))}
             </div>
           </div>
         </CardContent>
@@ -160,6 +182,15 @@ export const DebtsSection: React.FC<DebtsSectionProps> = ({
                     <div className="flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
                       <span>Préstamo activo con pagos quincenales</span>
+                    </div>
+                  </div>
+                )}
+
+                {debt.source === 'onboarding' && (
+                  <div className="mt-3 p-2 bg-purple-50 rounded text-sm text-purple-700">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      <span>Información capturada durante el registro inicial</span>
                     </div>
                   </div>
                 )}

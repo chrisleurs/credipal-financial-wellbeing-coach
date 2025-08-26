@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
@@ -133,7 +132,14 @@ export const useUnifiedFinancialData = () => {
         .eq('user_id', user.id)
         .eq('status', 'active')
 
-      // 4. Obtener metas de la BD
+      // 4. Obtener gastos del onboarding que podrían ser deudas
+      console.log('📋 Fetching onboarding expenses...')
+      const { data: onboardingExpenses } = await supabase
+        .from('onboarding_expenses')
+        .select('*')
+        .eq('user_id', user.id)
+
+      // 5. Obtener metas de la BD
       console.log('🎯 Fetching database goals...')
       const { data: dbGoals } = await supabase
         .from('goals')
@@ -141,12 +147,12 @@ export const useUnifiedFinancialData = () => {
         .eq('user_id', user.id)
         .eq('status', 'active')
 
-      // 5. Extraer datos del onboarding
+      // 6. Extraer datos del onboarding
       const onboardingData: OnboardingData = (profile?.onboarding_data as OnboardingData) || {}
       
       console.log('📊 Onboarding data:', onboardingData)
 
-      // 6. Procesar datos financieros básicos
+      // 7. Procesar datos financieros básicos
       const monthlyIncome = onboardingData.monthlyIncome || 0
       const extraIncome = onboardingData.extraIncome || 0
       const totalMonthlyIncome = monthlyIncome + extraIncome
@@ -155,10 +161,10 @@ export const useUnifiedFinancialData = () => {
       const currentSavings = onboardingData.currentSavings || 0
       const monthlySavingsCapacity = onboardingData.monthlySavingsCapacity || 0
 
-      // 7. Procesar deudas combinadas
+      // 8. Procesar deudas combinadas
       const combinedDebts = []
 
-      // Deudas del onboarding
+      // Deudas del onboarding (del JSON)
       if (onboardingData.debts && onboardingData.debts.length > 0) {
         onboardingData.debts.forEach((debt: any) => {
           combinedDebts.push({
@@ -170,6 +176,25 @@ export const useUnifiedFinancialData = () => {
             source: 'onboarding' as const,
             isKueski: false
           })
+        })
+      }
+
+      // Deudas de onboarding_expenses (gastos que podrían ser deudas)
+      if (onboardingExpenses && onboardingExpenses.length > 0) {
+        onboardingExpenses.forEach(expense => {
+          // Solo incluir si es una categoría que represente deudas
+          const debtCategories = ['Deudas', 'Tarjetas de Crédito', 'Préstamos', 'Créditos']
+          if (debtCategories.includes(expense.category)) {
+            combinedDebts.push({
+              id: `onboarding-expense-${expense.id}`,
+              name: expense.subcategory || expense.category,
+              creditor: expense.subcategory || expense.category,
+              amount: expense.amount,
+              monthlyPayment: expense.amount, // Asumimos que es un pago mensual
+              source: 'onboarding' as const,
+              isKueski: false
+            })
+          }
         })
       }
 
@@ -206,7 +231,7 @@ export const useUnifiedFinancialData = () => {
       const totalDebtBalance = combinedDebts.reduce((sum, debt) => sum + debt.amount, 0)
       const totalMonthlyDebtPayments = combinedDebts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
 
-      // 8. Procesar metas financieras combinadas
+      // 9. Procesar metas financieras combinadas
       const combinedGoals = []
 
       // Metas del onboarding
@@ -239,12 +264,12 @@ export const useUnifiedFinancialData = () => {
 
       console.log('🎯 Combined goals:', combinedGoals)
 
-      // 9. Calcular métricas derivadas
+      // 10. Calcular métricas derivadas
       const monthlyBalance = totalMonthlyIncome - monthlyExpenses
       const availableCashFlow = monthlyBalance - totalMonthlyDebtPayments
       const netWorth = currentSavings - totalDebtBalance
 
-      // 10. Verificar si hay datos reales del onboarding
+      // 11. Verificar si hay datos reales del onboarding
       const hasFinancialData = monthlyIncome > 0 || monthlyExpenses > 0 || combinedDebts.length > 0 || currentSavings > 0
 
       return {
