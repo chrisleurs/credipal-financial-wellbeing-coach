@@ -23,16 +23,40 @@ export interface UnifiedFinancialData {
   currentSavings: number
   monthlySavingsCapacity: number
   
+  // Deudas combinadas: onboarding + Kueski + otras deudas de BD
   debts: Array<{
     id: string
     name: string
+    creditor: string
     amount: number
     monthlyPayment: number
+    source: 'onboarding' | 'kueski' | 'database'
+    isKueski?: boolean
   }>
   totalDebtBalance: number
   totalMonthlyDebtPayments: number
   
-  financialGoals: string[]
+  // Metas financieras del onboarding + metas de BD
+  financialGoals: Array<{
+    id: string
+    title: string
+    targetAmount: number
+    currentAmount: number
+    progress: number
+    source: 'onboarding' | 'database'
+  }>
+  
+  // Préstamos Kueski
+  kueskiLoan: {
+    id: string
+    lender: string
+    amount: number
+    paymentAmount: number
+    remainingPayments: number
+    totalPayments: number
+    nextPaymentDate: string
+    status: string
+  } | null
   
   // Cálculos derivados
   monthlyBalance: number
@@ -77,6 +101,8 @@ export const useUnifiedFinancialData = () => {
         throw new Error('Usuario no autenticado')
       }
 
+      console.log('🔍 Fetching unified financial data for user:', user.id)
+
       // 1. Obtener perfil del usuario con datos del onboarding
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -89,73 +115,137 @@ export const useUnifiedFinancialData = () => {
         throw profileError
       }
 
-      // 2. Extraer datos del onboarding con type casting correcto
+      // 2. Obtener préstamo de Kueski
+      console.log('🏦 Fetching Kueski loan...')
+      const { data: kueskiLoanData } = await supabase
+        .from('loans')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('lender', 'Kueski')
+        .eq('status', 'active')
+        .single()
+
+      // 3. Obtener todas las deudas de la BD
+      console.log('💳 Fetching database debts...')
+      const { data: dbDebts } = await supabase
+        .from('debts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+
+      // 4. Obtener metas de la BD
+      console.log('🎯 Fetching database goals...')
+      const { data: dbGoals } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+
+      // 5. Extraer datos del onboarding
       const onboardingData: OnboardingData = (profile?.onboarding_data as OnboardingData) || {}
       
-      // 3. Obtener datos consolidados de las tablas principales (solo como respaldo)
-      const [incomesResult, expensesResult, debtsResult, goalsResult] = await Promise.all([
-        supabase.from('income_sources').select('*').eq('user_id', user.id).eq('is_active', true),
-        supabase.from('expenses').select('*').eq('user_id', user.id).gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
-        supabase.from('debts').select('*').eq('user_id', user.id).eq('status', 'active'),
-        supabase.from('goals').select('*').eq('user_id', user.id).eq('status', 'active')
-      ])
+      console.log('📊 Onboarding data:', onboardingData)
 
-      const incomes = incomesResult.data || []
-      const expenses = expensesResult.data || []
-      const dbDebts = debtsResult.data || []
-      const goals = goalsResult.data || []
-
-      // 4. Priorizar datos del onboarding sobre datos de BD
-      const monthlyIncome = onboardingData.monthlyIncome || incomes.reduce((sum, income) => {
-        switch (income.frequency) {
-          case 'monthly': return sum + income.amount
-          case 'biweekly': return sum + (income.amount * 2)
-          case 'weekly': return sum + (income.amount * 4)
-          case 'yearly': return sum + (income.amount / 12)
-          default: return sum + income.amount
-        }
-      }, 0)
-
+      // 6. Procesar datos financieros básicos
+      const monthlyIncome = onboardingData.monthlyIncome || 0
       const extraIncome = onboardingData.extraIncome || 0
       const totalMonthlyIncome = monthlyIncome + extraIncome
-
-      const monthlyExpenses = onboardingData.monthlyExpenses || expenses.reduce((sum, expense) => sum + expense.amount, 0)
-      
-      const expenseCategories = onboardingData.expenseCategories || expenses.reduce((acc: Record<string, number>, expense) => {
-        acc[expense.category] = (acc[expense.category] || 0) + expense.amount
-        return acc
-      }, {})
-
+      const monthlyExpenses = onboardingData.monthlyExpenses || 0
+      const expenseCategories = onboardingData.expenseCategories || {}
       const currentSavings = onboardingData.currentSavings || 0
       const monthlySavingsCapacity = onboardingData.monthlySavingsCapacity || 0
 
-      // 5. Procesar deudas (priorizar onboarding)
-      const onboardingDebts = onboardingData.debts || []
-      const debts = onboardingDebts.length > 0 ? onboardingDebts.map((debt: any) => ({
-        id: debt.id || `onboarding-${Math.random()}`,
-        name: debt.name || debt.creditor || 'Deuda',
-        amount: debt.amount || debt.current_balance || 0,
-        monthlyPayment: debt.monthlyPayment || debt.monthly_payment || 0
-      })) : dbDebts.map(debt => ({
-        id: debt.id,
-        name: debt.creditor,
-        amount: debt.current_balance,
-        monthlyPayment: debt.monthly_payment
-      }))
+      // 7. Procesar deudas combinadas
+      const combinedDebts = []
 
-      const totalDebtBalance = debts.reduce((sum, debt) => sum + debt.amount, 0)
-      const totalMonthlyDebtPayments = debts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
+      // Deudas del onboarding
+      if (onboardingData.debts && onboardingData.debts.length > 0) {
+        onboardingData.debts.forEach((debt: any) => {
+          combinedDebts.push({
+            id: debt.id || `onboarding-${Math.random()}`,
+            name: debt.name || debt.creditor || 'Deuda',
+            creditor: debt.name || debt.creditor || 'Deuda',
+            amount: debt.amount || debt.current_balance || 0,
+            monthlyPayment: debt.monthlyPayment || debt.monthly_payment || 0,
+            source: 'onboarding' as const,
+            isKueski: false
+          })
+        })
+      }
 
-      // 6. Procesar metas financieras
-      const financialGoals = onboardingData.financialGoals || goals.map(goal => goal.title) || []
+      // Préstamo Kueski como deuda
+      if (kueskiLoanData) {
+        combinedDebts.push({
+          id: kueskiLoanData.id,
+          name: 'Préstamo Kueski',
+          creditor: 'Kueski',
+          amount: kueskiLoanData.amount,
+          monthlyPayment: kueskiLoanData.payment_amount * 2, // Quincenal a mensual
+          source: 'kueski' as const,
+          isKueski: true
+        })
+      }
 
-      // 7. Calcular métricas derivadas
+      // Otras deudas de la BD
+      if (dbDebts && dbDebts.length > 0) {
+        dbDebts.forEach(debt => {
+          combinedDebts.push({
+            id: debt.id,
+            name: debt.creditor,
+            creditor: debt.creditor,
+            amount: debt.current_balance,
+            monthlyPayment: debt.monthly_payment,
+            source: 'database' as const,
+            isKueski: false
+          })
+        })
+      }
+
+      console.log('💳 Combined debts:', combinedDebts)
+
+      const totalDebtBalance = combinedDebts.reduce((sum, debt) => sum + debt.amount, 0)
+      const totalMonthlyDebtPayments = combinedDebts.reduce((sum, debt) => sum + debt.monthlyPayment, 0)
+
+      // 8. Procesar metas financieras combinadas
+      const combinedGoals = []
+
+      // Metas del onboarding
+      if (onboardingData.financialGoals && onboardingData.financialGoals.length > 0) {
+        onboardingData.financialGoals.forEach((goalTitle: string, index: number) => {
+          combinedGoals.push({
+            id: `onboarding-goal-${index}`,
+            title: goalTitle,
+            targetAmount: monthlySavingsCapacity * 12, // Estimación
+            currentAmount: currentSavings,
+            progress: currentSavings > 0 ? (currentSavings / (monthlySavingsCapacity * 12)) * 100 : 0,
+            source: 'onboarding' as const
+          })
+        })
+      }
+
+      // Metas de la BD
+      if (dbGoals && dbGoals.length > 0) {
+        dbGoals.forEach(goal => {
+          combinedGoals.push({
+            id: goal.id,
+            title: goal.title,
+            targetAmount: goal.target_amount,
+            currentAmount: goal.current_amount,
+            progress: goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0,
+            source: 'database' as const
+          })
+        })
+      }
+
+      console.log('🎯 Combined goals:', combinedGoals)
+
+      // 9. Calcular métricas derivadas
       const monthlyBalance = totalMonthlyIncome - monthlyExpenses
       const availableCashFlow = monthlyBalance - totalMonthlyDebtPayments
-      const netWorth = currentSavings + (monthlySavingsCapacity * 12)
+      const netWorth = currentSavings - totalDebtBalance
 
-      // 8. Verificar si hay datos reales del onboarding
-      const hasFinancialData = monthlyIncome > 0 || monthlyExpenses > 0 || debts.length > 0 || currentSavings > 0
+      // 10. Verificar si hay datos reales del onboarding
+      const hasFinancialData = monthlyIncome > 0 || monthlyExpenses > 0 || combinedDebts.length > 0 || currentSavings > 0
 
       return {
         userId: user.id,
@@ -175,11 +265,22 @@ export const useUnifiedFinancialData = () => {
         currentSavings,
         monthlySavingsCapacity,
         
-        debts,
+        debts: combinedDebts,
         totalDebtBalance,
         totalMonthlyDebtPayments,
         
-        financialGoals,
+        financialGoals: combinedGoals,
+        
+        kueskiLoan: kueskiLoanData ? {
+          id: kueskiLoanData.id,
+          lender: kueskiLoanData.lender,
+          amount: kueskiLoanData.amount,
+          paymentAmount: kueskiLoanData.payment_amount,
+          remainingPayments: kueskiLoanData.remaining_payments,
+          totalPayments: kueskiLoanData.total_payments,
+          nextPaymentDate: kueskiLoanData.next_payment_date,
+          status: kueskiLoanData.status
+        } : null,
         
         monthlyBalance,
         availableCashFlow,
