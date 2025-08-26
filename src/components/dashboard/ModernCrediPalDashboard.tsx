@@ -54,23 +54,49 @@ export const ModernCrediPalDashboard = () => {
     }
   }
 
-  // Create mock dashboard data from plan
+  // Create mock dashboard data from plan structure - using actual ComprehensiveFinancialPlan properties
   const dashboardData = {
-    greeting: plan.coachMessage?.personalizedGreeting || 'Bienvenido',
-    goals: plan.bigGoals?.map(goal => ({
-      id: goal.id,
-      type: 'short' as const,
-      title: goal.title,
-      emoji: goal.emoji || '🎯',
-      targetAmount: goal.targetAmount,
-      currentAmount: goal.currentAmount,
-      progress: goal.progress,
-      deadline: goal.timeline || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      status: convertStatus(goal.status),
-      actionText: 'Actualizar Progreso'
-    })) || [],
+    greeting: '¡Bienvenido a tu Plan Financiero!',
+    goals: [
+      {
+        id: '1',
+        type: 'short' as const,
+        title: 'Fondo de Emergencia',
+        emoji: '🛡️',
+        targetAmount: plan.fondoEmergencia.metaTotal,
+        currentAmount: plan.fondoEmergencia.progresoActual,
+        progress: Math.round((plan.fondoEmergencia.progresoActual / plan.fondoEmergencia.metaTotal) * 100),
+        deadline: plan.fondoEmergencia.fechaCompletion,
+        status: 'in_progress' as const,
+        actionText: 'Actualizar Progreso'
+      },
+      {
+        id: '2',
+        type: 'medium' as const,
+        title: 'Eliminar Deudas',
+        emoji: '💳',
+        targetAmount: plan.snapshotInicial.hoy.deuda,
+        currentAmount: plan.snapshotInicial.hoy.deuda - plan.snapshotInicial.en12Meses.deuda,
+        progress: Math.round(((plan.snapshotInicial.hoy.deuda - plan.snapshotInicial.en12Meses.deuda) / plan.snapshotInicial.hoy.deuda) * 100),
+        deadline: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'in_progress' as const,
+        actionText: 'Ver Plan'
+      },
+      {
+        id: '3',
+        type: 'long' as const,
+        title: 'Crecimiento Patrimonial',
+        emoji: '📈',
+        targetAmount: plan.crecimientoPatrimonial.año1,
+        currentAmount: plan.snapshotInicial.hoy.ahorro,
+        progress: Math.round((plan.snapshotInicial.hoy.ahorro / plan.crecimientoPatrimonial.año1) * 100),
+        deadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'pending' as const,
+        actionText: 'Comenzar'
+      }
+    ],
     crediMessage: {
-      text: plan.coachMessage?.text || 'Continúa con tus objetivos financieros',
+      text: 'Continúa con tus objetivos financieros. Tu plan está diseñado para ayudarte a alcanzar la estabilidad.',
       type: 'motivational' as const
     }
   }

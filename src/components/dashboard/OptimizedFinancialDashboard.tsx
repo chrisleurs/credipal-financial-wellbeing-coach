@@ -89,10 +89,10 @@ export const OptimizedFinancialDashboard = () => {
   const { data: financialData, isLoading: financialLoading, error: financialError } = useUnifiedFinancialData()
   
   const {
-    aiPlan,
+    plan,
     loading: isLoadingPlan,
-    generateNewPlan,
-    isGeneratingPlan
+    regeneratePlan,
+    isGenerating
   } = useFinancialPlan()
 
   if (financialLoading) {
@@ -142,8 +142,8 @@ export const OptimizedFinancialDashboard = () => {
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando coach..." />}>
             <HeroCoachCard 
               userName={userName}
-              onUpdatePlan={generateNewPlan}
-              isLoading={isGeneratingPlan}
+              onUpdatePlan={regeneratePlan}
+              isLoading={isGenerating}
             />
           </Suspense>
         </section>
@@ -195,16 +195,17 @@ export const OptimizedFinancialDashboard = () => {
         </section>
 
         {/* 6. AI Plan Section (if available) */}
-        {aiPlan && (
+        {plan && (
           <section id="ai-plan" className="mt-8">
             <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-6">
               <h2 className="text-xl font-bold mb-4">Tu Plan Financiero Personalizado</h2>
               <div className="space-y-4">
-                {aiPlan.coachMessage && (
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <p className="text-sm text-muted-foreground">{aiPlan.coachMessage.text}</p>
-                  </div>
-                )}
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <p className="text-sm text-muted-foreground">
+                    Plan generado con tus datos financieros actuales. 
+                    Incluye estrategias para el fondo de emergencia, pago de deudas y crecimiento patrimonial.
+                  </p>
+                </div>
               </div>
             </div>
           </section>
