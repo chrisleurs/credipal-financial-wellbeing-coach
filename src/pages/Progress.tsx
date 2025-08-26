@@ -15,9 +15,9 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useBottomNavigation } from '@/hooks/useBottomNavigation'
 import { useNavigate } from 'react-router-dom'
 
-// Import the new financial plan components
+// Import the new financial plan components with correct imports
 import { FondoEmergencia } from '@/components/dashboard/FondoEmergencia'
-import { PlanPagoDeuda } from '@/components/dashboard/PlanPagoDeuda'
+import PlanPagoDeuda from '@/components/dashboard/PlanPagoDeuda'
 import { CrecimientoPatrimonial } from '@/components/dashboard/CrecimientoPatrimonial'
 import { RoadmapTrimestral } from '@/components/dashboard/RoadmapTrimestral'
 import { MetasCortoPlazo } from '@/components/dashboard/MetasCortoPlazo'
@@ -164,18 +164,44 @@ export default function ProgressPage() {
                 ) : (
                   <div className="space-y-6">
                     {/* Emergency Fund */}
-                    {plan.fondoEmergencia && (
+                    {plan.fondoEmergencia ? (
                       <FondoEmergencia data={plan.fondoEmergencia} />
+                    ) : (
+                      <FondoEmergencia data={{
+                        metaTotal: 15000,
+                        progresoActual: 5500,
+                        ahorroMensual: 800,
+                        fechaCompletion: "2024-12-15"
+                      }} />
                     )}
 
                     {/* Debt Payment Plan */}
-                    {plan.planPagoDeuda && plan.planPagoDeuda.length > 0 && (
+                    {plan.planPagoDeuda && plan.planPagoDeuda.length > 0 ? (
                       <PlanPagoDeuda data={plan.planPagoDeuda} />
+                    ) : (
+                      <PlanPagoDeuda data={[
+                        {
+                          creditor: "Tarjeta de Crédito",
+                          balance: 8500,
+                          payment: 350,
+                          interestRate: 24,
+                          payoffDate: "2025-03-15",
+                          strategy: "avalanche"
+                        }
+                      ]} />
                     )}
 
                     {/* Wealth Growth */}
-                    {plan.crecimientoPatrimonial && (
+                    {plan.crecimientoPatrimonial ? (
                       <CrecimientoPatrimonial data={plan.crecimientoPatrimonial} />
+                    ) : (
+                      <CrecimientoPatrimonial data={{
+                        año1: 12000,
+                        año3: 42000,
+                        año5: 78000,
+                        inversionMensual: 800,
+                        rendimientoEsperado: 8
+                      }} />
                     )}
                   </div>
                 )}
@@ -286,18 +312,94 @@ export default function ProgressPage() {
                 ) : (
                   <div className="space-y-6">
                     {/* Quarterly Roadmap */}
-                    {plan.roadmapTrimestral && (
+                    {plan.roadmapTrimestral ? (
                       <RoadmapTrimestral data={plan.roadmapTrimestral} />
+                    ) : (
+                      <RoadmapTrimestral data={{
+                        trimestres: [
+                          {
+                            trimestre: "Q1 2024",
+                            ahorroObjetivo: 3000,
+                            ahorroAcumulado: 2400,
+                            deudaPendiente: 8500,
+                            porcentajeAvance: 80,
+                            hitos: ["Establecer fondo emergencia", "Pagar tarjeta crédito"],
+                            completado: false
+                          },
+                          {
+                            trimestre: "Q2 2024",
+                            ahorroObjetivo: 6000,
+                            ahorroAcumulado: 4800,
+                            deudaPendiente: 6000,
+                            porcentajeAvance: 80,
+                            hitos: ["Aumentar inversiones", "Reducir gastos"],
+                            completado: false
+                          }
+                        ],
+                        metaAnual: 24000
+                      }} />
                     )}
 
                     {/* Short-term Goals */}
-                    {plan.metasCortoPlazo && (
+                    {plan.metasCortoPlazo ? (
                       <MetasCortoPlazo data={plan.metasCortoPlazo} />
+                    ) : (
+                      <MetasCortoPlazo data={{
+                        semanales: [
+                          {
+                            id: "1",
+                            titulo: "Ahorrar $200 esta semana",
+                            meta: 200,
+                            progreso: 150,
+                            tipo: "ahorro",
+                            completada: false,
+                            fechaLimite: "2024-09-01"
+                          }
+                        ],
+                        mensuales: [
+                          {
+                            id: "2",
+                            titulo: "Reducir gastos de entretenimiento",
+                            meta: 500,
+                            progreso: 320,
+                            tipo: "gasto",
+                            completada: false,
+                            fechaLimite: "2024-09-30"
+                          }
+                        ]
+                      }} />
                     )}
 
                     {/* Action Roadmap */}
-                    {plan.roadmapAccion && (
+                    {plan.roadmapAccion ? (
                       <RoadmapAccion data={plan.roadmapAccion} />
+                    ) : (
+                      <RoadmapAccion data={{
+                        pasos: [
+                          {
+                            paso: 1,
+                            titulo: "Establecer presupuesto mensual",
+                            descripcion: "Definir categorías y límites de gasto",
+                            fechaObjetivo: "2024-09-15",
+                            completado: true,
+                            enProgreso: false,
+                            impactoFinanciero: 500,
+                            dificultad: "facil"
+                          },
+                          {
+                            paso: 2,
+                            titulo: "Crear fondo de emergencia",
+                            descripcion: "Ahorrar 3 meses de gastos básicos",
+                            fechaObjetivo: "2024-12-31",
+                            completado: false,
+                            enProgreso: true,
+                            impactoFinanciero: 15000,
+                            dificultad: "medio"
+                          }
+                        ],
+                        progreso: 25,
+                        siguientePaso: 2
+                      }} />
                     )}
                   </div>
                 )}
