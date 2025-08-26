@@ -5,77 +5,8 @@ import { useOptimizedFinancialData } from './useOptimizedFinancialData'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from './use-toast'
 
-export interface ComprehensiveFinancialPlan {
-  snapshotInicial: {
-    hoy: {
-      ingresos: number
-      gastos: number
-      deuda: number
-      ahorro: number
-    }
-    en12Meses: {
-      deuda: number
-      fondoEmergencia: number
-      patrimonio: number
-    }
-  }
-  presupuestoMensual: {
-    necesidades: { porcentaje: number; cantidad: number }
-    estiloVida: { porcentaje: number; cantidad: number }
-    ahorro: { porcentaje: number; cantidad: number }
-  }
-  planPagoDeuda: Array<{
-    deuda: string
-    balanceActual: number
-    fechaLiquidacion: string
-    pagoMensual: number
-    interesesAhorrados: number
-  }>
-  fondoEmergencia: {
-    metaTotal: number
-    progresoActual: number
-    ahorroMensual: number
-    fechaCompletion: string
-  }
-  crecimientoPatrimonial: {
-    año1: number
-    año3: number
-    año5: number
-  }
-  roadmapTrimestral: Array<{
-    trimestre: string
-    ahorroAcumulado: number
-    deudaPendiente: number
-    avance: number
-  }>
-  metasCortoPlazo: {
-    semanales: Array<{
-      titulo: string
-      meta: number
-      progreso: number
-      tipo: string
-    }>
-    mensuales: Array<{
-      titulo: string
-      meta: number
-      progreso: number
-      tipo: string
-    }>
-  }
-  roadmapAccion: Array<{
-    paso: number
-    titulo: string
-    fechaObjetivo: string
-    completado: boolean
-  }>
-  metadata?: {
-    generatedAt: string
-    userId: string
-    monthlyBalance: number
-    dataQuality: number
-    planVersion: string
-  }
-}
+// Import the existing type instead of redefining it
+import type { ComprehensiveFinancialPlan } from './useFinancialPlanGenerator'
 
 export const useFinancialPlan = (userId?: string) => {
   const { user } = useAuth()
@@ -189,6 +120,25 @@ export const useFinancialPlan = (userId?: string) => {
     }
   })
 
+  // Dummy functions for backward compatibility
+  const updateBigGoal = async (goalId: string, updates: any) => {
+    console.log('updateBigGoal called:', goalId, updates)
+    // For now, this is a placeholder - could be implemented later
+    toast({
+      title: "Función en desarrollo",
+      description: "La actualización de metas estará disponible pronto"
+    })
+  }
+
+  const completeMiniGoal = async (goalId: string) => {
+    console.log('completeMiniGoal called:', goalId)
+    // For now, this is a placeholder - could be implemented later
+    toast({
+      title: "Función en desarrollo", 
+      description: "La completación de mini-metas estará disponible pronto"
+    })
+  }
+
   // Helper function to refresh plan
   const regeneratePlan = () => {
     regeneratePlanMutation.mutate()
@@ -226,6 +176,8 @@ export const useFinancialPlan = (userId?: string) => {
     // Control functions
     regeneratePlan,
     updatePlan,
+    updateBigGoal,
+    completeMiniGoal,
     
     // Error state
     error: error?.message || null,
@@ -236,5 +188,3 @@ export const useFinancialPlan = (userId?: string) => {
   }
 }
 
-// Export the type for external use
-export type { ComprehensiveFinancialPlan }

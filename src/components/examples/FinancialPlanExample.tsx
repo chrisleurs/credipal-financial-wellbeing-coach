@@ -16,11 +16,8 @@ export const FinancialPlanExample: React.FC = () => {
     plan,
     loading,
     error,
-    loadingStates,
-    updateBigGoal,
-    completeMiniGoal,
-    completeAction,
-    refreshPlan,
+    regeneratePlan,
+    isGenerating,
     isStale,
     lastUpdated
   } = useFinancialPlan()
@@ -40,12 +37,12 @@ export const FinancialPlanExample: React.FC = () => {
         <CardContent className="p-6">
           <p className="text-red-600">Error: {error}</p>
           <Button 
-            onClick={refreshPlan} 
+            onClick={regeneratePlan} 
             variant="outline" 
             className="mt-4"
-            disabled={loadingStates.refreshing}
+            disabled={isGenerating}
           >
-            {loadingStates.refreshing ? (
+            {isGenerating ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -76,7 +73,7 @@ export const FinancialPlanExample: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Mi Plan Financiero</h2>
-          <p className="text-gray-600">{plan.coachMessage.personalizedGreeting}</p>
+          <p className="text-gray-600">¡Tu plan personalizado está listo!</p>
         </div>
         <div className="flex items-center gap-2">
           {isStale && (
@@ -85,12 +82,12 @@ export const FinancialPlanExample: React.FC = () => {
             </Badge>
           )}
           <Button
-            onClick={refreshPlan}
+            onClick={regeneratePlan}
             variant="outline"
             size="sm"
-            disabled={loadingStates.refreshing}
+            disabled={isGenerating}
           >
-            {loadingStates.refreshing ? (
+            {isGenerating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4" />
@@ -99,162 +96,122 @@ export const FinancialPlanExample: React.FC = () => {
         </div>
       </div>
 
-      {/* Coach Message */}
+      {/* Snapshot Inicial */}
       <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
         <CardContent className="p-6">
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">💪</div>
-            <div>
-              <p className="text-lg font-medium">{plan.coachMessage.text}</p>
-              {plan.coachMessage.nextStepSuggestion && (
-                <p className="text-blue-100 text-sm mt-2">
-                  {plan.coachMessage.nextStepSuggestion}
-                </p>
-              )}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold">${plan.snapshotInicial.hoy.ingresos.toLocaleString()}</div>
+              <div className="text-sm opacity-90">Ingresos</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">${plan.snapshotInicial.hoy.gastos.toLocaleString()}</div>
+              <div className="text-sm opacity-90">Gastos</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">${plan.snapshotInicial.hoy.deuda.toLocaleString()}</div>
+              <div className="text-sm opacity-90">Deuda Actual</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">${plan.snapshotInicial.hoy.ahorro.toLocaleString()}</div>
+              <div className="text-sm opacity-90">Ahorros</div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Overall Progress */}
+      {/* Presupuesto Mensual */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Progreso General
+            Presupuesto Mensual Recomendado
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span>Semana {plan.weekNumber} de {plan.totalWeeks}</span>
-              <span>{plan.overallProgress}%</span>
+            <div className="flex justify-between items-center">
+              <span>Necesidades ({plan.presupuestoMensual.necesidades.porcentaje}%)</span>
+              <span className="font-medium">${plan.presupuestoMensual.necesidades.cantidad.toLocaleString()}</span>
             </div>
-            <Progress value={plan.overallProgress} className="h-3" />
+            <Progress value={plan.presupuestoMensual.necesidades.porcentaje} className="h-2" />
+            
+            <div className="flex justify-between items-center">
+              <span>Estilo de Vida ({plan.presupuestoMensual.estiloVida.porcentaje}%)</span>
+              <span className="font-medium">${plan.presupuestoMensual.estiloVida.cantidad.toLocaleString()}</span>
+            </div>
+            <Progress value={plan.presupuestoMensual.estiloVida.porcentaje} className="h-2" />
+            
+            <div className="flex justify-between items-center">
+              <span>Ahorro ({plan.presupuestoMensual.ahorro.porcentaje}%)</span>
+              <span className="font-medium">${plan.presupuestoMensual.ahorro.cantidad.toLocaleString()}</span>
+            </div>
+            <Progress value={plan.presupuestoMensual.ahorro.porcentaje} className="h-2" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Big Goals */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {plan.bigGoals.map((goal) => (
-          <Card key={goal.id} className="relative">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{goal.emoji}</span>
-                <div>
-                  <CardTitle className="text-lg">{goal.title}</CardTitle>
-                  <p className="text-sm text-gray-600">{goal.timeline}</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Progreso</span>
-                  <span>{Math.round(goal.progress)}%</span>
-                </div>
-                <Progress value={goal.progress} className="h-2" />
-              </div>
-              
-              <div className="flex justify-between text-sm">
-                <span>Actual: ${goal.currentAmount.toLocaleString()}</span>
-                <span>Meta: ${goal.targetAmount.toLocaleString()}</span>
-              </div>
-
-              <Button
-                onClick={() => updateBigGoal(goal.id, { 
-                  progress: Math.min(goal.progress + 10, 100) 
-                })}
-                disabled={loadingStates.updatingBigGoal}
-                size="sm"
-                className="w-full"
-              >
-                {loadingStates.updatingBigGoal ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                Actualizar Progreso +10%
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Mini Goals */}
+      {/* Fondo de Emergencia */}
       <Card>
         <CardHeader>
-          <CardTitle>Mini-Metas de la Semana</CardTitle>
+          <CardTitle>Fondo de Emergencia</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {plan.miniGoals.map((miniGoal) => (
-            <div 
-              key={miniGoal.id}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{miniGoal.emoji}</span>
-                <div>
-                  <p className="font-medium">{miniGoal.title}</p>
-                  <p className="text-sm text-gray-600">
-                    {miniGoal.currentValue}/{miniGoal.targetValue} {miniGoal.unit}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Badge variant={miniGoal.isCompleted ? "default" : "secondary"}>
-                  {miniGoal.points} pts
-                </Badge>
-                {!miniGoal.isCompleted && (
-                  <Button
-                    onClick={() => completeMiniGoal(miniGoal.id)}
-                    disabled={loadingStates.updatingMiniGoal}
-                    size="sm"
-                  >
-                    {loadingStates.updatingMiniGoal ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Completar"
-                    )}
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
+        <CardContent className="space-y-4">
+          <div className="flex justify-between text-sm">
+            <span>Progreso: ${plan.fondoEmergencia.progresoActual.toLocaleString()}</span>
+            <span>Meta: ${plan.fondoEmergencia.metaTotal.toLocaleString()}</span>
+          </div>
+          <Progress 
+            value={(plan.fondoEmergencia.progresoActual / plan.fondoEmergencia.metaTotal) * 100} 
+            className="h-3" 
+          />
+          <p className="text-sm text-gray-600">
+            Ahorro mensual sugerido: ${plan.fondoEmergencia.ahorroMensual.toLocaleString()}
+          </p>
+          <p className="text-sm text-gray-600">
+            Fecha estimada de completación: {plan.fondoEmergencia.fechaCompletion}
+          </p>
         </CardContent>
       </Card>
 
-      {/* Immediate Action */}
-      {!plan.immediateAction.isCompleted && (
-        <Card className="border-orange-200 bg-orange-50">
+      {/* Metas de Corto Plazo */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <span className="text-xl">{plan.immediateAction.emoji}</span>
-              Acción Inmediata
-            </CardTitle>
+            <CardTitle>Metas Semanales</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="font-medium">{plan.immediateAction.title}</p>
-              <p className="text-sm text-gray-600">{plan.immediateAction.description}</p>
-              <p className="text-xs text-orange-600 mt-1">
-                Tiempo estimado: {plan.immediateAction.estimatedMinutes} minutos
-              </p>
-            </div>
-            
-            <Button
-              onClick={() => completeAction(plan.immediateAction.id)}
-              disabled={loadingStates.completingAction}
-              className="w-full"
-            >
-              {loadingStates.completingAction ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Marcar como Completada
-            </Button>
+          <CardContent className="space-y-3">
+            {plan.metasCortoPlazo.semanales.map((meta, index) => (
+              <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{meta.titulo}</span>
+                  <Badge variant={meta.tipo === 'ahorro' ? 'default' : 'destructive'}>
+                    ${meta.meta.toLocaleString()}
+                  </Badge>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
-      )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Metas Mensuales</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {plan.metasCortoPlazo.mensuales.map((meta, index) => (
+              <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{meta.titulo}</span>
+                  <Badge variant={meta.tipo === 'ahorro' ? 'default' : 'destructive'}>
+                    ${meta.meta.toLocaleString()}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Debug Info */}
       {process.env.NODE_ENV === 'development' && (
@@ -263,12 +220,10 @@ export const FinancialPlanExample: React.FC = () => {
             <CardTitle className="text-sm">Debug Info</CardTitle>
           </CardHeader>
           <CardContent className="text-xs space-y-1">
-            <p>Plan ID: {plan.id}</p>
             <p>Última actualización: {lastUpdated}</p>
             <p>Es obsoleto: {isStale ? 'Sí' : 'No'}</p>
-            <p>Metodología: {plan.methodology}</p>
-            <p>Racha: {plan.stats.streak} días</p>
-            <p>Puntos totales: {plan.stats.totalPoints}</p>
+            <p>Deuda inicial: ${plan.snapshotInicial.hoy.deuda.toLocaleString()}</p>
+            <p>Proyección 12 meses: ${plan.snapshotInicial.en12Meses.patrimonio.toLocaleString()}</p>
           </CardContent>
         </Card>
       )}
@@ -277,3 +232,4 @@ export const FinancialPlanExample: React.FC = () => {
 }
 
 export default FinancialPlanExample
+

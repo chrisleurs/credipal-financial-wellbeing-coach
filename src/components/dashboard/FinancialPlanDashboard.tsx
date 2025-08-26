@@ -75,22 +75,48 @@ export const FinancialPlanDashboard = () => {
     }
   }
 
-  // Create mock dashboard data from plan
+  // Create mock dashboard data from plan structure
   const dashboardData = {
-    greeting: plan.coachMessage?.personalizedGreeting || 'Bienvenido',
-    motivationalMessage: plan.coachMessage?.text || 'Sigue trabajando en tus objetivos financieros',
-    goals: plan.bigGoals?.map(goal => ({
-      id: goal.id,
-      type: 'short' as const,
-      title: goal.title,
-      emoji: goal.emoji || '🎯',
-      targetAmount: goal.targetAmount,
-      currentAmount: goal.currentAmount,
-      deadline: goal.timeline || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 3 months from now as fallback
-      status: convertStatus(goal.status),
-      progress: goal.progress,
-      actionText: 'Actualizar Progreso'
-    })) || [],
+    greeting: '¡Hola! Tu plan financiero está listo',
+    motivationalMessage: 'Sigues haciendo un gran trabajo con tus finanzas',
+    goals: [
+      {
+        id: '1',
+        type: 'short' as const,
+        title: 'Fondo de Emergencia',
+        emoji: '🛡️',
+        targetAmount: plan.fondoEmergencia.metaTotal,
+        currentAmount: plan.fondoEmergencia.progresoActual,
+        deadline: plan.fondoEmergencia.fechaCompletion,
+        status: 'in_progress' as const,
+        progress: Math.round((plan.fondoEmergencia.progresoActual / plan.fondoEmergencia.metaTotal) * 100),
+        actionText: 'Actualizar Progreso'
+      },
+      {
+        id: '2',
+        type: 'medium' as const,
+        title: 'Eliminar Deudas',
+        emoji: '💳',
+        targetAmount: plan.snapshotInicial.hoy.deuda,
+        currentAmount: plan.snapshotInicial.hoy.deuda - plan.snapshotInicial.en12Meses.deuda,
+        deadline: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'in_progress' as const,
+        progress: Math.round(((plan.snapshotInicial.hoy.deuda - plan.snapshotInicial.en12Meses.deuda) / plan.snapshotInicial.hoy.deuda) * 100),
+        actionText: 'Ver Plan'
+      },
+      {
+        id: '3',
+        type: 'long' as const,
+        title: 'Crecimiento Patrimonial',
+        emoji: '📈',
+        targetAmount: plan.crecimientoPatrimonial.año1,
+        currentAmount: plan.snapshotInicial.hoy.ahorro,
+        deadline: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'pending' as const,
+        progress: Math.round((plan.snapshotInicial.hoy.ahorro / plan.crecimientoPatrimonial.año1) * 100),
+        actionText: 'Comenzar'
+      }
+    ],
     journey: {
       steps: [
         { id: '1', title: 'Configuración inicial', emoji: '🚀', status: 'completed' as const },
@@ -101,20 +127,16 @@ export const FinancialPlanDashboard = () => {
     },
     crediMessage: {
       id: 'credi-1',
-      text: plan.coachMessage?.nextStepSuggestion || 'Continúa con tus objetivos',
+      text: '¡Excelente progreso! Continúa con el plan para alcanzar tus objetivos financieros.',
       timestamp: new Date().toISOString(),
       type: 'motivational' as const
     },
-    lastUpdate: plan.updatedAt || new Date().toISOString()
+    lastUpdate: new Date().toISOString()
   }
 
   const handleGoalAction = (goalId: string) => {
-    // Find the goal and update progress
-    const goal = plan.bigGoals?.find(g => g.id === goalId)
-    if (goal) {
-      const newProgress = Math.min((goal.progress || 0) + 10, 100)
-      updateBigGoal(goalId, { progress: newProgress })
-    }
+    console.log('Actualizando meta:', goalId)
+    updateBigGoal(goalId, { progress: 10 })
   }
 
   const handleViewDetails = (goalId: string) => {
@@ -245,3 +267,4 @@ export const FinancialPlanDashboard = () => {
     </div>
   )
 }
+
