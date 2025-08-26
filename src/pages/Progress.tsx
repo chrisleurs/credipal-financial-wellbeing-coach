@@ -181,7 +181,7 @@ export default function ProgressPage() {
                     ) : (
                       <PlanPagoDeuda data={[
                         {
-                          name: "Tarjeta de Crédito",
+                          deuda: "Tarjeta de Crédito",
                           balance: 8500,
                           payment: 350,
                           interestRate: 24,
