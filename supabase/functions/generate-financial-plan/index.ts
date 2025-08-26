@@ -1,8 +1,11 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,16 +21,23 @@ serve(async (req) => {
   try {
     const { financialData } = await req.json();
     
-    console.log('Generating AI-powered financial plan for:', financialData);
+    console.log('🤖 Generating comprehensive financial plan for:', financialData);
 
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    const totalIncome = financialData.monthlyIncome + (financialData.extraIncome || 0);
-    const totalExpenses = financialData.monthlyExpenses;
-    const totalDebts = financialData.debts?.reduce((sum: number, debt: any) => sum + debt.monthlyPayment, 0) || 0;
-    const monthlyBalance = totalIncome - totalExpenses - totalDebts;
+    // Extraer datos consolidados
+    const monthlyIncome = financialData.totalMonthlyIncome || financialData.monthlyIncome || 0;
+    const monthlyExpenses = financialData.monthlyExpenses || 0;
+    const currentSavings = financialData.currentSavings || 0;
+    const savingsCapacity = financialData.monthlySavingsCapacity || financialData.savingsCapacity || 0;
+    const totalDebt = financialData.debts?.reduce((sum: number, debt: any) => sum + (debt.amount || debt.current_balance || 0), 0) || 0;
+    const monthlyDebtPayments = financialData.debts?.reduce((sum: number, debt: any) => sum + (debt.monthlyPayment || debt.monthly_payment || 0), 0) || 0;
+
+    // Cálculos proyectados
+    const emergencyFund = monthlyExpenses * 3; // 3 meses de gastos
+    const projectedWealth = currentSavings + (savingsCapacity * 12) - (totalDebt * 0.5); // Proyección conservadora
 
     const formatUSD = (amount: number) => {
       return new Intl.NumberFormat('en-US', {
@@ -38,98 +48,120 @@ serve(async (req) => {
       }).format(amount);
     };
 
-    // Enhanced context analysis
-    const financialHealthScore = calculateFinancialHealth(financialData);
-    const userProfile = analyzeUserProfile(financialData);
-    const priorityArea = identifyPriorityArea(financialData);
-
+    // Prompt estructurado para OpenAI
     const enhancedPrompt = `
-Eres Credi, un asistente financiero especializado que conoce íntimamente la situación de ${financialData.name || 'este usuario'}. Genera un plan personalizado usando tu comprensión profunda de sus finanzas.
+Eres un asesor financiero experto mexicano. Analiza estos datos y crea un plan financiero completo con exactamente estos 8 componentes:
 
-PERFIL FINANCIERO COMPLETO:
-👤 Usuario: ${financialData.name || 'Usuario'} 
-💰 Ingresos totales: ${formatUSD(totalIncome)} (principal: ${formatUSD(financialData.monthlyIncome)}, extra: ${formatUSD(financialData.extraIncome || 0)})
-💸 Gastos mensuales: ${formatUSD(totalExpenses)}
-💳 Pagos de deudas: ${formatUSD(totalDebts)}
-📊 Balance disponible: ${formatUSD(monthlyBalance)}
-🎯 Completitud de datos: ${Math.round(financialData.dataCompleteness || 50)}%
+DATOS DEL USUARIO:
+- Ingreso mensual: ${formatUSD(monthlyIncome)}
+- Gastos mensuales: ${formatUSD(monthlyExpenses)}
+- Deudas: ${JSON.stringify(financialData.debts || [])}
+- Ahorros actuales: ${formatUSD(currentSavings)}
+- Capacidad de ahorro: ${formatUSD(savingsCapacity)}
+- Pagos mensuales de deuda: ${formatUSD(monthlyDebtPayments)}
 
-ANÁLISIS DE CONTEXTO:
-🏥 Salud financiera: ${financialHealthScore}/100
-👥 Perfil de usuario: ${userProfile}
-🚨 Área prioritaria: ${priorityArea}
+GENERA UN JSON CON ESTA ESTRUCTURA EXACTA:
 
-DESGLOSE DETALLADO DE GASTOS:
-${Object.entries(financialData.expenseCategories || {}).map(([category, amount]) => 
-  `• ${category}: ${formatUSD(amount as number)}`
-).join('\n') || 'Gastos no categorizados disponibles'}
-
-SITUACIÓN DE DEUDAS:
-${financialData.debts?.length > 0 ? financialData.debts.map((debt: any) => 
-  `• ${debt.name}: ${formatUSD(debt.amount)} (${debt.interestRate}% interés, pago mín: ${formatUSD(debt.monthlyPayment)})`
-).join('\n') : 'Sin deudas registradas - ¡Excelente posición financiera!'}
-
-METAS Y ASPIRACIONES:
-${financialData.goals?.length > 0 ? financialData.goals.map((goal: any) => 
-  `• ${goal.name}: ${formatUSD(goal.target)} (progreso: ${formatUSD(goal.current)}, fecha: ${goal.date})`
-).join('\n') : 'Metas financieras por definir'}
-
-AHORROS ACTUALES:
-• Disponible: ${formatUSD(financialData.currentSavings || 0)}
-• Meta general: ${formatUSD(financialData.savingsGoal || 0)}
-
-Como Credi, tu asistente personal, proporciona:
-
-1. 🎯 RECOMENDACIONES PERSONALIZADAS (4-6 acciones específicas):
-   - Basadas en su situación única y datos reales
-   - Priorizadas por impacto inmediato vs. largo plazo
-   - Considerando su perfil de riesgo y capacidad actual
-
-2. 💡 ESTRATEGIA DE OPTIMIZACIÓN:
-   - Identificar oportunidades de ahorro específicas
-   - Sugerir redistribución inteligente de gastos
-   - Proponer aceleración de metas existentes
-
-3. 📈 ANÁLISIS PREDICTIVO:
-   - Proyección realista de progreso en 3, 6 y 12 meses
-   - Impacto financiero de seguir vs. no seguir el plan
-   - Alertas proactivas sobre patrones preocupantes
-
-4. 🎉 MOTIVACIÓN CONTEXTUALIZADA:
-   - Celebrar fortalezas financieras actuales
-   - Crear momentum con victorias rápidas
-   - Vincular recomendaciones con metas personales
-
-Responde en formato JSON con esta estructura optimizada:
 {
-  "recommendations": [
-    "recomendación específica y accionable 1",
-    "recomendación específica y accionable 2",
-    "etc..."
-  ],
-  "analysis": "análisis profundo de 2-3 párrafos sobre su situación única, patrones identificados, y oportunidades clave",
-  "savingsSuggestion": número_realista_mensual,
-  "budgetBreakdown": {
-    "fixedExpenses": número,
-    "variableExpenses": número,
-    "savings": número,
-    "debtPayments": número,
-    "emergency": número
-  },
-  "timeEstimate": "proyección realista con hitos específicos",
-  "motivationalMessage": "mensaje personal y motivador de 2-3 líneas que reconozca sus fortalezas y anime hacia las metas",
-  "proactiveInsights": [
-    "insight predictivo 1",
-    "insight predictivo 2"
-  ],
-  "priorityActions": [
-    {
-      "action": "acción específica",
-      "timeline": "cuando hacerla",
-      "impact": "beneficio esperado"
+  "snapshotInicial": {
+    "hoy": {
+      "ingresos": ${monthlyIncome},
+      "gastos": ${monthlyExpenses},
+      "deuda": ${totalDebt},
+      "ahorro": ${currentSavings}
+    },
+    "en12Meses": {
+      "deuda": [calcula deuda restante después de 12 meses de pagos],
+      "fondoEmergencia": ${emergencyFund},
+      "patrimonio": [calcula patrimonio proyectado realista]
     }
+  },
+  
+  "presupuestoMensual": {
+    "necesidades": { "porcentaje": [calcula %], "cantidad": [cantidad en pesos] },
+    "estiloVida": { "porcentaje": [calcula %], "cantidad": [cantidad en pesos] },
+    "ahorro": { "porcentaje": [calcula %], "cantidad": [cantidad en pesos] }
+  },
+  
+  "planPagoDeuda": [
+    // Para cada deuda, calcula plan de pago realista
+    {
+      "deuda": "nombre de la deuda",
+      "balanceActual": [balance actual],
+      "fechaLiquidacion": "[fecha ISO realista]",
+      "pagoMensual": [pago mensual sugerido],
+      "interesesAhorrados": [estimado de intereses ahorrados]
+    }
+  ],
+  
+  "fondoEmergencia": {
+    "metaTotal": ${emergencyFund},
+    "progresoActual": ${Math.min(currentSavings, emergencyFund)},
+    "ahorroMensual": [calcula contribución mensual realista],
+    "fechaCompletion": "[fecha ISO cuando se completaría]"
+  },
+  
+  "crecimientoPatrimonial": {
+    "año1": [proyección conservadora año 1],
+    "año3": [proyección año 3], 
+    "año5": [proyección año 5]
+  },
+  
+  "roadmapTrimestral": [
+    {
+      "trimestre": "Q1 2025",
+      "ahorroAcumulado": [ahorro acumulado al final del trimestre],
+      "deudaPendiente": [deuda restante],
+      "avance": [porcentaje de avance hacia metas]
+    },
+    // Generar 4 trimestres
+  ],
+  
+  "metasCortoPlazo": {
+    "semanales": [
+      {
+        "titulo": "[meta específica semanal]",
+        "meta": [cantidad numérica],
+        "progreso": 0,
+        "tipo": "ahorro|deuda|gasto"
+      }
+      // 3-4 metas semanales
+    ],
+    "mensuales": [
+      {
+        "titulo": "[meta específica mensual]",
+        "meta": [cantidad numérica],
+        "progreso": 0,
+        "tipo": "ahorro|deuda|gasto"
+      }
+      // 2-3 metas mensuales
+    ]
+  },
+  
+  "roadmapAccion": [
+    {
+      "paso": 1,
+      "titulo": "[acción prioritaria específica]",
+      "fechaObjetivo": "[fecha ISO]",
+      "completado": false
+    }
+    // 5-6 pasos de acción priorizados
   ]
-}`;
+}
+
+INSTRUCCIONES CRÍTICAS:
+- Todos los cálculos deben ser matemáticamente correctos y realistas
+- Fechas en formato ISO (YYYY-MM-DD)
+- Cantidades sin símbolos de moneda (solo números)
+- Metas semanales/mensuales específicas y alcanzables
+- Considera el contexto financiero mexicano
+- Si no hay deudas, el array planPagoDeuda debe estar vacío []
+- Proyecciones conservadoras pero motivadoras
+- Roadmap trimestral debe cubrir los próximos 12 meses
+
+Responde ÚNICAMENTE con el JSON válido, sin texto adicional.`;
+
+    console.log('🤖 Sending request to OpenAI...');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -138,53 +170,84 @@ Responde en formato JSON con esta estructura optimizada:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-5-2025-08-07',
         messages: [
           { 
             role: 'system', 
-            content: 'Eres Credi, un asistente financiero personal experto que conoce profundamente a cada usuario. Proporcionas análisis detallados, recomendaciones específicas, y motivación personalizada basada en datos reales. Tu objetivo es ser el mejor asesor financiero personal que cada usuario pueda tener.' 
+            content: 'Eres un asesor financiero experto especializado en planes financieros estructurados para usuarios mexicanos. Generas análisis precisos basados en datos reales y proporcionas planes de acción específicos y alcanzables.' 
           },
           { role: 'user', content: enhancedPrompt }
         ],
-        temperature: 0.8,
-        max_tokens: 2000,
+        max_completion_tokens: 2500,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
     
-    console.log('Enhanced AI response:', aiResponse);
+    console.log('🤖 Raw AI response:', aiResponse);
 
     // Parse the JSON response from OpenAI
     let financialPlan;
     try {
       const cleanedResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
       financialPlan = JSON.parse(cleanedResponse);
+      console.log('✅ Parsed financial plan successfully');
     } catch (parseError) {
-      console.error('Error parsing enhanced AI response:', parseError);
-      // Enhanced fallback plan
-      financialPlan = generateEnhancedFallbackPlan(financialData, monthlyBalance);
+      console.error('❌ Error parsing AI response:', parseError);
+      console.error('❌ Raw response was:', aiResponse);
+      
+      // Fallback plan estructurado
+      financialPlan = generateFallbackPlan(financialData, monthlyIncome, monthlyExpenses, totalDebt, currentSavings, savingsCapacity);
     }
 
-    // Add calculated monthly balance and enhanced metadata
-    financialPlan.monthlyBalance = monthlyBalance;
-    financialPlan.financialHealthScore = financialHealthScore;
-    financialPlan.userProfile = userProfile;
-    financialPlan.dataQuality = financialData.dataCompleteness || 50;
+    // Add metadata to plan
+    financialPlan.metadata = {
+      generatedAt: new Date().toISOString(),
+      userId: financialData.userId,
+      monthlyBalance: monthlyIncome - monthlyExpenses,
+      dataQuality: calculateDataQuality(financialData),
+      planVersion: '2.0'
+    };
+
+    // Save to database using Supabase client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { error: saveError } = await supabase
+      .from('financial_plans')
+      .upsert({
+        user_id: financialData.userId,
+        plan_type: 'comprehensive',
+        plan_data: financialPlan,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,plan_type'
+      });
+
+    if (saveError) {
+      console.error('❌ Error saving plan to database:', saveError);
+      // Continue anyway, return the plan even if save failed
+    } else {
+      console.log('✅ Financial plan saved to database successfully');
+    }
 
     return new Response(JSON.stringify(financialPlan), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in enhanced generate-financial-plan function:', error);
+    console.error('❌ Error in comprehensive generate-financial-plan function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Error generating enhanced financial plan' 
+      error: error.message || 'Error generating comprehensive financial plan',
+      timestamp: new Date().toISOString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -192,98 +255,131 @@ Responde en formato JSON con esta estructura optimizada:
   }
 });
 
-function calculateFinancialHealth(data: any): number {
-  let score = 0;
+function generateFallbackPlan(data: any, income: number, expenses: number, debt: number, savings: number, capacity: number) {
+  const emergencyGoal = expenses * 3;
+  const currentDate = new Date();
   
-  // Income stability (20 points)
-  if (data.monthlyIncome > 0) score += 20;
-  if (data.extraIncome > 0) score += 5;
-  
-  // Expense management (25 points)
-  const incomeExpenseRatio = data.monthlyExpenses / (data.monthlyIncome || 1);
-  if (incomeExpenseRatio < 0.5) score += 25;
-  else if (incomeExpenseRatio < 0.7) score += 20;
-  else if (incomeExpenseRatio < 0.9) score += 10;
-  
-  // Debt situation (25 points)
-  const highInterestDebts = data.debts?.filter((d: any) => d.interestRate > 20) || [];
-  if (data.debts?.length === 0) score += 25;
-  else if (highInterestDebts.length === 0) score += 20;
-  else if (highInterestDebts.length <= 2) score += 10;
-  
-  // Savings and goals (20 points)
-  if (data.currentSavings > 0) score += 10;
-  if (data.goals?.length > 0) score += 10;
-  
-  // Data completeness (10 points)
-  score += Math.round((data.dataCompleteness || 50) / 10);
-  
-  return Math.min(score, 100);
-}
-
-function analyzeUserProfile(data: any): string {
-  const balance = (data.monthlyIncome || 0) - (data.monthlyExpenses || 0);
-  const hasDebts = data.debts?.length > 0;
-  const hasGoals = data.goals?.length > 0;
-  
-  if (balance > 500 && !hasDebts && hasGoals) return "Planificador Avanzado";
-  if (balance > 200 && hasGoals) return "Constructor de Patrimonio";
-  if (hasDebts && balance > 0) return "Optimizador de Deudas";
-  if (balance > 0) return "Ahorrador Principiante";
-  return "Equilibrista Financiero";
-}
-
-function identifyPriorityArea(data: any): string {
-  const balance = (data.monthlyIncome || 0) - (data.monthlyExpenses || 0);
-  const highInterestDebts = data.debts?.filter((d: any) => d.interestRate > 20) || [];
-  const emergencyFund = data.currentSavings || 0;
-  
-  if (balance < 0) return "Estabilización de Ingresos";
-  if (highInterestDebts.length > 0) return "Eliminación de Deudas Costosas";
-  if (emergencyFund < 500) return "Fondo de Emergencia";
-  if (data.goals?.length > 0) return "Aceleración de Metas";
-  return "Optimización y Crecimiento";
-}
-
-function generateEnhancedFallbackPlan(data: any, monthlyBalance: number): any {
   return {
-    recommendations: [
-      `Basado en tu balance mensual de ${formatUSD(monthlyBalance)}, prioriza crear un presupuesto detallado`,
-      'Establece un fondo de emergencia como primera meta financiera',
-      'Automatiza tus ahorros para construir disciplina financiera',
-      'Revisa y optimiza tus gastos más grandes cada mes',
-      data.debts?.length > 0 ? 'Enfócate en pagar primero las deudas con mayor interés' : 'Considera opciones de inversión para hacer crecer tu dinero'
-    ].filter(Boolean),
-    analysis: `Tu situación financiera muestra un balance mensual de ${formatUSD(monthlyBalance)}. ${monthlyBalance > 0 ? 'Tienes capacidad de ahorro que podemos optimizar' : 'Necesitamos trabajar en equilibrar ingresos y gastos'}. Con los datos disponibles, veo oportunidades importantes para mejorar tu estabilidad financiera.`,
-    savingsSuggestion: Math.max(monthlyBalance * 0.2, 50),
-    budgetBreakdown: {
-      fixedExpenses: data.monthlyExpenses * 0.6,
-      variableExpenses: data.monthlyExpenses * 0.4,
-      savings: Math.max(monthlyBalance * 0.2, 0),
-      debtPayments: data.debts?.reduce((sum: number, debt: any) => sum + debt.monthlyPayment, 0) || 0,
-      emergency: Math.max(monthlyBalance * 0.1, 0)
+    snapshotInicial: {
+      hoy: {
+        ingresos: income,
+        gastos: expenses,
+        deuda: debt,
+        ahorro: savings
+      },
+      en12Meses: {
+        deuda: Math.max(0, debt - (capacity * 0.5 * 12)),
+        fondoEmergencia: Math.min(emergencyGoal, savings + (capacity * 0.3 * 12)),
+        patrimonio: savings + (capacity * 12) - (debt * 0.3)
+      }
     },
-    timeEstimate: '3-6 meses para establecer bases sólidas, 6-12 meses para ver progreso significativo',
-    motivationalMessage: `¡${data.name || 'Usuario'}, estás dando el paso más importante hacia tu libertad financiera! Con disciplina y este plan personalizado, transformarás tu situación económica.`,
-    proactiveInsights: [
-      monthlyBalance > 0 ? 'Tu capacidad de ahorro te permite construir patrimonio gradualmente' : 'Identifica oportunidades de ingreso adicional o reducción de gastos',
-      'Mantén consistencia en tus hábitos financieros para resultados duraderos'
-    ],
-    priorityActions: [
+    presupuestoMensual: {
+      necesidades: { porcentaje: 50, cantidad: income * 0.5 },
+      estiloVida: { porcentaje: 30, cantidad: income * 0.3 },
+      ahorro: { porcentaje: 20, cantidad: income * 0.2 }
+    },
+    planPagoDeuda: debt > 0 ? [{
+      deuda: "Deuda consolidada",
+      balanceActual: debt,
+      fechaLiquidacion: new Date(currentDate.getTime() + (24 * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+      pagoMensual: Math.max(capacity * 0.4, 200),
+      interesesAhorrados: debt * 0.15
+    }] : [],
+    fondoEmergencia: {
+      metaTotal: emergencyGoal,
+      progresoActual: Math.min(savings, emergencyGoal),
+      ahorroMensual: capacity * 0.3,
+      fechaCompletion: new Date(currentDate.getTime() + (12 * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+    },
+    crecimientoPatrimonial: {
+      año1: savings + (capacity * 12),
+      año3: savings + (capacity * 36) + (capacity * 36 * 0.05),
+      año5: savings + (capacity * 60) + (capacity * 60 * 0.12)
+    },
+    roadmapTrimestral: [
       {
-        action: monthlyBalance > 0 ? 'Separar dinero para fondo de emergencia' : 'Revisar gastos para crear margen de ahorro',
-        timeline: 'Esta semana',
-        impact: monthlyBalance > 0 ? 'Seguridad financiera inmediata' : 'Mayor control sobre tus finanzas'
+        trimestre: "Q1 2025",
+        ahorroAcumulado: capacity * 3,
+        deudaPendiente: Math.max(0, debt - (capacity * 0.4 * 3)),
+        avance: 25
+      },
+      {
+        trimestre: "Q2 2025", 
+        ahorroAcumulado: capacity * 6,
+        deudaPendiente: Math.max(0, debt - (capacity * 0.4 * 6)),
+        avance: 50
+      },
+      {
+        trimestre: "Q3 2025",
+        ahorroAcumulado: capacity * 9, 
+        deudaPendiente: Math.max(0, debt - (capacity * 0.4 * 9)),
+        avance: 75
+      },
+      {
+        trimestre: "Q4 2025",
+        ahorroAcumulado: capacity * 12,
+        deudaPendiente: Math.max(0, debt - (capacity * 0.4 * 12)), 
+        avance: 100
+      }
+    ],
+    metasCortoPlazo: {
+      semanales: [
+        {
+          titulo: `Ahorra $${Math.round(capacity * 0.25 / 4)} esta semana`,
+          meta: Math.round(capacity * 0.25 / 4),
+          progreso: 0,
+          tipo: "ahorro"
+        },
+        {
+          titulo: "Revisa y categoriza gastos diarios",
+          meta: 7,
+          progreso: 0,
+          tipo: "gasto"
+        }
+      ],
+      mensuales: [
+        {
+          titulo: `Reduce deuda en $${Math.round(capacity * 0.4)}`,
+          meta: Math.round(capacity * 0.4),
+          progreso: 0,
+          tipo: "deuda"
+        },
+        {
+          titulo: `Ahorra $${Math.round(capacity * 0.3)} para emergencias`,
+          meta: Math.round(capacity * 0.3),
+          progreso: 0,
+          tipo: "ahorro"
+        }
+      ]
+    },
+    roadmapAccion: [
+      {
+        paso: 1,
+        titulo: "Establecer presupuesto mensual automático",
+        fechaObjetivo: new Date(currentDate.getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        completado: false
+      },
+      {
+        paso: 2,
+        titulo: debt > 0 ? "Consolidar y priorizar pagos de deuda" : "Establecer fondo de emergencia",
+        fechaObjetivo: new Date(currentDate.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        completado: false
+      },
+      {
+        paso: 3,
+        titulo: "Automatizar transferencias de ahorro",
+        fechaObjetivo: new Date(currentDate.getTime() + (14 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        completado: false
       }
     ]
   };
 }
 
-function formatUSD(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount);
+function calculateDataQuality(data: any): number {
+  let score = 0;
+  if (data.monthlyIncome > 0) score += 25;
+  if (data.monthlyExpenses > 0) score += 25;
+  if (data.debts && data.debts.length > 0) score += 25;
+  if (data.financialGoals && data.financialGoals.length > 0) score += 25;
+  return score;
 }

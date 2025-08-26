@@ -1,258 +1,238 @@
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
-import { useConsolidatedFinancialData } from './useConsolidatedFinancialData'
+import { useOptimizedFinancialData } from './useOptimizedFinancialData'
 import { supabase } from '@/integrations/supabase/client'
-import type { FinancialGoal } from '@/types/financialPlan'
+import { useToast } from './use-toast'
 
-interface GeneratedPlan {
-  id: string
-  goals: FinancialGoal[]
-  nextPayments: Array<{
-    id: string
-    type: 'debt' | 'goal'
-    name: string
-    amount: number
-    dueDate: string
-    priority: 'high' | 'medium' | 'low'
+export interface ComprehensiveFinancialPlan {
+  snapshotInicial: {
+    hoy: {
+      ingresos: number
+      gastos: number
+      deuda: number
+      ahorro: number
+    }
+    en12Meses: {
+      deuda: number
+      fondoEmergencia: number
+      patrimonio: number
+    }
+  }
+  presupuestoMensual: {
+    necesidades: { porcentaje: number; cantidad: number }
+    estiloVida: { porcentaje: number; cantidad: number }
+    ahorro: { porcentaje: number; cantidad: number }
+  }
+  planPagoDeuda: Array<{
+    deuda: string
+    balanceActual: number
+    fechaLiquidacion: string
+    pagoMensual: number
+    interesesAhorrados: number
   }>
-  upcomingMilestones: Array<{
-    id: string
-    title: string
-    targetDate: string
-    progress: number
-    description: string
+  fondoEmergencia: {
+    metaTotal: number
+    progresoActual: number
+    ahorroMensual: number
+    fechaCompletion: string
+  }
+  crecimientoPatrimonial: {
+    año1: number
+    año3: number
+    año5: number
+  }
+  roadmapTrimestral: Array<{
+    trimestre: string
+    ahorroAcumulado: number
+    deudaPendiente: number
+    avance: number
   }>
-  motivationalMessage: string
-  recommendations: string[]
-  actionPlan?: Array<{
-    title: string
-    description: string
-    timeline?: string
-    priority: 'high' | 'medium' | 'low'
+  metasCortoPlazo: {
+    semanales: Array<{
+      titulo: string
+      meta: number
+      progreso: number
+      tipo: string
+    }>
+    mensuales: Array<{
+      titulo: string
+      meta: number
+      progreso: number
+      tipo: string
+    }>
+  }
+  roadmapAccion: Array<{
+    paso: number
+    titulo: string
+    fechaObjetivo: string
+    completado: boolean
   }>
-  summary?: string
+  metadata?: {
+    generatedAt: string
+    userId: string
+    monthlyBalance: number
+    dataQuality: number
+    planVersion: string
+  }
 }
 
 export const useFinancialPlanGenerator = () => {
   const { user } = useAuth()
-  const { consolidatedData, isLoading: isDataLoading } = useConsolidatedFinancialData()
-  const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [hasPlan, setHasPlan] = useState(false)
+  const { data: optimizedData, isLoading: isLoadingData } = useOptimizedFinancialData()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const [generatedPlan, setGeneratedPlan] = useState<ComprehensiveFinancialPlan | null>(null)
 
-  // Check if user already has a plan - Fixed to handle multiple rows
-  const checkExistingPlan = async () => {
-    if (!user?.id) return
+  // Check if user has enough data for plan generation
+  const hasCompleteData = optimizedData?.hasRealData && optimizedData?.monthlyIncome > 0
 
-    try {
+  // Generate comprehensive financial plan
+  const generatePlanMutation = useMutation({
+    mutationFn: async (): Promise<ComprehensiveFinancialPlan> => {
+      if (!user?.id || !optimizedData) {
+        throw new Error('User not authenticated or missing financial data')
+      }
+
+      console.log('🚀 Generating comprehensive financial plan with data:', optimizedData)
+
+      // Prepare consolidated data for OpenAI
+      const consolidatedData = {
+        userId: user.id,
+        totalMonthlyIncome: optimizedData.monthlyIncome,
+        monthlyIncome: optimizedData.monthlyIncome, 
+        monthlyExpenses: optimizedData.monthlyExpenses,
+        currentSavings: optimizedData.currentSavings,
+        monthlySavingsCapacity: optimizedData.savingsCapacity,
+        savingsCapacity: optimizedData.savingsCapacity,
+        debts: optimizedData.activeDebts.map(debt => ({
+          name: debt.creditor,
+          creditor: debt.creditor,
+          amount: debt.balance,
+          current_balance: debt.balance,
+          monthlyPayment: debt.payment,
+          monthly_payment: debt.payment
+        })),
+        financialGoals: optimizedData.activeGoals.map(goal => goal.title),
+        expenseCategories: optimizedData.expenseCategories
+      }
+
+      console.log('📊 Sending consolidated data to AI:', consolidatedData)
+
+      const { data: aiPlan, error } = await supabase.functions.invoke('generate-financial-plan', {
+        body: { financialData: consolidatedData }
+      })
+
+      if (error) {
+        console.error('❌ Error generating financial plan:', error)
+        throw error
+      }
+
+      console.log('✅ Generated comprehensive financial plan:', aiPlan)
+      return aiPlan as ComprehensiveFinancialPlan
+    },
+    onSuccess: (plan) => {
+      setGeneratedPlan(plan)
+      toast({
+        title: "¡Plan financiero generado!",
+        description: "Tu plan personalizado está listo con todos los componentes",
+      })
+    },
+    onError: (error) => {
+      console.error('❌ Error generating plan:', error)
+      toast({
+        title: "Error al generar plan",
+        description: "No se pudo generar tu plan financiero. Intenta nuevamente.",
+        variant: "destructive"
+      })
+    }
+  })
+
+  // Get existing plan from database
+  const existingPlanQuery = useQuery({
+    queryKey: ['comprehensive-financial-plan', user?.id],
+    queryFn: async (): Promise<ComprehensiveFinancialPlan | null> => {
+      if (!user?.id) return null
+
       const { data, error } = await supabase
         .from('financial_plans')
-        .select('plan_data')
+        .select('plan_data, created_at, updated_at')
         .eq('user_id', user.id)
+        .eq('plan_type', 'comprehensive')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
+        .maybeSingle()
 
-      if (data && data.length > 0 && data[0]?.plan_data && !error) {
-        const planData = data[0].plan_data as any
-        setGeneratedPlan(planData)
-        setHasPlan(true)
-      } else {
-        setHasPlan(false)
-      }
-    } catch (error) {
-      console.error('Error checking existing plan:', error)
-      setHasPlan(false)
-    }
-  }
-
-  const generatePlan = async () => {
-    if (!user?.id || !consolidatedData) return
-
-    setIsGenerating(true)
-    setError(null)
-
-    try {
-      // Generar goals basados en la situación financiera
-      const goals: FinancialGoal[] = []
-      
-      // Goal 1: Fondo de emergencia (siempre prioritario)
-      const emergencyFundTarget = consolidatedData.monthlyExpenses * 6
-      goals.push({
-        id: 'emergency-fund',
-        type: 'short',
-        title: 'Fondo de Emergencia',
-        emoji: '🛡️',
-        targetAmount: emergencyFundTarget,
-        currentAmount: consolidatedData.currentSavings,
-        deadline: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        status: consolidatedData.currentSavings >= emergencyFundTarget ? 'completed' : 'in_progress',
-        progress: Math.min((consolidatedData.currentSavings / emergencyFundTarget) * 100, 100),
-        actionText: 'Ahorrar más'
-      })
-
-      // Goal 2: Reducción de deudas (si existen)
-      if (consolidatedData.totalDebtBalance > 0) {
-        goals.push({
-          id: 'debt-reduction',
-          type: 'medium',
-          title: 'Libertad de Deudas',
-          emoji: '💳',
-          targetAmount: consolidatedData.totalDebtBalance,
-          currentAmount: 0,
-          deadline: new Date(Date.now() + 12 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'in_progress',
-          progress: 0,
-          actionText: 'Pagar deudas'
-        })
+      if (error) {
+        console.error('Error fetching existing plan:', error)
+        return null
       }
 
-      // Goal 3: Meta de ahorro a largo plazo
-      const longTermSavingsTarget = consolidatedData.monthlyIncome * 12
-      goals.push({
-        id: 'long-term-savings',
-        type: 'long',
-        title: 'Meta de Ahorro Anual',
-        emoji: '🏡',
-        targetAmount: longTermSavingsTarget,
-        currentAmount: 0,
-        deadline: new Date(Date.now() + 12 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'pending',
-        progress: 0,
-        actionText: 'Comenzar a ahorrar'
-      })
-
-      // Generar próximos pagos
-      const nextPayments = []
-      
-      // Pagos de deudas
-      consolidatedData.debts.forEach(debt => {
-        nextPayments.push({
-          id: `debt-${debt.id}`,
-          type: 'debt' as const,
-          name: debt.creditor,
-          amount: debt.monthly_payment,
-          dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'high' as const
-        })
-      })
-
-      // Próximas metas a cumplir
-      const upcomingMilestones = [
-        {
-          id: 'emergency-25',
-          title: '25% del Fondo de Emergencia',
-          targetDate: new Date(Date.now() + 2 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-          progress: Math.min((consolidatedData.currentSavings / (emergencyFundTarget * 0.25)) * 100, 100),
-          description: `Alcanzar $${(emergencyFundTarget * 0.25).toLocaleString()}`
-        },
-        {
-          id: 'debt-50',
-          title: 'Reducir 50% de Deudas',
-          targetDate: new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000).toISOString(),
-          progress: 0,
-          description: `Pagar $${(consolidatedData.totalDebtBalance * 0.5).toLocaleString()}`
-        }
-      ]
-
-      // Mensaje motivacional basado en la situación
-      let motivationalMessage = "¡Bienvenido a tu nuevo plan financiero!"
-      if (consolidatedData.savingsCapacity > 0) {
-        motivationalMessage = `¡Excelente! Tienes $${consolidatedData.savingsCapacity.toLocaleString()} disponibles mensualmente. Tu libertad financiera está al alcance.`
-      } else if (consolidatedData.savingsCapacity < 0) {
-        motivationalMessage = "Vamos a optimizar tus finanzas. Cada pequeño cambio te acerca a la estabilidad."
+      if (data?.plan_data) {
+        return data.plan_data as ComprehensiveFinancialPlan
       }
 
-      // Recomendaciones personalizadas
-      const recommendations = []
-      if (consolidatedData.savingsCapacity <= 0) {
-        recommendations.push("Revisa tus gastos mensuales para encontrar áreas de optimización")
-      }
-      if (consolidatedData.totalDebtBalance > consolidatedData.monthlyIncome * 3) {
-        recommendations.push("Considera consolidar tus deudas para reducir intereses")
-      }
-      if (consolidatedData.currentSavings < consolidatedData.monthlyExpenses * 3) {
-        recommendations.push("Prioriza crear un fondo de emergencia")
-      }
-      recommendations.push("Automatiza tus ahorros para crear disciplina financiera")
+      return null
+    },
+    enabled: !!user?.id,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours cache
+  })
 
-      // Action plan
-      const actionPlan = [
-        {
-          title: "Establece tu fondo de emergencia",
-          description: "Separa un monto fijo mensual hasta alcanzar 6 meses de gastos",
-          timeline: "0-6 meses",
-          priority: 'high' as const
-        },
-        {
-          title: "Optimiza tus gastos",
-          description: "Identifica gastos innecesarios y redirige ese dinero a tus metas",
-          timeline: "Inmediato",
-          priority: 'high' as const
-        }
-      ]
+  // Save plan to database
+  const savePlanMutation = useMutation({
+    mutationFn: async (plan: ComprehensiveFinancialPlan) => {
+      if (!user?.id) throw new Error('User not authenticated')
 
-      const plan: GeneratedPlan = {
-        id: `plan-${Date.now()}`,
-        goals,
-        nextPayments,
-        upcomingMilestones,
-        motivationalMessage,
-        recommendations,
-        actionPlan,
-        summary: "Plan personalizado basado en tu situación financiera actual"
-      }
-
-      // Guardar el plan en la base de datos
-      const { error: saveError } = await supabase
+      const { error } = await supabase
         .from('financial_plans')
         .upsert({
           user_id: user.id,
-          plan_type: 'credipal-generated',
-          plan_data: plan as any,
+          plan_type: 'comprehensive',
+          plan_data: plan,
           status: 'active'
         })
 
-      if (saveError) throw saveError
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comprehensive-financial-plan'] })
+      toast({
+        title: "Plan guardado",
+        description: "Tu plan financiero ha sido guardado exitosamente",
+      })
+    },
+    onError: (error) => {
+      console.error('Error saving plan:', error)
+      toast({
+        title: "Error al guardar",
+        description: "No se pudo guardar el plan",
+        variant: "destructive"
+      })
+    }
+  })
 
-      setGeneratedPlan(plan)
-      setHasPlan(true)
-    } catch (error) {
-      console.error('Error generating financial plan:', error)
-      setError('Error al generar el plan financiero')
-    } finally {
-      setIsGenerating(false)
+  const generatePlan = () => generatePlanMutation.mutate()
+  const savePlan = () => {
+    if (generatedPlan) {
+      savePlanMutation.mutate(generatedPlan)
     }
   }
+  const clearPlan = () => setGeneratedPlan(null)
 
-  const savePlan = async () => {
-    console.log('Plan saved successfully')
-  }
-
-  const clearPlan = () => {
-    setGeneratedPlan(null)
-    setHasPlan(false)
-  }
-
-  useEffect(() => {
-    if (user?.id) {
-      checkExistingPlan()
-    }
-  }, [user?.id])
+  // Use generated plan if available, otherwise use existing plan from DB
+  const currentPlan = generatedPlan || existingPlanQuery.data
 
   return {
-    generatedPlan,
-    isGenerating,
-    error,
-    hasPlan,
-    isLoading: isDataLoading,
-    hasCompleteData: !!consolidatedData && consolidatedData.hasRealData,
-    consolidatedProfile: consolidatedData,
+    consolidatedProfile: optimizedData,
+    hasCompleteData,
+    isLoading: isLoadingData || existingPlanQuery.isLoading,
     generatePlan,
-    regeneratePlan: generatePlan,
+    isGenerating: generatePlanMutation.isPending,
+    generatedPlan: currentPlan,
     savePlan,
-    clearPlan
+    clearPlan,
+    isSaving: savePlanMutation.isPending,
   }
 }
