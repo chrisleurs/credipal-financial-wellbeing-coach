@@ -40,18 +40,34 @@ export const ModernCrediPalDashboard = () => {
     )
   }
 
+  // Helper function to convert GoalStatus to dashboard status
+  const convertStatus = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'completed' as const
+      case 'in_progress':
+        return 'in_progress' as const
+      case 'not_started':
+        return 'pending' as const
+      default:
+        return 'pending' as const
+    }
+  }
+
   // Create mock dashboard data from plan
   const dashboardData = {
     greeting: plan.coachMessage?.personalizedGreeting || 'Bienvenido',
     goals: plan.bigGoals?.map(goal => ({
       id: goal.id,
+      type: 'short' as const,
       title: goal.title,
       emoji: goal.emoji || '🎯',
       targetAmount: goal.targetAmount,
       currentAmount: goal.currentAmount,
       progress: goal.progress,
-      deadline: goal.deadline,
-      status: goal.status
+      deadline: goal.timeline || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      status: convertStatus(goal.status),
+      actionText: 'Actualizar Progreso'
     })) || [],
     crediMessage: {
       text: plan.coachMessage?.text || 'Continúa con tus objetivos financieros',

@@ -61,6 +61,20 @@ export const FinancialPlanDashboard = () => {
     )
   }
 
+  // Helper function to convert GoalStatus to dashboard status
+  const convertStatus = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'completed' as const
+      case 'in_progress':
+        return 'in_progress' as const
+      case 'not_started':
+        return 'pending' as const
+      default:
+        return 'pending' as const
+    }
+  }
+
   // Create mock dashboard data from plan
   const dashboardData = {
     greeting: plan.coachMessage?.personalizedGreeting || 'Bienvenido',
@@ -72,10 +86,10 @@ export const FinancialPlanDashboard = () => {
       emoji: goal.emoji || '🎯',
       targetAmount: goal.targetAmount,
       currentAmount: goal.currentAmount,
-      deadline: goal.deadline,
-      status: goal.status,
+      deadline: goal.timeline || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 3 months from now as fallback
+      status: convertStatus(goal.status),
       progress: goal.progress,
-      actionText: goal.actionText || 'Actualizar'
+      actionText: 'Actualizar Progreso'
     })) || [],
     journey: {
       steps: [
