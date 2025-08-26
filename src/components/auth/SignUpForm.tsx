@@ -84,16 +84,14 @@ export const SignUpForm = ({ onSuccess, onSwitchToLogin }: SignUpFormProps) => {
           variant: "destructive"
         });
       } else {
-        console.log('Signup successful');
+        console.log('Signup successful - letting AuthRedirect handle navigation');
         toast({
           title: "¡Cuenta creada!",
-          description: "Tu cuenta ha sido creada exitosamente. Revisa tu email para confirmar tu cuenta."
+          description: "Tu cuenta ha sido creada exitosamente. Te estamos redirigiendo..."
         });
         
-        // Don't force navigation - let AuthRedirect handle it based on onboarding status
-        if (onSuccess) {
-          onSuccess();
-        }
+        // Don't call onSuccess immediately - let AuthRedirect handle the navigation
+        // based on the user's onboarding status
       }
     } catch (error: any) {
       console.error('Signup exception:', error);

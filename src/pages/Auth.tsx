@@ -16,18 +16,12 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Redirect authenticated users
+  // Don't redirect here - let AuthRedirect handle it based on onboarding status
   useEffect(() => {
     if (!loading && user) {
-      console.log('Auth - User is authenticated, redirecting to dashboard');
-      navigate('/dashboard', { replace: true });
+      console.log('Auth - User authenticated, AuthRedirect will handle navigation');
     }
-  }, [user, loading, navigate]);
-
-  const handleAuthSuccess = () => {
-    console.log('Auth success, redirecting to dashboard...');
-    navigate('/dashboard', { replace: true });
-  };
+  }, [user, loading]);
 
   const switchToLogin = () => {
     setActiveTab('login');
@@ -47,13 +41,13 @@ const Auth = () => {
     setShowForgotPassword(false);
   };
 
-  // Don't render if loading or user is authenticated
+  // Don't render if loading or user is authenticated (let AuthRedirect handle it)
   if (loading || user) {
     return (
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Cargando...</p>
+          <p className="mt-2 text-muted-foreground">Verificando estado de usuario...</p>
         </div>
       </div>
     );
@@ -109,7 +103,6 @@ const Auth = () => {
                 </CardHeader>
                 <CardContent>
                   <LoginForm 
-                    onSuccess={handleAuthSuccess}
                     onForgotPassword={handleForgotPassword}
                   />
                   
@@ -133,10 +126,7 @@ const Auth = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <SignUpForm 
-                    onSuccess={handleAuthSuccess} 
-                    onSwitchToLogin={switchToLogin}
-                  />
+                  <SignUpForm onSwitchToLogin={switchToLogin} />
                 </CardContent>
               </TabsContent>
             </Tabs>

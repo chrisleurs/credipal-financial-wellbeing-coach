@@ -31,6 +31,9 @@ export const useOnboardingStatus = (): OnboardingStatus => {
       setIsLoading(true);
       console.log('Checking onboarding status for user:', user.id);
       
+      // Add a small delay to ensure database consistency
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('onboarding_completed, onboarding_step')
@@ -39,7 +42,7 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
       if (error) {
         console.error('Error checking onboarding status:', error);
-        // Si hay error, el perfil no existe, crear uno nuevo
+        // If there's an error, the profile doesn't exist, create a new one
         await createUserProfile();
         return;
       }
@@ -52,10 +55,11 @@ export const useOnboardingStatus = (): OnboardingStatus => {
 
       // Usuario existente - usar su estado real
       const completed = data.onboarding_completed === true;
-      console.log('User onboarding status:', completed);
+      console.log('User onboarding status found:', completed);
       setOnboardingCompleted(completed);
     } catch (error) {
       console.error('Exception checking onboarding status:', error);
+      // For new users, default to incomplete onboarding
       setOnboardingCompleted(false);
     } finally {
       setIsLoading(false);
@@ -88,7 +92,8 @@ export const useOnboardingStatus = (): OnboardingStatus => {
         return;
       }
 
-      setOnboardingCompleted(false); // Nuevo usuario = onboarding incompleto
+      // New user = incomplete onboarding
+      setOnboardingCompleted(false);
       console.log('New profile created successfully for user:', user.id);
     } catch (error) {
       console.error('Exception creating profile:', error);
