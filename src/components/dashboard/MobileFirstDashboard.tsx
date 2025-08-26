@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAIFinancialPlan } from '@/hooks/useAIFinancialPlan'
 import { AIGeneratedPlanDashboard } from './AIGeneratedPlanDashboard'
-import { OptimizedFinancialDashboard } from './OptimizedFinancialDashboard'
+import { UnifiedFinancialDashboard } from './UnifiedFinancialDashboard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export const MobileFirstDashboard = () => {
@@ -49,7 +49,7 @@ export const MobileFirstDashboard = () => {
     return <AIGeneratedPlanDashboard />
   }
 
-  // Si no, mostrar el dashboard optimizado regular
-  console.log('📊 Dashboard: Showing Optimized Financial Dashboard')
-  return <OptimizedFinancialDashboard />
+  // Mostrar el dashboard unificado que toma datos exclusivamente del onboarding
+  console.log('📊 Dashboard: Showing Unified Financial Dashboard (Onboarding Data)')
+  return <UnifiedFinancialDashboard />
 }
