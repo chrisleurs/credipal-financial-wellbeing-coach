@@ -23,10 +23,10 @@ import {
 import { cn } from '@/lib/utils'
 
 export const ModernCrediPalDashboard = () => {
-  const { dashboardData } = useFinancialPlan()
+  const { plan } = useFinancialPlan()
   const { consolidatedData } = useConsolidatedFinancialData()
 
-  if (!dashboardData) {
+  if (!plan) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
@@ -38,6 +38,25 @@ export const ModernCrediPalDashboard = () => {
         </div>
       </div>
     )
+  }
+
+  // Create mock dashboard data from plan
+  const dashboardData = {
+    greeting: plan.coachMessage?.personalizedGreeting || 'Bienvenido',
+    goals: plan.bigGoals?.map(goal => ({
+      id: goal.id,
+      title: goal.title,
+      emoji: goal.emoji || '🎯',
+      targetAmount: goal.targetAmount,
+      currentAmount: goal.currentAmount,
+      progress: goal.progress,
+      deadline: goal.deadline,
+      status: goal.status
+    })) || [],
+    crediMessage: {
+      text: plan.coachMessage?.text || 'Continúa con tus objetivos financieros',
+      type: 'motivational' as const
+    }
   }
 
   // Crear datos por defecto para consolidated data si no están disponibles

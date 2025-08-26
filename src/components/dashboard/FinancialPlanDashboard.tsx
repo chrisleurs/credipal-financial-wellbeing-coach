@@ -19,13 +19,14 @@ import {
 
 export const FinancialPlanDashboard = () => {
   const { 
-    dashboardData, 
-    isLoading, 
-    updateGoalProgress, 
-    markGoalCompleted 
+    plan,
+    loading,
+    error,
+    updateBigGoal,
+    completeMiniGoal
   } = useFinancialPlan()
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" text="Cargando tu plan financiero..." />
@@ -33,7 +34,21 @@ export const FinancialPlanDashboard = () => {
     )
   }
 
-  if (!dashboardData) {
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Error cargando el plan</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Intentar de nuevo
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!plan) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -46,10 +61,46 @@ export const FinancialPlanDashboard = () => {
     )
   }
 
+  // Create mock dashboard data from plan
+  const dashboardData = {
+    greeting: plan.coachMessage?.personalizedGreeting || 'Bienvenido',
+    motivationalMessage: plan.coachMessage?.text || 'Sigue trabajando en tus objetivos financieros',
+    goals: plan.bigGoals?.map(goal => ({
+      id: goal.id,
+      type: 'short' as const,
+      title: goal.title,
+      emoji: goal.emoji || '🎯',
+      targetAmount: goal.targetAmount,
+      currentAmount: goal.currentAmount,
+      deadline: goal.deadline,
+      status: goal.status,
+      progress: goal.progress,
+      actionText: goal.actionText || 'Actualizar'
+    })) || [],
+    journey: {
+      steps: [
+        { id: '1', title: 'Configuración inicial', emoji: '🚀', status: 'completed' as const },
+        { id: '2', title: 'Primeras metas', emoji: '🎯', status: 'in_progress' as const },
+        { id: '3', title: 'Optimización', emoji: '⚡', status: 'pending' as const }
+      ],
+      currentStep: 1
+    },
+    crediMessage: {
+      id: 'credi-1',
+      text: plan.coachMessage?.nextStepSuggestion || 'Continúa con tus objetivos',
+      timestamp: new Date().toISOString(),
+      type: 'motivational' as const
+    },
+    lastUpdate: plan.updatedAt || new Date().toISOString()
+  }
+
   const handleGoalAction = (goalId: string) => {
-    // En producción, abriría un modal para registrar el progreso
-    const amount = 50 // Mock amount
-    updateGoalProgress(goalId, amount)
+    // Find the goal and update progress
+    const goal = plan.bigGoals?.find(g => g.id === goalId)
+    if (goal) {
+      const newProgress = Math.min((goal.progress || 0) + 10, 100)
+      updateBigGoal(goalId, { progress: newProgress })
+    }
   }
 
   const handleViewDetails = (goalId: string) => {

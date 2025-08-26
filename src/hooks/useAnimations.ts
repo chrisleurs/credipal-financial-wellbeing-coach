@@ -1,5 +1,6 @@
 
-import React, { useReducedMotion } from 'framer-motion'
+import React from 'react'
+import { useReducedMotion } from 'framer-motion'
 
 export const useAnimations = () => {
   const shouldReduceMotion = useReducedMotion()
