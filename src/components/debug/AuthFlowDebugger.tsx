@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { useAuthFlowAudit } from '@/hooks/useAuthFlowAudit'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +12,7 @@ export const AuthFlowDebugger = () => {
   const { onboardingCompleted } = useOnboardingStatus()
   const { audit, runFullAudit, getAuditSummary, exportAuditLog, flowStatus } = useAuthFlowAudit()
   const [isExpanded, setIsExpanded] = useState(false)
+  const [lastAuditTime, setLastAuditTime] = useState<number>(0)
   
   const summary = getAuditSummary()
 
@@ -49,12 +49,22 @@ export const AuthFlowDebugger = () => {
     URL.revokeObjectURL(url)
   }
 
-  // Auto-run audit when user state changes
+  // Optimized auto-run audit - only run once per user session and with throttling
   useEffect(() => {
-    if (user) {
-      runFullAudit()
+    if (user?.id) {
+      const now = Date.now()
+      const timeSinceLastAudit = now - lastAuditTime
+      
+      // Only run audit if it's been more than 30 seconds since last audit
+      if (timeSinceLastAudit > 30000) {
+        console.log('🔍 AuthFlowDebugger: Running audit for user:', user.id)
+        runFullAudit()
+        setLastAuditTime(now)
+      } else {
+        console.log('🔍 AuthFlowDebugger: Skipping audit, too recent')
+      }
     }
-  }, [user?.id])
+  }, [user?.id]) // Only depend on user ID change, not other state
 
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-md">
@@ -83,6 +93,7 @@ export const AuthFlowDebugger = () => {
               <div><strong>User ID:</strong> {user?.id || 'None'}</div>
               <div><strong>Onboarding:</strong> {onboardingCompleted === null ? 'Unknown' : onboardingCompleted ? 'Completed' : 'Pending'}</div>
               <div><strong>Flow Status:</strong> {flowStatus}</div>
+              <div><strong>Last Audit:</strong> {lastAuditTime > 0 ? new Date(lastAuditTime).toLocaleTimeString() : 'Never'}</div>
             </div>
 
             {/* Steps Summary */}
@@ -128,7 +139,10 @@ export const AuthFlowDebugger = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={runFullAudit}
+                onClick={() => {
+                  runFullAudit()
+                  setLastAuditTime(Date.now())
+                }}
                 className="flex-1"
               >
                 <RefreshCw className="h-3 w-3 mr-1" />
