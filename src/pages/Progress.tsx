@@ -17,84 +17,14 @@ import {
   BarChart3
 } from 'lucide-react'
 
-// Import dashboard components
-import { PresupuestoMensual } from '@/components/dashboard/PresupuestoMensual'
-import { PlanPagoDeuda } from '@/components/dashboard/PlanPagoDeuda'
-import { FondoEmergencia } from '@/components/dashboard/FondoEmergencia'
-import { CrecimientoPatrimonial } from '@/components/dashboard/CrecimientoPatrimonial'
-import { RoadmapTrimestral } from '@/components/dashboard/RoadmapTrimestral'
-import { MetasCortoPlazo } from '@/components/dashboard/MetasCortoPlazo'
-import { RoadmapAccion } from '@/components/dashboard/RoadmapAccion'
-
-// Types for the plan components
-interface PresupuestoMensualData {
-  necesidades: { porcentaje: number; cantidad: number }
-  estiloVida: { porcentaje: number; cantidad: number }
-  ahorro: { porcentaje: number; cantidad: number }
-}
-
-interface PlanPagoDeudaData {
-  deuda: string
-  balanceActual: number
-  fechaLiquidacion: string
-  pagoMensual: number
-  interesesAhorrados: number
-}
-
-interface FondoEmergenciaData {
-  metaTotal: number
-  progresoActual: number
-  ahorroMensual: number
-  fechaCompletion: string
-}
-
-interface CrecimientoPatrimonialData {
-  año1: number
-  año3: number
-  año5: number
-  inversionMensual: number
-  rendimientoEsperado: number
-}
-
-interface RoadmapTrimestralData {
-  trimestres: Array<{
-    trimestre: string
-    ahorroAcumulado: number
-    deudaPendiente: number
-    avance: number
-  }>
-  metaAnual: number
-}
-
-interface MetaData {
-  id: string
-  titulo: string
-  meta: number
-  progreso: number
-  tipo: 'ahorro' | 'gasto' | 'ingreso'
-  completada: boolean
-  fechaLimite?: string
-}
-
-interface MetasCortoPlazoData {
-  semanales: MetaData[]
-  mensuales: MetaData[]
-}
-
-interface RoadmapAccionData {
-  pasos: Array<{
-    paso: number
-    titulo: string
-    fechaObjetivo: string
-    completado: boolean
-  }>
-  progreso: number
-  siguientePaso: {
-    titulo: string
-    descripcion: string
-    dificultad: 'facil' | 'medio' | 'dificil'
-  }
-}
+// Import dashboard components with default imports
+import PresupuestoMensual from '@/components/dashboard/PresupuestoMensual'
+import PlanPagoDeuda from '@/components/dashboard/PlanPagoDeuda'
+import FondoEmergencia from '@/components/dashboard/FondoEmergencia'
+import CrecimientoPatrimonial from '@/components/dashboard/CrecimientoPatrimonial'
+import RoadmapTrimestral from '@/components/dashboard/RoadmapTrimestral'
+import MetasCortoPlazo from '@/components/dashboard/MetasCortoPlazo'
+import RoadmapAccion from '@/components/dashboard/RoadmapAccion'
 
 export default function Progress() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -146,13 +76,13 @@ export default function Progress() {
     )
   }
 
-  // Create mock data that matches the expected interfaces
+  // Create mock data that matches the component interfaces exactly
   const mockPlan = generatedPlan || {
     presupuestoMensual: {
       necesidades: { porcentaje: 50, cantidad: unifiedData?.monthlyIncome ? unifiedData.monthlyIncome * 0.5 : 2500 },
       estiloVida: { porcentaje: 30, cantidad: unifiedData?.monthlyIncome ? unifiedData.monthlyIncome * 0.3 : 1500 },
       ahorro: { porcentaje: 20, cantidad: unifiedData?.monthlyIncome ? unifiedData.monthlyIncome * 0.2 : 1000 }
-    } as PresupuestoMensualData,
+    },
     
     planPagoDeuda: unifiedData?.debts?.slice(0, 3).map(debt => ({
       deuda: debt.creditor,
@@ -160,14 +90,14 @@ export default function Progress() {
       fechaLiquidacion: '2025-12-31',
       pagoMensual: debt.monthlyPayment,
       interesesAhorrados: debt.amount * 0.1
-    })) || [] as PlanPagoDeudaData[],
+    })) || [],
     
     fondoEmergencia: {
       metaTotal: (unifiedData?.monthlyExpenses || 3000) * 6,
       progresoActual: unifiedData?.currentSavings || 0,
       ahorroMensual: unifiedData?.monthlySavingsCapacity || 500,
       fechaCompletion: '2026-06-30'
-    } as FondoEmergenciaData,
+    },
     
     crecimientoPatrimonial: {
       año1: (unifiedData?.currentSavings || 0) + ((unifiedData?.monthlySavingsCapacity || 500) * 12),
@@ -175,17 +105,49 @@ export default function Progress() {
       año5: (unifiedData?.currentSavings || 0) + ((unifiedData?.monthlySavingsCapacity || 500) * 60 * 1.08),
       inversionMensual: (unifiedData?.monthlySavingsCapacity || 500) * 0.7,
       rendimientoEsperado: 8.5
-    } as CrecimientoPatrimonialData,
+    },
     
     roadmapTrimestral: {
       trimestres: [
-        { trimestre: 'Q1 2025', ahorroAcumulado: 3000, deudaPendiente: 8000, avance: 25 },
-        { trimestre: 'Q2 2025', ahorroAcumulado: 6000, deudaPendiente: 6000, avance: 50 },
-        { trimestre: 'Q3 2025', ahorroAcumulado: 9000, deudaPendiente: 4000, avance: 75 },
-        { trimestre: 'Q4 2025', ahorroAcumulado: 12000, deudaPendiente: 2000, avance: 100 }
+        { 
+          trimestre: 'Q1 2025', 
+          ahorroObjetivo: 3000,
+          ahorroAcumulado: 3000, 
+          deudaPendiente: 8000, 
+          porcentajeAvance: 25,
+          hitos: ['Establecer presupuesto', 'Reducir gastos innecesarios'],
+          completado: false 
+        },
+        { 
+          trimestre: 'Q2 2025', 
+          ahorroObjetivo: 6000,
+          ahorroAcumulado: 6000, 
+          deudaPendiente: 6000, 
+          porcentajeAvance: 50,
+          hitos: ['Aumentar fondo de emergencia', 'Negociar deudas'],
+          completado: false 
+        },
+        { 
+          trimestre: 'Q3 2025', 
+          ahorroObjetivo: 9000,
+          ahorroAcumulado: 9000, 
+          deudaPendiente: 4000, 
+          porcentajeAvance: 75,
+          hitos: ['Iniciar inversiones', 'Completar 50% del fondo de emergencia'],
+          completado: false 
+        },
+        { 
+          trimestre: 'Q4 2025', 
+          ahorroObjetivo: 12000,
+          ahorroAcumulado: 12000, 
+          deudaPendiente: 2000, 
+          porcentajeAvance: 100,
+          hitos: ['Alcanzar meta anual', 'Planificar siguiente año'],
+          completado: false 
+        }
       ],
       metaAnual: 12000
-    } as RoadmapTrimestralData,
+    },
     
     metasCortoPlazo: {
       semanales: [
@@ -223,27 +185,59 @@ export default function Progress() {
           titulo: 'Aumentar ingresos extras',
           meta: 500,
           progreso: 200,
-          tipo: 'ingreso' as const,
+          tipo: 'ahorro' as const,
           completada: false,
           fechaLimite: '2025-01-31'
         }
       ]
-    } as MetasCortoPlazoData,
+    },
     
     roadmapAccion: {
       pasos: [
-        { paso: 1, titulo: 'Establecer fondo de emergencia básico', fechaObjetivo: '2025-03-31', completado: false },
-        { paso: 2, titulo: 'Reducir deuda de tarjetas de crédito', fechaObjetivo: '2025-06-30', completado: false },
-        { paso: 3, titulo: 'Aumentar inversiones mensuales', fechaObjetivo: '2025-09-30', completado: false },
-        { paso: 4, titulo: 'Completar fondo de emergencia', fechaObjetivo: '2025-12-31', completado: false }
+        { 
+          paso: 1, 
+          titulo: 'Establecer fondo de emergencia básico', 
+          descripcion: 'Crear un fondo inicial para emergencias',
+          fechaObjetivo: '2025-03-31', 
+          completado: false,
+          enProgreso: false,
+          impactoFinanciero: 3000,
+          dificultad: 'medio' as const
+        },
+        { 
+          paso: 2, 
+          titulo: 'Reducir deuda de tarjetas de crédito', 
+          descripcion: 'Pagar deudas de alto interés',
+          fechaObjetivo: '2025-06-30', 
+          completado: false,
+          enProgreso: false,
+          impactoFinanciero: 5000,
+          dificultad: 'dificil' as const
+        },
+        { 
+          paso: 3, 
+          titulo: 'Aumentar inversiones mensuales', 
+          descripcion: 'Destinar más dinero a inversiones',
+          fechaObjetivo: '2025-09-30', 
+          completado: false,
+          enProgreso: false,
+          impactoFinanciero: 2000,
+          dificultad: 'facil' as const
+        },
+        { 
+          paso: 4, 
+          titulo: 'Completar fondo de emergencia', 
+          descripcion: 'Alcanzar 6 meses de gastos en emergencias',
+          fechaObjetivo: '2025-12-31', 
+          completado: false,
+          enProgreso: false,
+          impactoFinanciero: 8000,
+          dificultad: 'medio' as const
+        }
       ],
       progreso: 15,
-      siguientePaso: {
-        titulo: 'Crear presupuesto detallado',
-        descripcion: 'Analiza todos tus gastos del mes pasado y crea categorías específicas',
-        dificultad: 'medio' as const
-      }
-    } as RoadmapAccionData
+      siguientePaso: 1
+    }
   }
 
   return (
@@ -345,12 +339,12 @@ export default function Progress() {
           {/* Wealth Tab */}
           <TabsContent value="wealth" className="space-y-6">
             <div className="space-y-6">
-              {/* Wealth Growth - Fixed with all required properties */}
+              {/* Wealth Growth */}
               {mockPlan.crecimientoPatrimonial && (
                 <CrecimientoPatrimonial data={mockPlan.crecimientoPatrimonial} />
               )}
 
-              {/* Quarterly Roadmap - Fixed with proper structure */}
+              {/* Quarterly Roadmap */}
               {mockPlan.roadmapTrimestral && (
                 <RoadmapTrimestral data={mockPlan.roadmapTrimestral} />
               )}
@@ -360,12 +354,12 @@ export default function Progress() {
           {/* Actions Tab */}
           <TabsContent value="actions" className="space-y-6">
             <div className="space-y-6">
-              {/* Short-term Goals - Fixed with all required properties */}
+              {/* Short-term Goals */}
               {mockPlan.metasCortoPlazo && (
                 <MetasCortoPlazo data={mockPlan.metasCortoPlazo} />
               )}
 
-              {/* Action Roadmap - Fixed with proper structure */}
+              {/* Action Roadmap */}
               {mockPlan.roadmapAccion && (
                 <RoadmapAccion data={mockPlan.roadmapAccion} />
               )}
