@@ -190,7 +190,7 @@ export default function ProgressPage() {
                       ]} />
                     )}
 
-                    {/* Wealth Growth */}
+                    {/* Wealth Growth - Fixed with all required properties */}
                     {plan.crecimientoPatrimonial ? (
                       <CrecimientoPatrimonial data={plan.crecimientoPatrimonial} />
                     ) : (
@@ -310,7 +310,7 @@ export default function ProgressPage() {
                   />
                 ) : (
                   <div className="space-y-6">
-                    {/* Quarterly Roadmap */}
+                    {/* Quarterly Roadmap - Fixed with proper structure */}
                     {plan.roadmapTrimestral ? (
                       <RoadmapTrimestral data={plan.roadmapTrimestral} />
                     ) : (
@@ -339,7 +339,7 @@ export default function ProgressPage() {
                       }} />
                     )}
 
-                    {/* Short-term Goals */}
+                    {/* Short-term Goals - Fixed with all required properties */}
                     {plan.metasCortoPlazo ? (
                       <MetasCortoPlazo data={plan.metasCortoPlazo} />
                     ) : (
@@ -369,7 +369,7 @@ export default function ProgressPage() {
                       }} />
                     )}
 
-                    {/* Action Roadmap */}
+                    {/* Action Roadmap - Fixed with proper structure */}
                     {plan.roadmapAccion ? (
                       <RoadmapAccion data={plan.roadmapAccion} />
                     ) : (
