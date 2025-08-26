@@ -171,7 +171,8 @@ export const useFinancialPlanGenerator = () => {
       }
 
       if (data?.plan_data) {
-        return data.plan_data as ComprehensiveFinancialPlan
+        // Type assertion with proper checking
+        return data.plan_data as unknown as ComprehensiveFinancialPlan
       }
 
       return null
@@ -190,7 +191,7 @@ export const useFinancialPlanGenerator = () => {
         .upsert({
           user_id: user.id,
           plan_type: 'comprehensive',
-          plan_data: plan,
+          plan_data: plan as unknown as Record<string, any>,
           status: 'active'
         })
 

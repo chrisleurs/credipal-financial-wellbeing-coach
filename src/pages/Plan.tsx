@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { useFinancialPlanGenerator } from '@/hooks/useFinancialPlanGenerator'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { TrendingUp, Target, AlertCircle, CheckCircle, Lightbulb } from 'lucide-react'
+import { TrendingUp, Target, AlertCircle, CheckCircle, Lightbulb, Calendar, Banknote, PiggyBank } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
 
 const Plan = () => {
@@ -154,75 +154,167 @@ const Plan = () => {
               </CardHeader>
             </Card>
 
-            {/* Plan Content */}
+            {/* Snapshot Inicial */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recommendations */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Target className="h-5 w-5 text-blue-500" />
-                    Recomendaciones Prioritarias
+                    Situación Actual vs 12 Meses
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {generatedPlan.recommendations?.map((rec: any, index: number) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{rec.title}</h4>
-                        <Badge variant={rec.priority === 'high' ? 'destructive' : 
-                                      rec.priority === 'medium' ? 'default' : 'secondary'}>
-                          {rec.priority === 'high' ? 'Alta' : 
-                           rec.priority === 'medium' ? 'Media' : 'Baja'}
-                        </Badge>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Hoy</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>Ingresos: {formatCurrency(generatedPlan.snapshotInicial.hoy.ingresos)}</div>
+                        <div>Gastos: {formatCurrency(generatedPlan.snapshotInicial.hoy.gastos)}</div>
+                        <div>Deuda: {formatCurrency(generatedPlan.snapshotInicial.hoy.deuda)}</div>
+                        <div>Ahorro: {formatCurrency(generatedPlan.snapshotInicial.hoy.ahorro)}</div>
                       </div>
-                      <p className="text-sm text-muted-foreground">{rec.description}</p>
                     </div>
-                  )) || <p className="text-muted-foreground">No hay recomendaciones específicas disponibles.</p>}
+                    <Separator />
+                    <div>
+                      <h4 className="font-medium mb-2">En 12 Meses</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>Deuda: {formatCurrency(generatedPlan.snapshotInicial.en12Meses.deuda)}</div>
+                        <div>Fondo Emergencia: {formatCurrency(generatedPlan.snapshotInicial.en12Meses.fondoEmergencia)}</div>
+                        <div className="col-span-2">Patrimonio: {formatCurrency(generatedPlan.snapshotInicial.en12Meses.patrimonio)}</div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Action Plan */}
+              {/* Presupuesto Mensual */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
-                    Plan de Acción
+                    <PiggyBank className="h-5 w-5 text-green-500" />
+                    Presupuesto Mensual Recomendado
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {generatedPlan.actionPlan?.map((action: any, index: number) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium mb-1">{action.title}</h4>
-                          <p className="text-sm text-muted-foreground">{action.description}</p>
-                          {action.timeline && (
-                            <Badge variant="outline" className="mt-2">
-                              {action.timeline}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )) || <p className="text-muted-foreground">Plan de acción no disponible.</p>}
+                  <div className="flex justify-between items-center">
+                    <span>Necesidades ({generatedPlan.presupuestoMensual.necesidades.porcentaje}%)</span>
+                    <span className="font-medium">{formatCurrency(generatedPlan.presupuestoMensual.necesidades.cantidad)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Estilo de Vida ({generatedPlan.presupuestoMensual.estiloVida.porcentaje}%)</span>
+                    <span className="font-medium">{formatCurrency(generatedPlan.presupuestoMensual.estiloVida.cantidad)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Ahorro ({generatedPlan.presupuestoMensual.ahorro.porcentaje}%)</span>
+                    <span className="font-medium">{formatCurrency(generatedPlan.presupuestoMensual.ahorro.cantidad)}</span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Summary */}
-            {generatedPlan.summary && (
+            {/* Plan de Pago de Deuda */}
+            {generatedPlan.planPagoDeuda.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Resumen del Plan</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Banknote className="h-5 w-5 text-red-500" />
+                    Plan de Eliminación de Deudas
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">{generatedPlan.summary}</p>
+                  <div className="space-y-4">
+                    {generatedPlan.planPagoDeuda.map((deuda, index) => (
+                      <div key={index} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium">{deuda.deuda}</h4>
+                          <Badge variant="outline">{formatCurrency(deuda.balanceActual)}</Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                          <div>Pago mensual: {formatCurrency(deuda.pagoMensual)}</div>
+                          <div>Liquidación: {deuda.fechaLiquidacion}</div>
+                          <div className="col-span-2">Intereses ahorrados: {formatCurrency(deuda.interesesAhorrados)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}
+
+            {/* Roadmap de Acción */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-purple-500" />
+                  Plan de Acción
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {generatedPlan.roadmapAccion.map((accion, index) => (
+                  <div key={index} className="p-4 border rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                        {accion.paso}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium mb-1">{accion.titulo}</h4>
+                        <Badge variant="outline" className="mt-2">
+                          {accion.fechaObjetivo}
+                        </Badge>
+                      </div>
+                      {accion.completado && (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Metas de Corto Plazo */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Metas Semanales</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {generatedPlan.metasCortoPlazo.semanales.map((meta, index) => (
+                    <div key={index} className="p-3 border rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{meta.titulo}</span>
+                        <Badge variant={meta.tipo === 'ahorro' ? 'default' : 'destructive'}>
+                          {meta.tipo}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Meta: {formatCurrency(meta.meta)}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Metas Mensuales</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {generatedPlan.metasCortoPlazo.mensuales.map((meta, index) => (
+                    <div key={index} className="p-3 border rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{meta.titulo}</span>
+                        <Badge variant={meta.tipo === 'ahorro' ? 'default' : 'destructive'}>
+                          {meta.tipo}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Meta: {formatCurrency(meta.meta)}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </div>
