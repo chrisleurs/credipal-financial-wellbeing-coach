@@ -47,6 +47,26 @@ export interface UnifiedFinancialData {
   lastUpdated: string | null
 }
 
+// Interfaz para el onboarding data con tipado correcto
+interface OnboardingData {
+  monthlyIncome?: number
+  extraIncome?: number
+  monthlyExpenses?: number
+  currentSavings?: number
+  monthlySavingsCapacity?: number
+  expenseCategories?: Record<string, number>
+  debts?: Array<{
+    id?: string
+    name?: string
+    creditor?: string
+    amount?: number
+    current_balance?: number
+    monthlyPayment?: number
+    monthly_payment?: number
+  }>
+  financialGoals?: string[]
+}
+
 export const useUnifiedFinancialData = () => {
   const { user } = useAuth()
 
@@ -69,8 +89,8 @@ export const useUnifiedFinancialData = () => {
         throw profileError
       }
 
-      // 2. Extraer datos del onboarding desde el perfil
-      const onboardingData = profile?.onboarding_data || {}
+      // 2. Extraer datos del onboarding con type casting correcto
+      const onboardingData: OnboardingData = (profile?.onboarding_data as OnboardingData) || {}
       
       // 3. Obtener datos consolidados de las tablas principales (solo como respaldo)
       const [incomesResult, expensesResult, debtsResult, goalsResult] = await Promise.all([
