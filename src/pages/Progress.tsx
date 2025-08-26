@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -182,11 +181,10 @@ export default function ProgressPage() {
                       <PlanPagoDeuda data={[
                         {
                           deuda: "Tarjeta de Crédito",
-                          balance: 8500,
-                          payment: 350,
-                          interestRate: 24,
-                          payoffDate: "2025-03-15",
-                          strategy: "avalanche"
+                          balanceActual: 8500,
+                          pagoMensual: 350,
+                          fechaLiquidacion: "2025-03-15",
+                          interesesAhorrados: 1200
                         }
                       ]} />
                     )}
