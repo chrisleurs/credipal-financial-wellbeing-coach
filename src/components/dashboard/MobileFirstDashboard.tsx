@@ -6,7 +6,7 @@ import { OptimizedFinancialDashboard } from './OptimizedFinancialDashboard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export const MobileFirstDashboard = () => {
-  const { hasActivePlan, parsedPlan, isLoading } = useAIFinancialPlan()
+  const { hasActivePlan, parsedPlan, isLoadingPlan } = useAIFinancialPlan()
   const [showingLoader, setShowingLoader] = useState(true)
 
   // Control loading state to prevent infinite loading
@@ -17,17 +17,17 @@ export const MobileFirstDashboard = () => {
     }, 3000) // Maximum 3 seconds of loading
 
     // If not loading from hook, hide loader immediately
-    if (!isLoading) {
+    if (!isLoadingPlan) {
       console.log('🎛️ Dashboard: AI plan loading complete, hiding loader')
       setShowingLoader(false)
       clearTimeout(timer)
     }
 
     return () => clearTimeout(timer)
-  }, [isLoading])
+  }, [isLoadingPlan])
 
   // Show loading only briefly and with timeout protection
-  if (showingLoader && isLoading) {
+  if (showingLoader && isLoadingPlan) {
     console.log('🎛️ Dashboard: Showing loading spinner...')
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
@@ -39,7 +39,7 @@ export const MobileFirstDashboard = () => {
   console.log('🎛️ Dashboard: Deciding which dashboard to show:', {
     hasActivePlan,
     hasParsedPlan: !!parsedPlan,
-    isLoading,
+    isLoadingPlan,
     showingLoader
   })
 
