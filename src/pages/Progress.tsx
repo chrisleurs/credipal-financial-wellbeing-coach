@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -182,7 +181,7 @@ export default function ProgressPage() {
                       <PlanPagoDeuda data={[
                         {
                           deuda: "Tarjeta de Crédito",
-                          balance: 8500,
+                          amount: 8500,
                           payment: 350,
                           interestRate: 24,
                           payoffDate: "2025-03-15",
@@ -351,7 +350,7 @@ export default function ProgressPage() {
                             titulo: "Ahorrar $200 esta semana",
                             meta: 200,
                             progreso: 150,
-                            tipo: "ahorro",
+                            tipo: "ahorro" as const,
                             completada: false,
                             fechaLimite: "2024-09-01"
                           }
@@ -362,7 +361,7 @@ export default function ProgressPage() {
                             titulo: "Reducir gastos de entretenimiento",
                             meta: 500,
                             progreso: 320,
-                            tipo: "gasto",
+                            tipo: "gasto" as const,
                             completada: false,
                             fechaLimite: "2024-09-30"
                           }
@@ -384,7 +383,7 @@ export default function ProgressPage() {
                             completado: true,
                             enProgreso: false,
                             impactoFinanciero: 500,
-                            dificultad: "facil"
+                            dificultad: "facil" as const
                           },
                           {
                             paso: 2,
@@ -394,7 +393,7 @@ export default function ProgressPage() {
                             completado: false,
                             enProgreso: true,
                             impactoFinanciero: 15000,
-                            dificultad: "medio"
+                            dificultad: "medio" as const
                           }
                         ],
                         progreso: 25,
