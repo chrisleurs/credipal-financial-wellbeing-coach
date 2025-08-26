@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
@@ -160,6 +161,9 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
       ? JSON.parse(dbPlan.plan_data) 
       : dbPlan.plan_data
 
+    const bigGoals = Array.isArray(planData.bigGoals) ? planData.bigGoals : []
+    const miniGoals = Array.isArray(planData.miniGoals) ? planData.miniGoals : []
+
     return {
       id: dbPlan.id,
       version: dbPlan.version || 1,
@@ -167,22 +171,22 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
       totalWeeks: planData.totalWeeks || 12,
       overallProgress: planData.overallProgress || 0,
       methodology: planData.methodology || '3-2-1',
-      bigGoals: (planData.bigGoals || []).map((goal: any) => ({
+      bigGoals: bigGoals.map((goal: any) => ({
         ...goal,
         emoji: goal.emoji || '🎯'
       })),
-      miniGoals: (planData.miniGoals || []).map((goal: any) => ({
+      miniGoals: miniGoals.map((goal: any) => ({
         ...goal,
         emoji: goal.emoji || '⭐',
         currentValue: goal.currentValue || 0,
         targetValue: goal.targetValue || 1,
         unit: goal.unit || 'tareas'
       })),
-      immediateAction: {
+      immediateAction: planData.immediateAction ? {
         ...planData.immediateAction,
-        emoji: planData.immediateAction?.emoji || '⚡',
-        estimatedMinutes: planData.immediateAction?.estimatedMinutes || 15
-      } || {
+        emoji: planData.immediateAction.emoji || '⚡',
+        estimatedMinutes: planData.immediateAction.estimatedMinutes || 15
+      } : {
         id: 'default',
         title: 'Revisar gastos mensuales',
         description: 'Identifica oportunidades de ahorro',
@@ -198,15 +202,12 @@ export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
         nextStepSuggestion: 'Comencemos organizando tus finanzas'
       },
       stats: {
-        ...planData.stats,
+        completedBigGoals: planData.stats?.completedBigGoals || 0,
+        completedMiniGoals: planData.stats?.completedMiniGoals || 0,
+        completedActions: planData.stats?.completedActions || 0,
+        totalPoints: planData.stats?.totalPoints || 0,
+        streakDays: planData.stats?.streakDays || 0,
         streak: planData.stats?.streakDays || planData.stats?.streak || 0
-      } || {
-        completedBigGoals: 0,
-        completedMiniGoals: 0,
-        completedActions: 0,
-        totalPoints: 0,
-        streakDays: 0,
-        streak: 0
       },
       createdAt: dbPlan.created_at,
       updatedAt: dbPlan.updated_at
