@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react'
 import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
 import { useFinancialPlan } from '@/hooks/useFinancialPlan'
@@ -89,9 +90,8 @@ export const OptimizedFinancialDashboard = () => {
   
   const {
     aiPlan,
-    isLoadingPlan,
-    hasActivePlan,
-    generatePlan,
+    loading: isLoadingPlan,
+    generateNewPlan,
     isGeneratingPlan
   } = useFinancialPlan()
 
@@ -142,9 +142,8 @@ export const OptimizedFinancialDashboard = () => {
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando coach..." />}>
             <HeroCoachCard 
               userName={userName}
-              financialData={consolidatedData}
-              hasActivePlan={hasActivePlan}
-              onGeneratePlan={generatePlan}
+              hasActivePlan={!!aiPlan}
+              onGeneratePlan={generateNewPlan}
               isGeneratingPlan={isGeneratingPlan}
             />
           </Suspense>
@@ -153,7 +152,15 @@ export const OptimizedFinancialDashboard = () => {
         {/* 2. Préstamo Kueski */}
         {financialData.kueskiLoan && (
           <section id="kueski-loan">
-            <LoanCard loan={financialData.kueskiLoan} />
+            <LoanCard loan={{
+              ...financialData.kueskiLoan,
+              user_id: financialData.userId,
+              currency: 'MXN',
+              payment_amount: financialData.kueskiLoan.paymentAmount,
+              payment_dates: [1, 15], // Quincenal típico
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }} />
           </section>
         )}
 
@@ -188,11 +195,11 @@ export const OptimizedFinancialDashboard = () => {
             <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-6">
               <h2 className="text-xl font-bold mb-4">Tu Plan Financiero Personalizado</h2>
               <div className="space-y-4">
-                {aiPlan.recommendations?.map((rec, index) => (
-                  <div key={index} className="bg-white p-4 rounded-lg shadow-sm">
-                    <p className="text-sm text-muted-foreground">{rec}</p>
+                {aiPlan.coachMessage && (
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <p className="text-sm text-muted-foreground">{aiPlan.coachMessage.text}</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </section>
