@@ -1,10 +1,10 @@
 
 /**
- * Dashboard optimizado que usa los nuevos hooks y servicios
+ * Dashboard optimizado que usa el nuevo useFinancialPlan master hook
  */
 
 import React, { useState } from 'react'
-import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
+import { useFinancialPlan } from '@/hooks/useFinancialPlan'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { MetricCard } from './MetricCard'
@@ -17,17 +17,34 @@ import {
   TrendingUp, 
   Target,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Trophy,
+  Zap
 } from 'lucide-react'
 
 export const OptimizedFinancialDashboard = () => {
-  const { data: financialData, isLoading, error, refetch } = useOptimizedFinancialData()
-  const [activeTab, setActiveTab] = useState<'overview' | 'breakdown'>('overview')
+  const {
+    financialData,
+    aiPlan,
+    loading,
+    isUpdatingGoal,
+    isGeneratingPlan,
+    isRefreshingData,
+    updateBigGoal,
+    completeMiniGoal,
+    completeAction,
+    generateNewPlan,
+    refreshAll,
+    lastSyncTime,
+    error
+  } = useFinancialPlan()
+  
+  const [activeTab, setActiveTab] = useState<'overview' | 'plan' | 'progress'>('overview')
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Cargando dashboard optimizado..." />
+        <LoadingSpinner size="lg" text="Cargando tu dashboard financiero..." />
       </div>
     )
   }
@@ -39,12 +56,10 @@ export const OptimizedFinancialDashboard = () => {
           <CardContent className="p-6 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Error al cargar datos</h2>
-            <p className="text-muted-foreground mb-4">
-              No se pudieron cargar tus datos financieros.
-            </p>
-            <Button onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Reintentar
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={refreshAll} disabled={isRefreshingData}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshingData ? 'animate-spin' : ''}`} />
+              {isRefreshingData ? 'Actualizando...' : 'Reintentar'}
             </Button>
           </CardContent>
         </Card>
@@ -72,41 +87,56 @@ export const OptimizedFinancialDashboard = () => {
   }
 
   const handlePlanGenerated = (planData: any) => {
-    console.log('Plan generado:', planData)
-    // Aquí puedes manejar la respuesta del plan generado
-    // Por ejemplo, mostrar un modal, navegar a otra página, etc.
+    console.log('Plan generado desde HeroCoachCard:', planData)
+    // El hook ya maneja la actualización automática
   }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Coach Card - Reemplaza el header básico */}
+        {/* Hero Coach Card - Now with integrated AI plan */}
         <div className="mb-8">
           <HeroCoachCard 
             userData={financialData}
-            onGeneratePlan={handlePlanGenerated}
-            onRefresh={refetch}
+            aiPlan={aiPlan}
+            onGeneratePlan={generateNewPlan}
+            onRefresh={refreshAll}
+            isGenerating={isGeneratingPlan}
+            lastSyncTime={lastSyncTime}
           />
         </div>
 
-        {/* Tabs */}
+        {/* Navigation Tabs */}
         <div className="mb-6">
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 bg-muted p-1 rounded-lg">
             <Button
               variant={activeTab === 'overview' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('overview')}
+              className="flex-1"
             >
+              <DollarSign className="h-4 w-4 mr-2" />
               Resumen
             </Button>
             <Button
-              variant={activeTab === 'breakdown' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('breakdown')}
+              variant={activeTab === 'plan' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('plan')}
+              className="flex-1"
             >
-              Desglose
+              <Target className="h-4 w-4 mr-2" />
+              Mi Plan 3-2-1
+            </Button>
+            <Button
+              variant={activeTab === 'progress' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('progress')}
+              className="flex-1"
+            >
+              <Trophy className="h-4 w-4 mr-2" />
+              Progreso
             </Button>
           </div>
         </div>
 
+        {/* Tab Content */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Key Metrics Grid */}
@@ -180,81 +210,194 @@ export const OptimizedFinancialDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'breakdown' && (
+        {activeTab === 'plan' && aiPlan && (
           <div className="space-y-6">
-            {/* Expense Categories */}
+            {/* Big Goals Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Gastos por Categoría</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Tus 3 Metas Principales
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {Object.entries(financialData.expenseCategories).map(([category, amount]) => (
-                    <div key={category} className="flex justify-between items-center">
-                      <span className="capitalize">{category}</span>
-                      <span className="font-semibold">{formatCurrency(amount)}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Income Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Fuentes de Ingreso</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {financialData.incomeBreakdown.map((income, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <div>
-                        <span>{income.source}</span>
-                        <span className="text-sm text-muted-foreground ml-2">
-                          ({income.frequency})
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {aiPlan.bigGoals.map((goal) => (
+                    <div key={goal.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl">{goal.emoji}</span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          goal.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          goal.status === 'active' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {goal.status}
                         </span>
                       </div>
-                      <span className="font-semibold text-green-600">
-                        {formatCurrency(income.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Active Goals */}
-            {financialData.activeGoals.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Metas Activas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {financialData.activeGoals.map((goal, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>{goal.title}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {goal.progress.toFixed(1)}%
-                          </span>
+                      <h3 className="font-semibold">{goal.title}</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>{formatCurrency(goal.currentAmount)}</span>
+                          <span>{formatCurrency(goal.targetAmount)}</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
                             style={{ width: `${Math.min(goal.progress, 100)}%` }}
                           />
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>{formatCurrency(goal.current)}</span>
-                          <span>{formatCurrency(goal.target)}</span>
+                        <div className="text-xs text-muted-foreground">
+                          Timeline: {goal.timeline}
                         </div>
                       </div>
-                    ))}
+                      <Button 
+                        size="sm" 
+                        onClick={() => updateBigGoal(goal.id, { progress: Math.min(goal.progress + 10, 100) })}
+                        disabled={isUpdatingGoal || goal.status === 'completed'}
+                        className="w-full"
+                      >
+                        {isUpdatingGoal ? 'Actualizando...' : 'Actualizar Progreso'}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Mini Goals Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Mini-Metas de la Semana
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {aiPlan.miniGoals.map((goal) => (
+                    <div key={goal.id} className={`flex items-center gap-3 p-3 rounded-lg border ${
+                      goal.isCompleted ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <Button
+                        size="sm"
+                        variant={goal.isCompleted ? "default" : "outline"}
+                        onClick={() => !goal.isCompleted && completeMiniGoal(goal.id)}
+                        disabled={goal.isCompleted}
+                        className="shrink-0"
+                      >
+                        {goal.isCompleted ? '✓' : '○'}
+                      </Button>
+                      <div className="flex-1">
+                        <h4 className={`font-medium ${goal.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+                          {goal.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{goal.description}</p>
+                      </div>
+                      <div className="text-sm font-semibold text-blue-600">
+                        +{goal.points} pts
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Immediate Action */}
+            {aiPlan.immediateAction && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-orange-500" />
+                    Acción Inmediata
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className={`p-4 rounded-lg border ${
+                    aiPlan.immediateAction.isCompleted ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold">{aiPlan.immediateAction.title}</h3>
+                      <span className="text-sm px-2 py-1 rounded-full bg-orange-100 text-orange-800">
+                        Impacto: {aiPlan.immediateAction.impact}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {aiPlan.immediateAction.description}
+                    </p>
+                    {!aiPlan.immediateAction.isCompleted && (
+                      <Button 
+                        size="sm"
+                        onClick={() => completeAction(aiPlan.immediateAction.id)}
+                      >
+                        Marcar como Completado
+                      </Button>
+                    )}
+                    {aiPlan.immediateAction.isCompleted && (
+                      <div className="text-green-600 font-medium">
+                        ✅ Completado el {new Date(aiPlan.immediateAction.completedAt!).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+
+        {activeTab === 'progress' && aiPlan && (
+          <div className="space-y-6">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <MetricCard
+                title="Metas Completadas"
+                value={aiPlan.stats.completedBigGoals.toString()}
+                icon={Trophy}
+                className="bg-yellow-50 border-yellow-200"
+              />
+              <MetricCard
+                title="Mini-Metas"
+                value={aiPlan.stats.completedMiniGoals.toString()}
+                icon={Zap}
+                className="bg-blue-50 border-blue-200"
+              />
+              <MetricCard
+                title="Puntos Totales"
+                value={aiPlan.stats.totalPoints.toString()}
+                icon={Target}
+                className="bg-purple-50 border-purple-200"
+              />
+              <MetricCard
+                title="Racha (días)"
+                value={aiPlan.stats.streakDays.toString()}
+                icon={TrendingUp}
+                className="bg-green-50 border-green-200"
+              />
+            </div>
+
+            {/* Progress Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Detalles de Progreso</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <Trophy className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">¡Sigue así!</h3>
+                    <p className="text-muted-foreground">
+                      Has completado {aiPlan.stats.completedMiniGoals} mini-metas y acumulado {aiPlan.stats.totalPoints} puntos.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Sync Status */}
+        {lastSyncTime && (
+          <div className="text-center text-sm text-muted-foreground mt-8">
+            Última actualización: {lastSyncTime.toLocaleTimeString()}
           </div>
         )}
       </div>

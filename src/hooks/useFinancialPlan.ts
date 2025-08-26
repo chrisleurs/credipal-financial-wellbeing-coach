@@ -1,437 +1,587 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
 import { useOptimizedFinancialData } from './useOptimizedFinancialData'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { debounce } from 'lodash'
-import type { 
-  FinancialCoachPlan, 
-  BigGoal, 
-  MiniGoal, 
-  ImmediateAction,
-  CoachingUIState 
-} from '@/types/coach'
 
-// Hook options and configuration
-interface UseFinancialPlanOptions {
-  enableRealtime?: boolean
-  cacheTimeout?: number
-  retryAttempts?: number
-  optimisticUpdates?: boolean
+// Types for AI Plan
+interface AIPlan {
+  id: string
+  version: number
+  bigGoals: Array<{
+    id: string
+    title: string
+    targetAmount: number
+    currentAmount: number
+    progress: number
+    status: 'active' | 'completed' | 'paused'
+    timeline: string
+    emoji: string
+  }>
+  miniGoals: Array<{
+    id: string
+    title: string
+    description: string
+    points: number
+    isCompleted: boolean
+    completedAt?: string
+  }>
+  immediateAction: {
+    id: string
+    title: string
+    description: string
+    impact: string
+    isCompleted: boolean
+    completedAt?: string
+  }
+  coachMessage: {
+    text: string
+    type: 'motivational' | 'warning' | 'celebration'
+    personalizedGreeting: string
+    nextStepSuggestion: string
+  }
+  stats: {
+    completedBigGoals: number
+    completedMiniGoals: number
+    completedActions: number
+    totalPoints: number
+    streakDays: number
+  }
+  createdAt: string
+  updatedAt: string
 }
 
 interface UseFinancialPlanReturn {
   // Core data
-  plan: FinancialCoachPlan | null
+  financialData: any
+  aiPlan: AIPlan | null
+  
+  // Loading states
   loading: boolean
-  error: string | null
+  isUpdatingGoal: boolean
+  isGeneratingPlan: boolean
+  isRefreshingData: boolean
   
-  // Granular loading states
-  loadingStates: {
-    refreshing: boolean
-    updatingBigGoal: boolean
-    updatingMiniGoal: boolean
-    completingAction: boolean
-  }
-  
-  // Update methods
-  updateBigGoal: (goalId: string, updates: Partial<BigGoal>) => Promise<void>
+  // Methods
+  updateBigGoal: (goalId: string, updates: any) => Promise<void>
   completeMiniGoal: (goalId: string) => Promise<void>
   completeAction: (actionId: string) => Promise<void>
-  refreshPlan: () => Promise<void>
+  generateNewPlan: () => Promise<void>
+  refreshAll: () => Promise<void>
   
-  // Utility methods
-  invalidateCache: () => void
-  retryLastOperation: () => Promise<void>
-  
-  // Metrics
-  isStale: boolean
-  lastUpdated: string | null
+  // Metadata
+  lastSyncTime: Date | null
+  error: string | null
 }
 
-const DEFAULT_OPTIONS: UseFinancialPlanOptions = {
-  enableRealtime: true,
-  cacheTimeout: 5 * 60 * 1000, // 5 minutes
-  retryAttempts: 3,
-  optimisticUpdates: true
-}
-
-export const useFinancialPlan = (
-  userId?: string, 
-  options: UseFinancialPlanOptions = {}
-): UseFinancialPlanReturn => {
+export const useFinancialPlan = (userId?: string): UseFinancialPlanReturn => {
   const { user } = useAuth()
-  const { data: financialData } = useOptimizedFinancialData()
+  const effectiveUserId = userId || user?.id
   const { toast } = useToast()
   const queryClient = useQueryClient()
   
-  const config = { ...DEFAULT_OPTIONS, ...options }
-  const effectiveUserId = userId || user?.id
+  // Local states for granular loading
+  const [isUpdatingGoal, setIsUpdatingGoal] = useState(false)
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false)
+  const [isRefreshingData, setIsRefreshingData] = useState(false)
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
   
-  // Local state for granular loading management
-  const [loadingStates, setLoadingStates] = useState({
-    refreshing: false,
-    updatingBigGoal: false,
-    updatingMiniGoal: false,
-    completingAction: false
-  })
+  // Get base financial data
+  const optimizedData = useOptimizedFinancialData()
   
-  const [lastOperation, setLastOperation] = useState<(() => Promise<void>) | null>(null)
-  const retryCountRef = useRef(0)
-
-  // Query key for caching
-  const planQueryKey = ['financial-plan', effectiveUserId]
-  
-  // Fetch financial plan with caching and error handling
-  const planQuery = useQuery({
-    queryKey: planQueryKey,
-    queryFn: async (): Promise<FinancialCoachPlan | null> => {
-      if (!effectiveUserId) throw new Error('User ID is required')
-
-      console.log(`Fetching financial plan for user: ${effectiveUserId}`)
+  // Fetch AI Plan from financial_plans table
+  const aiPlanQuery = useQuery({
+    queryKey: ['financial-plan-ai', effectiveUserId],
+    queryFn: async (): Promise<AIPlan | null> => {
+      if (!effectiveUserId) throw new Error('User ID required')
+      
+      console.log('Fetching AI plan for user:', effectiveUserId)
       
       const { data, error } = await supabase
         .from('financial_plans')
         .select('*')
         .eq('user_id', effectiveUserId)
-        .eq('plan_type', 'coach-3-2-1')
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
+        .in('plan_type', ['3-2-1', 'coach-3-2-1', 'credipal-3-2-1'])
+        .order('version', { ascending: false })
         .limit(1)
         .maybeSingle()
-
-      if (error) {
-        console.error('Error fetching financial plan:', error)
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching AI plan:', error)
         throw error
       }
       
-      if (!data?.plan_data) {
-        console.log('No active financial plan found')
-        return null
+      // If no plan exists, generate a basic one
+      if (!data) {
+        console.log('No AI plan found, will generate basic plan')
+        return await generateBasicPlan(effectiveUserId)
       }
-
-      // Parse plan data safely
-      try {
-        const planData = typeof data.plan_data === 'string' 
-          ? JSON.parse(data.plan_data) 
-          : data.plan_data
-        
-        return planData as FinancialCoachPlan
-      } catch (parseError) {
-        console.error('Error parsing plan data:', parseError)
-        throw new Error('Invalid plan data format')
-      }
+      
+      return transformPlanData(data)
     },
-    enabled: !!effectiveUserId,
-    staleTime: config.cacheTimeout,
-    gcTime: config.cacheTimeout * 2,
-    retry: (failureCount, error) => {
-      console.log(`Query retry attempt ${failureCount}:`, error)
-      return failureCount < config.retryAttempts
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+    enabled: !!effectiveUserId && !!optimizedData.data,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours cache
+    gcTime: 48 * 60 * 60 * 1000, // 48 hours garbage collection
+    retry: 2
   })
 
-  // Optimistic update helper
-  const performOptimisticUpdate = useCallback((
-    updateFn: (plan: FinancialCoachPlan) => FinancialCoachPlan
-  ) => {
-    if (!config.optimisticUpdates || !planQuery.data) return
+  // Transform database plan data to AIPlan format
+  const transformPlanData = (dbPlan: any): AIPlan => {
+    const planData = typeof dbPlan.plan_data === 'string' 
+      ? JSON.parse(dbPlan.plan_data) 
+      : dbPlan.plan_data
 
-    queryClient.setQueryData(planQueryKey, updateFn)
-  }, [queryClient, planQueryKey, planQuery.data, config.optimisticUpdates])
+    return {
+      id: dbPlan.id,
+      version: dbPlan.version || 1,
+      bigGoals: planData.bigGoals || [],
+      miniGoals: planData.miniGoals || [],
+      immediateAction: planData.immediateAction || {
+        id: 'default',
+        title: 'Revisar gastos mensuales',
+        description: 'Identifica oportunidades de ahorro',
+        impact: 'Medio',
+        isCompleted: false
+      },
+      coachMessage: planData.coachMessage || {
+        text: '¡Bienvenido a tu journey financiero!',
+        type: 'motivational',
+        personalizedGreeting: `¡Hola ${user?.user_metadata?.first_name || 'Usuario'}!`,
+        nextStepSuggestion: 'Comencemos organizando tus finanzas'
+      },
+      stats: planData.stats || {
+        completedBigGoals: 0,
+        completedMiniGoals: 0,
+        completedActions: 0,
+        totalPoints: 0,
+        streakDays: 0
+      },
+      createdAt: dbPlan.created_at,
+      updatedAt: dbPlan.updated_at
+    }
+  }
 
-  // Rollback optimistic update helper
-  const rollbackOptimisticUpdate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: planQueryKey })
-  }, [queryClient, planQueryKey])
+  // Generate basic plan when none exists
+  const generateBasicPlan = async (userId: string): Promise<AIPlan> => {
+    console.log('Generating basic plan for user:', userId)
+    
+    const basicPlan: AIPlan = {
+      id: `basic-${userId}`,
+      version: 1,
+      bigGoals: [
+        {
+          id: 'goal-1',
+          title: 'Crear fondo de emergencia',
+          targetAmount: 10000,
+          currentAmount: 0,
+          progress: 0,
+          status: 'active',
+          timeline: '6 meses',
+          emoji: '🛡️'
+        },
+        {
+          id: 'goal-2', 
+          title: 'Reducir gastos innecesarios',
+          targetAmount: 2000,
+          currentAmount: 0,
+          progress: 0,
+          status: 'active',
+          timeline: '3 meses',
+          emoji: '✂️'
+        },
+        {
+          id: 'goal-3',
+          title: 'Aumentar ingresos',
+          targetAmount: 5000,
+          currentAmount: 0,
+          progress: 0,
+          status: 'active',
+          timeline: '12 meses',
+          emoji: '📈'
+        }
+      ],
+      miniGoals: [
+        {
+          id: 'mini-1',
+          title: 'Revisar gastos de la semana',
+          description: 'Analiza dónde va tu dinero',
+          points: 10,
+          isCompleted: false
+        },
+        {
+          id: 'mini-2',
+          title: 'Separar dinero para ahorro',
+          description: 'Aparta al menos $500 esta semana',
+          points: 20,
+          isCompleted: false
+        }
+      ],
+      immediateAction: {
+        id: 'action-1',
+        title: 'Revisar gastos del mes pasado',
+        description: 'Identifica tus 3 gastos más grandes',
+        impact: 'Alto',
+        isCompleted: false
+      },
+      coachMessage: {
+        text: '¡Perfecto momento para tomar control de tus finanzas!',
+        type: 'motivational',
+        personalizedGreeting: `¡Hola ${user?.user_metadata?.first_name || 'Usuario'}!`,
+        nextStepSuggestion: 'Empecemos con pequeños pasos que generen gran impacto'
+      },
+      stats: {
+        completedBigGoals: 0,
+        completedMiniGoals: 0,
+        completedActions: 0,
+        totalPoints: 0,
+        streakDays: 1
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
 
-  // Database update mutation with retry logic
-  const updatePlanMutation = useMutation({
-    mutationFn: async (updatedPlan: FinancialCoachPlan) => {
-      if (!effectiveUserId) throw new Error('User ID is required')
+    // Save basic plan to database
+    await supabase
+      .from('financial_plans')
+      .insert({
+        user_id: userId,
+        plan_type: 'basic-3-2-1',
+        plan_data: basicPlan,
+        status: 'active',
+        version: 1
+      })
 
-      console.log('Updating financial plan in database')
+    return basicPlan
+  }
+
+  // Update Big Goal mutation with optimistic updates
+  const updateBigGoalMutation = useMutation({
+    mutationFn: async ({ goalId, updates }: { goalId: string; updates: any }) => {
+      if (!effectiveUserId || !aiPlanQuery.data) throw new Error('Missing data')
       
-      const { data, error } = await supabase
+      const updatedPlan = {
+        ...aiPlanQuery.data,
+        bigGoals: aiPlanQuery.data.bigGoals.map(goal =>
+          goal.id === goalId 
+            ? { ...goal, ...updates, updatedAt: new Date().toISOString() }
+            : goal
+        ),
+        updatedAt: new Date().toISOString()
+      }
+
+      const { error } = await supabase
         .from('financial_plans')
         .update({
-          plan_data: updatedPlan as any,
+          plan_data: updatedPlan,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', effectiveUserId)
-        .eq('plan_type', 'coach-3-2-1')
         .eq('status', 'active')
-        .select()
-        .single()
 
       if (error) throw error
-      return data
+      return updatedPlan
+    },
+    onMutate: async ({ goalId, updates }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['financial-plan-ai', effectiveUserId] })
+      
+      // Snapshot previous value
+      const previousPlan = queryClient.getQueryData(['financial-plan-ai', effectiveUserId])
+      
+      // Optimistically update cache
+      queryClient.setQueryData(['financial-plan-ai', effectiveUserId], (old: AIPlan | undefined) => {
+        if (!old) return old
+        return {
+          ...old,
+          bigGoals: old.bigGoals.map(goal =>
+            goal.id === goalId ? { ...goal, ...updates } : goal
+          )
+        }
+      })
+      
+      return { previousPlan }
+    },
+    onError: (error, variables, context) => {
+      // Rollback optimistic update
+      if (context?.previousPlan) {
+        queryClient.setQueryData(['financial-plan-ai', effectiveUserId], context.previousPlan)
+      }
+      
+      toast({
+        title: "Error actualizando meta",
+        description: "No se pudo guardar el progreso. Intenta nuevamente.",
+        variant: "destructive"
+      })
     },
     onSuccess: () => {
-      console.log('Plan updated successfully')
-      queryClient.invalidateQueries({ queryKey: planQueryKey })
-      retryCountRef.current = 0
+      setLastSyncTime(new Date())
+      toast({
+        title: "¡Progreso actualizado! 📈",
+        description: "Tu avance ha sido guardado exitosamente.",
+      })
     },
-    onError: (error) => {
-      console.error('Plan update failed:', error)
-      rollbackOptimisticUpdate()
-      
-      if (retryCountRef.current < config.retryAttempts) {
-        retryCountRef.current++
-        toast({
-          title: "Error temporal",
-          description: `Reintentando actualización... (${retryCountRef.current}/${config.retryAttempts})`,
-          variant: "destructive"
-        })
-      } else {
-        toast({
-          title: "Error actualizando plan",
-          description: "No se pudo guardar los cambios. Intenta nuevamente.",
-          variant: "destructive"
-        })
-      }
+    onSettled: () => {
+      setIsUpdatingGoal(false)
     }
   })
 
-  // Debounced database update to prevent spam
-  const debouncedUpdate = useCallback(
-    debounce((updatedPlan: FinancialCoachPlan) => {
-      updatePlanMutation.mutate(updatedPlan)
-    }, 1000),
-    [updatePlanMutation]
-  )
-
-  // Update big goal with optimistic updates
-  const updateBigGoal = useCallback(async (goalId: string, updates: Partial<BigGoal>): Promise<void> => {
-    if (!planQuery.data) throw new Error('No plan data available')
-
-    setLoadingStates(prev => ({ ...prev, updatingBigGoal: true }))
-    setLastOperation(() => () => updateBigGoal(goalId, updates))
-
-    try {
-      // Optimistic update
-      const optimisticUpdate = (plan: FinancialCoachPlan): FinancialCoachPlan => ({
-        ...plan,
-        bigGoals: plan.bigGoals.map(goal => 
-          goal.id === goalId 
-            ? { 
-                ...goal, 
-                ...updates, 
-                updatedAt: new Date().toISOString(),
-                status: updates.progress && updates.progress >= 100 ? 'completed' : goal.status
-              }
-            : goal
-        ),
-        updatedAt: new Date().toISOString()
-      })
-
-      performOptimisticUpdate(optimisticUpdate)
+  // Complete Mini Goal mutation
+  const completeMiniGoalMutation = useMutation({
+    mutationFn: async (goalId: string) => {
+      if (!effectiveUserId || !aiPlanQuery.data) throw new Error('Missing data')
       
-      // Debounced database update
-      const updatedPlan = optimisticUpdate(planQuery.data)
-      debouncedUpdate(updatedPlan)
-      
-      toast({
-        title: "Progreso actualizado! 📈",
-        description: "Tu avance ha sido guardado exitosamente.",
-      })
-
-    } catch (error) {
-      console.error('Error updating big goal:', error)
-      throw error
-    } finally {
-      setLoadingStates(prev => ({ ...prev, updatingBigGoal: false }))
-    }
-  }, [planQuery.data, performOptimisticUpdate, debouncedUpdate, toast])
-
-  // Complete mini goal with celebration
-  const completeMiniGoal = useCallback(async (goalId: string): Promise<void> => {
-    if (!planQuery.data) throw new Error('No plan data available')
-
-    setLoadingStates(prev => ({ ...prev, updatingMiniGoal: true }))
-    setLastOperation(() => () => completeMiniGoal(goalId))
-
-    try {
-      const optimisticUpdate = (plan: FinancialCoachPlan): FinancialCoachPlan => ({
-        ...plan,
-        miniGoals: plan.miniGoals.map(goal => 
+      const updatedPlan = {
+        ...aiPlanQuery.data,
+        miniGoals: aiPlanQuery.data.miniGoals.map(goal =>
           goal.id === goalId 
-            ? { 
-                ...goal, 
-                isCompleted: true,
-                completedAt: new Date().toISOString(),
-                currentValue: goal.targetValue
-              }
+            ? { ...goal, isCompleted: true, completedAt: new Date().toISOString() }
             : goal
         ),
         stats: {
-          ...plan.stats,
-          completedMiniGoals: plan.stats.completedMiniGoals + 1,
-          totalPoints: plan.stats.totalPoints + (plan.miniGoals.find(g => g.id === goalId)?.points || 0)
+          ...aiPlanQuery.data.stats,
+          completedMiniGoals: aiPlanQuery.data.stats.completedMiniGoals + 1,
+          totalPoints: aiPlanQuery.data.stats.totalPoints + (aiPlanQuery.data.miniGoals.find(g => g.id === goalId)?.points || 0)
         },
         updatedAt: new Date().toISOString()
-      })
+      }
 
-      performOptimisticUpdate(optimisticUpdate)
+      const { error } = await supabase
+        .from('financial_plans')
+        .update({
+          plan_data: updatedPlan,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', effectiveUserId)
+        .eq('status', 'active')
+
+      if (error) throw error
+      return updatedPlan
+    },
+    onSuccess: (updatedPlan) => {
+      queryClient.setQueryData(['financial-plan-ai', effectiveUserId], updatedPlan)
+      setLastSyncTime(new Date())
       
-      const updatedPlan = optimisticUpdate(planQuery.data)
-      debouncedUpdate(updatedPlan)
-      
-      const completedGoal = planQuery.data.miniGoals.find(g => g.id === goalId)
+      const completedGoal = aiPlanQuery.data?.miniGoals.find(g => g.id === updatedPlan.miniGoals.find(mg => mg.isCompleted)?.id)
       
       toast({
         title: "¡Mini-meta completada! 🎉",
-        description: completedGoal ? `${completedGoal.completionReward}` : "¡Excelente trabajo!",
+        description: `+${completedGoal?.points || 0} puntos. ¡Excelente trabajo!`,
       })
-
-    } catch (error) {
-      console.error('Error completing mini goal:', error)
-      throw error
-    } finally {
-      setLoadingStates(prev => ({ ...prev, updatingMiniGoal: false }))
+    },
+    onError: () => {
+      toast({
+        title: "Error completando meta",
+        description: "No se pudo marcar como completada. Intenta nuevamente.",
+        variant: "destructive"
+      })
     }
-  }, [planQuery.data, performOptimisticUpdate, debouncedUpdate, toast])
+  })
 
-  // Complete immediate action
-  const completeAction = useCallback(async (actionId: string): Promise<void> => {
-    if (!planQuery.data) throw new Error('No plan data available')
-
-    setLoadingStates(prev => ({ ...prev, completingAction: true }))
-    setLastOperation(() => () => completeAction(actionId))
-
-    try {
-      const optimisticUpdate = (plan: FinancialCoachPlan): FinancialCoachPlan => ({
-        ...plan,
+  // Complete Action mutation
+  const completeActionMutation = useMutation({
+    mutationFn: async (actionId: string) => {
+      if (!effectiveUserId || !aiPlanQuery.data) throw new Error('Missing data')
+      
+      const updatedPlan = {
+        ...aiPlanQuery.data,
         immediateAction: {
-          ...plan.immediateAction,
+          ...aiPlanQuery.data.immediateAction,
           isCompleted: true,
           completedAt: new Date().toISOString()
         },
         stats: {
-          ...plan.stats,
-          completedActions: plan.stats.completedActions + 1
+          ...aiPlanQuery.data.stats,
+          completedActions: aiPlanQuery.data.stats.completedActions + 1
         },
         updatedAt: new Date().toISOString()
-      })
+      }
 
-      performOptimisticUpdate(optimisticUpdate)
-      
-      const updatedPlan = optimisticUpdate(planQuery.data)
-      debouncedUpdate(updatedPlan)
+      const { error } = await supabase
+        .from('financial_plans')
+        .update({
+          plan_data: updatedPlan,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', effectiveUserId)
+        .eq('status', 'active')
+
+      if (error) throw error
+      return updatedPlan
+    },
+    onSuccess: (updatedPlan) => {
+      queryClient.setQueryData(['financial-plan-ai', effectiveUserId], updatedPlan)
+      setLastSyncTime(new Date())
       
       toast({
         title: "¡Acción completada! ✅",
-        description: `Impacto: ${planQuery.data.immediateAction.impact}`,
+        description: `Impacto: ${updatedPlan.immediateAction.impact}`,
+      })
+    }
+  })
+
+  // Generate New Plan mutation using edge function
+  const generateNewPlanMutation = useMutation({
+    mutationFn: async () => {
+      if (!effectiveUserId || !optimizedData.data) throw new Error('Missing data')
+      
+      console.log('Generating new AI plan...')
+      
+      const { data, error } = await supabase.functions.invoke('generate-financial-plan', {
+        body: {
+          userId: effectiveUserId,
+          financialData: {
+            name: `${user?.user_metadata?.first_name || ''} ${user?.user_metadata?.last_name || ''}`.trim() || user?.email || 'Usuario',
+            monthlyIncome: optimizedData.data.monthlyIncome,
+            monthlyExpenses: optimizedData.data.monthlyExpenses,
+            totalDebt: optimizedData.data.totalDebtBalance,
+            savingsCapacity: optimizedData.data.savingsCapacity,
+            goals: optimizedData.data.activeGoals,
+            debts: optimizedData.data.activeDebts
+          }
+        }
       })
 
-    } catch (error) {
-      console.error('Error completing action:', error)
-      throw error
-    } finally {
-      setLoadingStates(prev => ({ ...prev, completingAction: false }))
+      if (error) throw new Error(`AI generation failed: ${error.message}`)
+      
+      // Transform AI response to our AIPlan format
+      const aiPlan: AIPlan = {
+        id: `ai-${Date.now()}`,
+        version: Date.now(),
+        bigGoals: data.bigGoals || [],
+        miniGoals: data.miniGoals || [],
+        immediateAction: data.immediateAction || {},
+        coachMessage: {
+          text: data.motivationalMessage || '¡Nuevo plan listo!',
+          type: 'motivational',
+          personalizedGreeting: `¡Hola ${user?.user_metadata?.first_name || 'Usuario'}!`,
+          nextStepSuggestion: data.recommendations?.[0] || 'Sigamos con el plan'
+        },
+        stats: {
+          completedBigGoals: 0,
+          completedMiniGoals: 0,
+          completedActions: 0,
+          totalPoints: 0,
+          streakDays: 1
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+      
+      // Save to financial_plans table
+      await supabase
+        .from('financial_plans')
+        .upsert({
+          user_id: effectiveUserId,
+          plan_type: 'ai-3-2-1',
+          plan_data: aiPlan,
+          status: 'active',
+          version: Date.now()
+        })
+        
+      return aiPlan
+    },
+    onSuccess: (newPlan) => {
+      queryClient.setQueryData(['financial-plan-ai', effectiveUserId], newPlan)
+      setIsGeneratingPlan(false)
+      setLastSyncTime(new Date())
+      
+      toast({
+        title: "¡Nuevo plan generado! 🎯",
+        description: "Tu plan financiero personalizado está listo.",
+      })
+    },
+    onError: (error) => {
+      setIsGeneratingPlan(false)
+      console.error('Plan generation error:', error)
+      
+      toast({
+        title: "Error generando plan",
+        description: "No se pudo generar tu plan financiero. Intenta nuevamente.",
+        variant: "destructive"
+      })
     }
-  }, [planQuery.data, performOptimisticUpdate, debouncedUpdate, toast])
+  })
 
-  // Refresh plan data
-  const refreshPlan = useCallback(async (): Promise<void> => {
-    setLoadingStates(prev => ({ ...prev, refreshing: true }))
+  // Debounced update methods
+  const debouncedUpdateBigGoal = useCallback(
+    debounce((goalId: string, updates: any) => {
+      setIsUpdatingGoal(true)
+      updateBigGoalMutation.mutate({ goalId, updates })
+    }, 1000),
+    [updateBigGoalMutation]
+  )
+
+  // Public methods
+  const updateBigGoal = useCallback(async (goalId: string, updates: any) => {
+    debouncedUpdateBigGoal(goalId, updates)
+  }, [debouncedUpdateBigGoal])
+
+  const completeMiniGoal = useCallback(async (goalId: string) => {
+    completeMiniGoalMutation.mutate(goalId)
+  }, [completeMiniGoalMutation])
+
+  const completeAction = useCallback(async (actionId: string) => {
+    completeActionMutation.mutate(actionId)
+  }, [completeActionMutation])
+
+  const generateNewPlan = useCallback(async () => {
+    setIsGeneratingPlan(true)
+    generateNewPlanMutation.mutate()
+  }, [generateNewPlanMutation])
+
+  const refreshAll = useCallback(async () => {
+    setIsRefreshingData(true)
     
     try {
-      await planQuery.refetch()
+      await Promise.all([
+        optimizedData.refetch(),
+        queryClient.invalidateQueries({ queryKey: ['financial-plan-ai', effectiveUserId] })
+      ])
+      
+      setLastSyncTime(new Date())
+      
       toast({
-        title: "Plan actualizado",
-        description: "Datos sincronizados con el servidor.",
+        title: "Datos actualizados",
+        description: "Información sincronizada con el servidor.",
       })
     } catch (error) {
-      console.error('Error refreshing plan:', error)
       toast({
         title: "Error actualizando",
-        description: "No se pudo actualizar el plan. Intenta nuevamente.",
+        description: "No se pudieron actualizar los datos. Intenta nuevamente.",
         variant: "destructive"
       })
     } finally {
-      setLoadingStates(prev => ({ ...prev, refreshing: false }))
+      setIsRefreshingData(false)
     }
-  }, [planQuery, toast])
-
-  // Retry last failed operation
-  const retryLastOperation = useCallback(async (): Promise<void> => {
-    if (!lastOperation) return
-    
-    try {
-      await lastOperation()
-      setLastOperation(null)
-    } catch (error) {
-      console.error('Retry failed:', error)
-      throw error
-    }
-  }, [lastOperation])
-
-  // Cache invalidation
-  const invalidateCache = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: planQueryKey })
-  }, [queryClient, planQueryKey])
-
-  // Real-time subscriptions
-  useEffect(() => {
-    if (!config.enableRealtime || !effectiveUserId) return
-
-    console.log('Setting up real-time subscription for financial plans')
-    
-    const channel = supabase
-      .channel(`financial-plans-${effectiveUserId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'financial_plans',
-          filter: `user_id=eq.${effectiveUserId}`
-        },
-        (payload) => {
-          console.log('Real-time update received:', payload)
-          queryClient.invalidateQueries({ queryKey: planQueryKey })
-        }
-      )
-      .subscribe()
-
-    return () => {
-      console.log('Cleaning up real-time subscription')
-      supabase.removeChannel(channel)
-    }
-  }, [config.enableRealtime, effectiveUserId, queryClient, planQueryKey])
-
-  // Calculate if data is stale
-  const isStale = planQuery.isStale || 
-    (planQuery.dataUpdatedAt && Date.now() - planQuery.dataUpdatedAt > config.cacheTimeout)
+  }, [optimizedData, queryClient, effectiveUserId, toast])
 
   return {
     // Core data
-    plan: planQuery.data || null,
-    loading: planQuery.isLoading,
-    error: planQuery.error?.message || null,
+    financialData: optimizedData.data,
+    aiPlan: aiPlanQuery.data || null,
     
-    // Granular loading states
-    loadingStates,
+    // Loading states
+    loading: optimizedData.isLoading || aiPlanQuery.isLoading,
+    isUpdatingGoal,
+    isGeneratingPlan,
+    isRefreshingData,
     
-    // Update methods
+    // Methods
     updateBigGoal,
     completeMiniGoal,
     completeAction,
-    refreshPlan,
+    generateNewPlan,
+    refreshAll,
     
-    // Utility methods
-    invalidateCache,
-    retryLastOperation,
-    
-    // Metrics
-    isStale: isStale || false,
-    lastUpdated: planQuery.dataUpdatedAt ? new Date(planQuery.dataUpdatedAt).toISOString() : null
+    // Metadata
+    lastSyncTime,
+    error: optimizedData.error?.message || aiPlanQuery.error?.message || null
   }
 }
 
-// Export hook options for external configuration
-export type { UseFinancialPlanOptions, UseFinancialPlanReturn }
+// Export types for external use
+export type { AIPlan, UseFinancialPlanReturn }

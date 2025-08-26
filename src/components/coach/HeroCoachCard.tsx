@@ -1,168 +1,112 @@
-
 import React, { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { AnimatedProgressRing } from '@/components/animations/AnimatedProgressRing'
+import { Sparkles, RefreshCw, TrendingUp, Target } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/integrations/supabase/client'
-import { OptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
-import { 
-  Sparkles, 
-  TrendingUp, 
-  Target,
-  Zap,
-  Heart,
-  RefreshCw
-} from 'lucide-react'
+import { AnimatedProgressRing } from '../shared/AnimatedProgressRing'
 
 interface HeroCoachCardProps {
-  userData: OptimizedFinancialData
-  onGeneratePlan?: (planData: any) => void
+  userData: any
+  aiPlan?: any
+  onGeneratePlan?: () => void
   onRefresh?: () => void
+  isGenerating?: boolean
+  lastSyncTime?: Date | null
 }
 
-export const HeroCoachCard: React.FC<HeroCoachCardProps> = ({ 
+export const HeroCoachCard = ({ 
   userData, 
-  onGeneratePlan,
-  onRefresh 
-}) => {
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedMessage, setGeneratedMessage] = useState<string>('')
+  aiPlan,
+  onGeneratePlan, 
+  onRefresh,
+  isGenerating = false,
+  lastSyncTime
+}: HeroCoachCardProps) => {
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { toast } = useToast()
   const { user } = useAuth()
 
-  // Calcular health score basado en situación financiera
   const calculateHealthScore = (): number => {
-    let score = 0
+    let score = 50 // Base score
     
-    // Ingresos vs gastos (40 puntos)
-    const incomeExpenseRatio = userData.monthlyExpenses / (userData.monthlyIncome || 1)
-    if (incomeExpenseRatio < 0.5) score += 40
-    else if (incomeExpenseRatio < 0.7) score += 30
-    else if (incomeExpenseRatio < 0.9) score += 20
-    else if (incomeExpenseRatio <= 1) score += 10
-    
-    // Capacidad de ahorro (30 puntos)
-    const savingsRatio = userData.savingsCapacity / (userData.monthlyIncome || 1)
-    if (savingsRatio > 0.3) score += 30
-    else if (savingsRatio > 0.2) score += 25
-    else if (savingsRatio > 0.1) score += 20
-    else if (savingsRatio > 0) score += 10
-    
-    // Situación de deudas (20 puntos)
-    if (userData.totalDebtBalance === 0) score += 20
-    else if (userData.totalMonthlyDebtPayments < userData.monthlyIncome * 0.3) score += 15
-    else if (userData.totalMonthlyDebtPayments < userData.monthlyIncome * 0.5) score += 10
-    
-    // Metas activas (10 puntos)
-    if (userData.activeGoals.length > 0) score += 10
-    
+    // Reward savings
+    if (userData.currentSavings > 0) {
+      score += 15
+    }
+
+    // Reward low debt
+    if (userData.totalDebtBalance < userData.monthlyIncome * 3) {
+      score += 20
+    }
+
+    // Reward positive balance
+    if (userData.monthlyBalance > 0) {
+      score += 15
+    }
+
     return Math.min(score, 100)
   }
 
-  // Generar mensaje dinámico del coach
+  const getCoachMood = (): { mood: string; color: string; emoji: string; message: string } => {
+    const { monthlyBalance } = userData
+
+    if (monthlyBalance > 1000) {
+      return {
+        mood: 'great',
+        color: 'from-green-400 to-green-600',
+        emoji: '🚀',
+        message: '¡Estás en excelente forma financiera!'
+      }
+    } else if (monthlyBalance > 0) {
+      return {
+        mood: 'good',
+        color: 'from-blue-400 to-blue-600',
+        emoji: '👍',
+        message: 'Vas por buen camino, sigue así.'
+      }
+    } else {
+      return {
+        mood: 'neutral',
+        color: 'from-orange-400 to-orange-600',
+        emoji: '🤔',
+        message: 'Analicemos cómo mejorar tus finanzas.'
+      }
+    }
+  }
+
   const generateCoachMessage = (): string => {
-    if (generatedMessage) return generatedMessage
+    // If we have AI plan message, use it
+    if (aiPlan?.coachMessage?.text) {
+      return aiPlan.coachMessage.text
+    }
     
     const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Usuario'
     const { savingsCapacity, totalDebtBalance, monthlyIncome } = userData
     
-    // Situación: Excelente capacidad de ahorro
-    if (savingsCapacity > monthlyIncome * 0.2) {
-      return `¡Hola ${firstName}! Tienes una excelente capacidad de ahorro de ${formatCurrency(savingsCapacity)} mensual. ¡Vamos a maximizarla! 🚀`
+    if (savingsCapacity > 5000) {
+      return `¡${firstName}, tu fondo de emergencia está muy bien! Sigue ahorrando.`
+    } else if (totalDebtBalance > monthlyIncome * 5) {
+      return `¡${firstName}, enfócate en reducir tus deudas!`
+    } else {
+      return `¡${firstName}, revisa tus gastos y ahorra más!`
     }
-    
-    // Situación: Deudas pero con margen
-    if (totalDebtBalance > 0 && savingsCapacity > 0) {
-      return `¡${firstName}, estás en buen camino! Con ${formatCurrency(savingsCapacity)} de margen mensual, eliminaremos esas deudas 💪`
-    }
-    
-    // Situación: Sin deudas pero sin ahorro
-    if (totalDebtBalance === 0 && savingsCapacity <= 0) {
-      return `Hola ${firstName}, tienes finanzas sanas sin deudas. Vamos a crear tu primer fondo de ahorro ✨`
-    }
-    
-    // Situación: Necesita organización urgente
-    if (savingsCapacity < 0) {
-      return `${firstName}, vamos a estabilizar tus finanzas paso a paso. Cada pequeño ajuste cuenta 🎯`
-    }
-    
-    // Fallback motivacional
-    return `¡Hola ${firstName}! Estás dando pasos importantes hacia tu libertad financiera 🌟`
-  }
-
-  // Determinar el mood del coach
-  const getCoachMood = () => {
-    const healthScore = calculateHealthScore()
-    
-    if (healthScore >= 80) return { emoji: '🎉', color: 'from-emerald-500 to-teal-600', level: 'celebration' }
-    if (healthScore >= 60) return { emoji: '💪', color: 'from-blue-500 to-indigo-600', level: 'motivated' }
-    if (healthScore >= 40) return { emoji: '📈', color: 'from-orange-500 to-amber-600', level: 'working' }
-    return { emoji: '🎯', color: 'from-purple-500 to-pink-600', level: 'focused' }
-  }
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount)
   }
 
   const handleGeneratePlan = async () => {
-    setIsGenerating(true)
-    
+    if (onGeneratePlan) {
+      onGeneratePlan()
+    }
+  }
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
     try {
-      const { data, error } = await supabase.functions.invoke('generate-financial-plan', {
-        body: {
-          userId: user?.id,
-          financialData: {
-            name: `${user?.user_metadata?.first_name || ''} ${user?.user_metadata?.last_name || ''}`.trim() || user?.email || 'Usuario',
-            monthlyIncome: userData.monthlyIncome,
-            monthlyExpenses: userData.monthlyExpenses,
-            debts: userData.activeDebts.map(debt => ({
-              name: debt.creditor,
-              amount: debt.balance,
-              monthlyPayment: debt.payment,
-              interestRate: 18 // Default, you might want to get this from your data
-            })),
-            goals: userData.activeGoals,
-            currentSavings: userData.currentSavings,
-            savingsGoal: userData.totalGoalsTarget,
-            expenseCategories: userData.expenseCategories,
-            dataCompleteness: userData.hasRealData ? 80 : 30
-          }
-        }
-      })
-
-      if (error) throw error
-
-      if (data?.motivationalMessage) {
-        setGeneratedMessage(data.motivationalMessage)
+      if (onRefresh) {
+        await onRefresh()
       }
-
-      onGeneratePlan?.(data)
-      
-      toast({
-        title: '¡Plan generado! 🎉',
-        description: 'Credi ha creado tu plan financiero personalizado',
-      })
-
-      // Refrescar datos después de generar plan
-      onRefresh?.()
-      
-    } catch (error) {
-      console.error('Error generando plan:', error)
-      toast({
-        title: 'Ups, algo salió mal',
-        description: 'No pude generar tu plan, pero sigamos con lo básico',
-        variant: 'destructive'
-      })
     } finally {
-      setIsGenerating(false)
+      setIsRefreshing(false)
     }
   }
 
@@ -172,107 +116,125 @@ export const HeroCoachCard: React.FC<HeroCoachCardProps> = ({
 
   return (
     <Card className={`relative overflow-hidden border-0 shadow-xl bg-gradient-to-br ${mood.color} text-white`}>
-      {/* Background Decorations */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+      <div className="absolute top-0 left-0 w-full h-full opacity-20">
+        <svg
+          className="absolute top-0 left-0 w-full h-full"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style={{ stopColor: 'rgba(255,255,255,0.1)' }} />
+              <stop offset="100%" style={{ stopColor: 'rgba(255,255,255,0.0)' }} />
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#gradient)" />
+        </svg>
+      </div>
 
-      <CardContent className="p-6 md:p-8">
+      <CardContent className="relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-          
-          {/* Coach Info & Message */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-3xl backdrop-blur-sm">
-                  {mood.emoji}
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
-              </div>
-              
-              <div>
-                <h2 className="text-2xl font-bold">¡Hola {firstName}! 👋</h2>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-white/20 text-white border-0">
-                    <Heart className="w-3 h-3 mr-1" />
-                    Tu Coach Credi
-                  </Badge>
-                  <Badge variant="outline" className="border-white/30 text-white">
-                    Score: {healthScore}/100
-                  </Badge>
-                </div>
-              </div>
+          {/* Left: Health Score Ring */}
+          <div className="flex flex-col items-center space-y-2">
+            <AnimatedProgressRing 
+              progress={healthScore} 
+              size={120}
+              strokeWidth={8}
+              className="text-white"
+            />
+            <div className="text-center">
+              <div className="text-sm opacity-90">Salud Financiera</div>
+              <div className="text-2xl font-bold">{healthScore}/100</div>
             </div>
+          </div>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+          {/* Center: Coach Message & Stats */}
+          <div className="text-center space-y-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <p className="text-lg leading-relaxed">
                 {generateCoachMessage()}
               </p>
             </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={handleGeneratePlan}
-                disabled={isGenerating}
-                className="bg-white text-gray-900 hover:bg-white/90 font-semibold"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Generando Plan...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generar Plan AI
-                  </>
-                )}
-              </Button>
-              
-              <Button
-                onClick={onRefresh}
-                variant="ghost"
-                className="text-white hover:bg-white/10 border border-white/30"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Actualizar
-              </Button>
-            </div>
-          </div>
-
-          {/* Health Score & Quick Stats */}
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative">
-              <AnimatedProgressRing
-                progress={healthScore}
-                size={120}
-                strokeWidth={8}
-                color="#ffffff"
-                backgroundColor="#ffffff30"
-                showLabel={true}
-                className="drop-shadow-lg"
-              />
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-white/20 text-white border-0 text-xs">
-                  Salud Financiera
-                </Badge>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-                <div className="text-sm opacity-80">Balance</div>
-                <div className="font-bold text-lg">
-                  {formatCurrency(userData.monthlyBalance)}
+            
+            {/* AI Plan Stats */}
+            {aiPlan && (
+              <div className="flex justify-center gap-4 text-sm">
+                <div className="bg-white/10 px-3 py-1 rounded-full">
+                  🎯 {aiPlan.stats.completedBigGoals}/3 metas
+                </div>
+                <div className="bg-white/10 px-3 py-1 rounded-full">
+                  ⚡ {aiPlan.stats.completedMiniGoals} mini-metas
+                </div>
+                <div className="bg-white/10 px-3 py-1 rounded-full">
+                  🏆 {aiPlan.stats.totalPoints} puntos
                 </div>
               </div>
-              <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-                <div className="text-sm opacity-80">Metas</div>
-                <div className="font-bold text-lg">
-                  {userData.activeGoals.length}
-                </div>
-              </div>
-            </div>
+            )}
           </div>
+
+          {/* Right: Actions */}
+          <div className="space-y-3">
+            <Button
+              onClick={handleGeneratePlan}
+              disabled={isGenerating}
+              className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30"
+              size="lg"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Generando Plan...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {aiPlan ? 'Actualizar Plan' : 'Generar Plan AI'}
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              variant="outline"
+              className="w-full bg-white/10 hover:bg-white/20 text-white border-white/30"
+            >
+              {isRefreshing ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Sincronizando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Actualizar Datos
+                </>
+              )}
+            </Button>
+
+            {/* Next Action Badge */}
+            {aiPlan?.immediateAction && !aiPlan.immediateAction.isCompleted && (
+              <div className="bg-orange-500/20 border border-orange-300/30 rounded-lg p-3">
+                <div className="text-xs font-semibold opacity-90 mb-1">PRÓXIMA ACCIÓN</div>
+                <div className="text-sm">{aiPlan.immediateAction.title}</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom: Mood & Sync Status */}
+        <div className="flex justify-between items-center mt-6 pt-4 border-t border-white/20">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{mood.emoji}</span>
+            <span className="text-sm opacity-90">{mood.message}</span>
+          </div>
+          
+          {lastSyncTime && (
+            <div className="text-xs opacity-75">
+              Actualizado: {lastSyncTime.toLocaleTimeString()}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
