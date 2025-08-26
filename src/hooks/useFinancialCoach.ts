@@ -1,4 +1,3 @@
-
 /**
  * Hook para manejo del Financial Coach con metodología 3.2.1
  */
@@ -286,11 +285,21 @@ export const useFinancialCoach = (): UseFinancialCoachState => {
     }))
   }, [queryClient])
 
+  // Generate new plan function that returns a Promise
+  const generateNewPlan = useCallback(async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      generatePlanMutation.mutate(undefined, {
+        onSuccess: () => resolve(),
+        onError: (error) => reject(error)
+      })
+    })
+  }, [generatePlanMutation])
+
   return {
     currentPlan: currentPlanQuery.data || null,
     uiState,
     userSnapshot,
-    generateNewPlan: generatePlanMutation.mutate,
+    generateNewPlan,
     updateGoalProgress,
     completeAction,
     requestMotivation,
