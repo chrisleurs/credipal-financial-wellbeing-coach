@@ -142,9 +142,8 @@ export const OptimizedFinancialDashboard = () => {
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando coach..." />}>
             <HeroCoachCard 
               userName={userName}
-              hasActivePlan={!!aiPlan}
-              onGeneratePlan={generateNewPlan}
-              isGeneratingPlan={isGeneratingPlan}
+              onUpdatePlan={generateNewPlan}
+              isLoading={isGeneratingPlan}
             />
           </Suspense>
         </section>
@@ -153,11 +152,17 @@ export const OptimizedFinancialDashboard = () => {
         {financialData.kueskiLoan && (
           <section id="kueski-loan">
             <LoanCard loan={{
-              ...financialData.kueskiLoan,
+              id: financialData.kueskiLoan.id,
               user_id: financialData.userId,
+              lender: financialData.kueskiLoan.lender,
+              amount: financialData.kueskiLoan.amount,
               currency: 'MXN',
               payment_amount: financialData.kueskiLoan.paymentAmount,
               payment_dates: [1, 15], // Quincenal típico
+              total_payments: financialData.kueskiLoan.totalPayments,
+              remaining_payments: financialData.kueskiLoan.remainingPayments,
+              next_payment_date: financialData.kueskiLoan.nextPaymentDate,
+              status: financialData.kueskiLoan.status,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }} />
