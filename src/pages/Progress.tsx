@@ -5,13 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useDebts } from '@/hooks/useDebts'
 import { useGoals } from '@/hooks/useGoals'
-import { TrendingUp, Target, CreditCard, PiggyBank, Plus, Trophy } from 'lucide-react'
+import { useFinancialPlan } from '@/hooks/useFinancialPlan'
+import { TrendingUp, Target, CreditCard, PiggyBank, Plus, Trophy, Calendar, BarChart3 } from 'lucide-react'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { DebtSummaryCards } from '@/components/debts/DebtSummaryCards'
 import { DebtsList } from '@/components/debts/DebtsList'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useBottomNavigation } from '@/hooks/useBottomNavigation'
 import { useNavigate } from 'react-router-dom'
+
+// Import the new financial plan components
+import { FondoEmergencia } from '@/components/dashboard/FondoEmergencia'
+import { PlanPagoDeuda } from '@/components/dashboard/PlanPagoDeuda'
+import { CrecimientoPatrimonial } from '@/components/dashboard/CrecimientoPatrimonial'
+import { RoadmapTrimestral } from '@/components/dashboard/RoadmapTrimestral'
+import { MetasCortoPlazo } from '@/components/dashboard/MetasCortoPlazo'
+import { RoadmapAccion } from '@/components/dashboard/RoadmapAccion'
 
 export default function ProgressPage() {
   const navigate = useNavigate()
@@ -27,6 +37,14 @@ export default function ProgressPage() {
   
   const { goals } = useGoals()
   const { emptyStates } = useBottomNavigation()
+  
+  // Get financial plan data
+  const { 
+    plan, 
+    loading: planLoading, 
+    error: planError,
+    hasPlan 
+  } = useFinancialPlan()
 
   const activeDebts = debts.filter(debt => debt.status === 'active')
   const activeGoals = goals.filter(goal => goal.status === 'active')
@@ -41,12 +59,10 @@ export default function ProgressPage() {
   }
 
   const handleCreateDebt = () => {
-    // Navigate to debts page with create action
     navigate('/debts')
   }
 
   const handleCreateGoal = () => {
-    // Navigate to plan page or trigger goal creation
     navigate('/plan')
   }
 
@@ -56,11 +72,11 @@ export default function ProgressPage() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold">Mi Progreso</h1>
-          <p className="text-muted-foreground">Seguimiento de deudas y metas financieras</p>
+          <p className="text-muted-foreground">Seguimiento completo de tu situación financiera</p>
         </div>
 
         {/* Show empty state if no data */}
-        {!emptyStates.progress.hasData ? (
+        {!emptyStates.progress.hasData && !hasPlan ? (
           <EmptyState
             icon={<Trophy className="h-16 w-16" />}
             title={emptyStates.progress.title}
@@ -95,7 +111,7 @@ export default function ProgressPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-primary">
-                    {activeGoals.length > 0 ? `${((activeGoals.reduce((sum, goal) => sum + goal.current_amount, 0) / activeGoals.reduce((sum, goal) => sum + goal.target_amount, 0)) * 100).toFixed(1)}%` : '0%'}
+                    {activeGoals.length > 0 ? `${overallGoalProgress.toFixed(1)}%` : '0%'}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {activeGoals.length} meta{activeGoals.length !== 1 ? 's' : ''} activa{activeGoals.length !== 1 ? 's' : ''}
@@ -105,8 +121,12 @@ export default function ProgressPage() {
             </div>
 
             {/* Tabs Content */}
-            <Tabs defaultValue="debts" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
+            <Tabs defaultValue="plan" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="plan" className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Plan
+                </TabsTrigger>
                 <TabsTrigger value="debts" className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
                   Deudas
@@ -115,7 +135,51 @@ export default function ProgressPage() {
                   <Target className="h-4 w-4" />
                   Metas
                 </TabsTrigger>
+                <TabsTrigger value="roadmap" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Roadmap
+                </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="plan" className="space-y-6">
+                {planLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingSpinner size="lg" text="Cargando plan financiero..." />
+                  </div>
+                ) : planError ? (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground mb-4">Error al cargar el plan financiero</p>
+                    <Button onClick={() => window.location.reload()}>
+                      Reintentar
+                    </Button>
+                  </Card>
+                ) : !plan ? (
+                  <EmptyState
+                    icon={<BarChart3 className="h-12 w-12" />}
+                    title="No hay plan financiero disponible"
+                    message="Completa tu onboarding para generar tu plan financiero personalizado."
+                    actionLabel="Ir al Plan"
+                    onAction={() => navigate('/plan')}
+                  />
+                ) : (
+                  <div className="space-y-6">
+                    {/* Emergency Fund */}
+                    {plan.fondoEmergencia && (
+                      <FondoEmergencia data={plan.fondoEmergencia} />
+                    )}
+
+                    {/* Debt Payment Plan */}
+                    {plan.planPagoDeuda && plan.planPagoDeuda.length > 0 && (
+                      <PlanPagoDeuda data={plan.planPagoDeuda} />
+                    )}
+
+                    {/* Wealth Growth */}
+                    {plan.crecimientoPatrimonial && (
+                      <CrecimientoPatrimonial data={plan.crecimientoPatrimonial} />
+                    )}
+                  </div>
+                )}
+              </TabsContent>
 
               <TabsContent value="debts" className="space-y-4">
                 {activeDebts.length === 0 ? (
@@ -202,6 +266,39 @@ export default function ProgressPage() {
                         </Card>
                       )
                     })}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="roadmap" className="space-y-6">
+                {planLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingSpinner size="lg" text="Cargando roadmap..." />
+                  </div>
+                ) : !plan ? (
+                  <EmptyState
+                    icon={<Calendar className="h-12 w-12" />}
+                    title="No hay roadmap disponible"
+                    message="Genera tu plan financiero para ver tu roadmap personalizado."
+                    actionLabel="Generar Plan"
+                    onAction={() => navigate('/plan')}
+                  />
+                ) : (
+                  <div className="space-y-6">
+                    {/* Quarterly Roadmap */}
+                    {plan.roadmapTrimestral && (
+                      <RoadmapTrimestral data={plan.roadmapTrimestral} />
+                    )}
+
+                    {/* Short-term Goals */}
+                    {plan.metasCortoPlazo && (
+                      <MetasCortoPlazo data={plan.metasCortoPlazo} />
+                    )}
+
+                    {/* Action Roadmap */}
+                    {plan.roadmapAccion && (
+                      <RoadmapAccion data={plan.roadmapAccion} />
+                    )}
                   </div>
                 )}
               </TabsContent>
