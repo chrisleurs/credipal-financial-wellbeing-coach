@@ -105,7 +105,9 @@ export const MobileFirstDashboard = () => {
     monthlyIncome: financialData?.monthlyIncome || 0,
     monthlyExpenses: financialData?.monthlyExpenses || 0,
     currentSavings: financialData?.currentSavings || 0,
-    savingsCapacity: financialData?.savingsCapacity || 0
+    savingsCapacity: financialData?.savingsCapacity || 0,
+    totalDebtBalance: financialData?.totalDebtBalance || 0,
+    totalMonthlyDebtPayments: financialData?.totalMonthlyDebtPayments || 0
   }
 
   const defaultMessage = {
@@ -153,7 +155,7 @@ export const MobileFirstDashboard = () => {
         {/* Asistente CrediPal */}
         <CrediAssistant 
           message={defaultMessage}
-          onChat={(message: string) => console.log('Chat message:', message)}
+          onChat={() => console.log('Chat activated')}
         />
       </div>
     </div>
