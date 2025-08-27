@@ -1,19 +1,21 @@
+
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from './use-toast'
+import { useConsolidatedFinancialData } from './useConsolidatedFinancialData'
 import type { FinancialPlan, PlanGenerationData } from '@/types/financialPlan'
 
 /**
  * Hook unificado para gestión completa de planes financieros
- * Reemplaza a todos los hooks duplicados
  */
 export const useFinancialPlanManager = () => {
   const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [isGenerating, setIsGenerating] = useState(false)
+  const { data: consolidatedData } = useConsolidatedFinancialData()
 
   // Obtener plan activo del usuario
   const { 
@@ -25,6 +27,8 @@ export const useFinancialPlanManager = () => {
     queryFn: async (): Promise<FinancialPlan | null> => {
       if (!user?.id) return null
 
+      console.log('🔍 Fetching financial plan for user:', user.id)
+
       const { data, error } = await supabase
         .from('financial_plans')
         .select('*')
@@ -35,11 +39,16 @@ export const useFinancialPlanManager = () => {
         .maybeSingle()
 
       if (error) {
-        console.error('Error fetching plan:', error)
+        console.error('❌ Error fetching plan:', error)
         return null
       }
 
-      if (!data) return null
+      if (!data) {
+        console.log('📋 No active plan found')
+        return null
+      }
+
+      console.log('✅ Found active plan:', data.id)
 
       // Parsear plan_data si es string
       const planData = typeof data.plan_data === 'string' 
@@ -79,6 +88,8 @@ export const useFinancialPlanManager = () => {
         throw new Error('No plan received from AI service')
       }
 
+      console.log('✅ AI plan generated:', aiPlan)
+
       // Guardar plan en base de datos
       const { data: savedPlan, error: saveError } = await supabase
         .from('financial_plans')
@@ -95,6 +106,8 @@ export const useFinancialPlanManager = () => {
         console.error('❌ Error saving plan:', saveError)
         throw saveError
       }
+
+      console.log('💾 Plan saved successfully:', savedPlan.id)
 
       return {
         id: savedPlan.id,
@@ -125,71 +138,44 @@ export const useFinancialPlanManager = () => {
   })
 
   // Función principal para generar plan
-  const generatePlan = async (data: PlanGenerationData) => {
+  const generatePlan = async (data?: PlanGenerationData) => {
     setIsGenerating(true)
     try {
-      await generatePlanMutation.mutateAsync(data)
+      // Usar datos consolidados si no se proporcionan datos específicos
+      const planData = data || {
+        monthlyIncome: consolidatedData?.monthlyIncome || 0,
+        monthlyExpenses: consolidatedData?.monthlyExpenses || 0,
+        currentSavings: consolidatedData?.currentSavings || 0,
+        savingsCapacity: consolidatedData?.savingsCapacity || 0,
+        debts: consolidatedData?.debts.map(debt => ({
+          name: debt.name,
+          amount: debt.balance,
+          monthlyPayment: debt.payment
+        })) || [],
+        goals: consolidatedData?.financialGoals || [],
+        expenseCategories: consolidatedData?.expenseCategories || {}
+      }
+
+      console.log('📤 Using plan data:', planData)
+      await generatePlanMutation.mutateAsync(planData)
     } finally {
       setIsGenerating(false)
     }
   }
 
-  // Actualizar progreso de metas
-  const updateGoalProgressMutation = useMutation({
-    mutationFn: async ({ goalId, progress }: { goalId: string; progress: number }) => {
-      if (!activePlan) throw new Error('No active plan found')
-
-      // Actualizar el progreso en el plan
-      const updatedPlan = { ...activePlan }
-      // Lógica para actualizar progreso específico según goalId
-      
-      const { error } = await supabase
-        .from('financial_plans')
-        .update({
-          plan_data: updatedPlan,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', activePlan.id)
-
-      if (error) throw error
-      return updatedPlan
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financial-plan'] })
-      toast({
-        title: "Progreso actualizado",
-        description: "Tu avance ha sido registrado exitosamente",
-      })
-    }
-  })
-
   // Función mejorada para regenerar plan
   const regeneratePlan = async () => {
-    if (!activePlan || !user?.id) {
+    if (!consolidatedData) {
       toast({
         title: "Error",
-        description: "No se puede regenerar el plan sin datos existentes.",
+        description: "No se pueden obtener los datos financieros actuales.",
         variant: "destructive"
       })
       return
     }
 
-    // Crear datos base desde el plan actual para regeneración
-    const planData: PlanGenerationData = {
-      monthlyIncome: activePlan.currentSnapshot.monthlyIncome,
-      monthlyExpenses: activePlan.currentSnapshot.monthlyExpenses,
-      currentSavings: activePlan.currentSnapshot.currentSavings,
-      savingsCapacity: activePlan.currentSnapshot.monthlyIncome - activePlan.currentSnapshot.monthlyExpenses,
-      debts: activePlan.debtPayoffPlan.map(debt => ({
-        name: debt.debtName,
-        amount: debt.currentBalance,
-        monthlyPayment: debt.monthlyPayment
-      })),
-      goals: [], // Los goals se obtienen de la base de datos actual
-      expenseCategories: {}
-    }
-    
-    await generatePlan(planData)
+    console.log('🔄 Regenerating plan with latest data')
+    await generatePlan()
     
     toast({
       title: "Plan regenerado",
@@ -207,10 +193,6 @@ export const useFinancialPlanManager = () => {
     // Generación de plan
     generatePlan,
     isGenerating: isGenerating || generatePlanMutation.isPending,
-    
-    // Actualización de progreso
-    updateGoalProgress: updateGoalProgressMutation.mutate,
-    isUpdatingProgress: updateGoalProgressMutation.isPending,
     
     // Utilidades
     regeneratePlan
