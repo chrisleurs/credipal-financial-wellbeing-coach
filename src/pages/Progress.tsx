@@ -83,7 +83,7 @@ export default function Progress() {
                 </p>
               </div>
               <Button 
-                onClick={generatePlan} 
+                onClick={() => generatePlan()} 
                 disabled={isGenerating}
                 variant="outline"
               >
@@ -151,7 +151,7 @@ export default function Progress() {
                 )}
               </div>
 
-              <Button onClick={generatePlan} disabled={isGenerating} size="lg" className="w-full">
+              <Button onClick={() => generatePlan()} disabled={isGenerating} size="lg" className="w-full">
                 {isGenerating ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

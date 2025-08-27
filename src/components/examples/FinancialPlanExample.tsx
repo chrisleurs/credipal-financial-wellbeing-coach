@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,7 +15,7 @@ export const FinancialPlanExample: React.FC = () => {
     plan,
     loading,
     error,
-    regeneratePlan,
+    generatePlan,
     isGenerating,
     isStale,
     lastUpdated
@@ -37,7 +36,7 @@ export const FinancialPlanExample: React.FC = () => {
         <CardContent className="p-6">
           <p className="text-red-600">Error: {error}</p>
           <Button 
-            onClick={regeneratePlan} 
+            onClick={() => generatePlan()} 
             variant="outline" 
             className="mt-4"
             disabled={isGenerating}
@@ -82,7 +81,7 @@ export const FinancialPlanExample: React.FC = () => {
             </Badge>
           )}
           <Button
-            onClick={regeneratePlan}
+            onClick={() => generatePlan()}
             variant="outline"
             size="sm"
             disabled={isGenerating}
@@ -232,4 +231,3 @@ export const FinancialPlanExample: React.FC = () => {
 }
 
 export default FinancialPlanExample
-
