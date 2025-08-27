@@ -372,7 +372,7 @@ export const DataAuditDashboard = () => {
                   <div className="text-sm space-y-1">
                     <div><strong>Ingresos mensuales:</strong> ${consolidatedData.monthlyIncome}</div>
                     <div><strong>Gastos mensuales:</strong> ${consolidatedData.monthlyExpenses}</div>
-                    <div><strong>Balance mensual:</strong> ${consolidatedData.monthlyBalance}</div>
+                    <div><strong>Balance mensual:</strong> ${consolidatedData.monthlyIncome - consolidatedData.monthlyExpenses}</div>
                     <div><strong>Tiene datos reales:</strong> {consolidatedData.hasRealData ? 'Sí' : 'No'}</div>
                   </div>
                 ) : (
