@@ -3,13 +3,13 @@ import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { TrendingUp, PiggyBank, CreditCard, Target } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
-import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
+import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
 
 export const QuickStatsGrid = () => {
-  const { consolidatedData } = useConsolidatedFinancialData()
+  const { data: financialData } = useOptimizedFinancialData()
 
-  // Usar datos del onboarding cuando estén disponibles
-  const safeData = consolidatedData || {
+  // Usar datos reales del onboarding
+  const safeData = financialData || {
     monthlyExpenses: 0,
     currentSavings: 0,
     totalDebtBalance: 0,
