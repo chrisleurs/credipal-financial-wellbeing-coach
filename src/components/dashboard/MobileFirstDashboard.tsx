@@ -155,18 +155,8 @@ export const MobileFirstDashboard = () => {
           </TabsList>
 
           <TabsContent value="resumen" className="space-y-4 mt-4">
-            <FinancialSummary 
-              monthlyIncome={consolidatedData.monthlyIncome}
-              monthlyExpenses={consolidatedData.monthlyExpenses}
-              currentSavings={consolidatedData.currentSavings}
-              totalDebt={consolidatedData.totalDebtBalance}
-              savingsCapacity={consolidatedData.savingsCapacity}
-            />
-            <QuickStatsGrid 
-              expenseCategories={consolidatedData.expenseCategories}
-              monthlyBalance={monthlyBalance}
-              debtToIncomeRatio={consolidatedData.totalDebtBalance > 0 ? (consolidatedData.totalMonthlyDebtPayments / consolidatedData.monthlyIncome) * 100 : 0}
-            />
+            <FinancialSummary />
+            <QuickStatsGrid />
           </TabsContent>
 
           <TabsContent value="metas" className="space-y-4 mt-4">
@@ -180,13 +170,17 @@ export const MobileFirstDashboard = () => {
                 source: 'onboarding' as const
               })) || []}
             />
-            <BigGoalsSection />
+            <BigGoalsSection 
+              goals={[]}
+              onUpdateGoal={() => {}}
+              isUpdating={false}
+            />
             <MiniGoalsSection />
           </TabsContent>
 
           <TabsContent value="plan" className="space-y-4 mt-4">
             {hasPlan ? (
-              <ActionPlanSection plan={activePlan as any} />
+              <ActionPlanSection />
             ) : (
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
                 <CardContent className="p-6 text-center">
@@ -218,10 +212,7 @@ export const MobileFirstDashboard = () => {
           </TabsContent>
 
           <TabsContent value="pagos" className="space-y-4 mt-4">
-            <UpcomingPaymentsSection 
-              debts={consolidatedData.debts}
-              nextPaymentDate="2024-09-15"
-            />
+            <UpcomingPaymentsSection />
           </TabsContent>
         </Tabs>
       </div>
