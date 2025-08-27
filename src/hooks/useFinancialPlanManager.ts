@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
@@ -164,6 +163,40 @@ export const useFinancialPlanManager = () => {
     }
   })
 
+  // Función mejorada para regenerar plan
+  const regeneratePlan = async () => {
+    if (!activePlan || !user?.id) {
+      toast({
+        title: "Error",
+        description: "No se puede regenerar el plan sin datos existentes.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Crear datos base desde el plan actual para regeneración
+    const planData: PlanGenerationData = {
+      monthlyIncome: activePlan.currentSnapshot.monthlyIncome,
+      monthlyExpenses: activePlan.currentSnapshot.monthlyExpenses,
+      currentSavings: activePlan.currentSnapshot.currentSavings,
+      savingsCapacity: activePlan.currentSnapshot.monthlyIncome - activePlan.currentSnapshot.monthlyExpenses,
+      debts: activePlan.debtPayoffPlan.map(debt => ({
+        name: debt.debtName,
+        amount: debt.currentBalance,
+        monthlyPayment: debt.monthlyPayment
+      })),
+      goals: [], // Los goals se obtienen de la base de datos actual
+      expenseCategories: {}
+    }
+    
+    await generatePlan(planData)
+    
+    toast({
+      title: "Plan regenerado",
+      description: "Tu plan ha sido actualizado con la información más reciente.",
+    })
+  }
+
   return {
     // Estado del plan
     activePlan,
@@ -180,23 +213,6 @@ export const useFinancialPlanManager = () => {
     isUpdatingProgress: updateGoalProgressMutation.isPending,
     
     // Utilidades
-    regeneratePlan: () => {
-      if (!activePlan) return
-      // Re-generar con los mismos datos base
-      const planData: PlanGenerationData = {
-        monthlyIncome: activePlan.currentSnapshot.monthlyIncome,
-        monthlyExpenses: activePlan.currentSnapshot.monthlyExpenses,
-        currentSavings: activePlan.currentSnapshot.currentSavings,
-        savingsCapacity: activePlan.currentSnapshot.monthlyIncome - activePlan.currentSnapshot.monthlyExpenses,
-        debts: activePlan.debtPayoffPlan.map(debt => ({
-          name: debt.debtName,
-          amount: debt.currentBalance,
-          monthlyPayment: debt.monthlyPayment
-        })),
-        goals: [],
-        expenseCategories: {}
-      }
-      generatePlan(planData)
-    }
+    regeneratePlan
   }
 }
