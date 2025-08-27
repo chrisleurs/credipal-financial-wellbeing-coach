@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from './use-toast'
-import { useConsolidatedFinancialData } from './useConsolidatedFinancialData'
+import { useOptimizedFinancialData } from './useOptimizedFinancialData'
 import type { FinancialPlan, PlanGenerationData } from '@/types/financialPlan'
 
 /**
@@ -15,7 +15,7 @@ export const useFinancialPlanManager = () => {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [isGenerating, setIsGenerating] = useState(false)
-  const { data: consolidatedData } = useConsolidatedFinancialData()
+  const { data: optimizedData } = useOptimizedFinancialData()
 
   // Obtener plan activo del usuario
   const { 
@@ -69,14 +69,29 @@ export const useFinancialPlanManager = () => {
 
   // Generar nuevo plan
   const generatePlanMutation = useMutation({
-    mutationFn: async (planData: PlanGenerationData): Promise<FinancialPlan> => {
+    mutationFn: async (planData?: PlanGenerationData): Promise<FinancialPlan> => {
       if (!user?.id) throw new Error('User not authenticated')
 
-      console.log('🚀 Generating financial plan with data:', planData)
+      // Usar datos optimizados si no se proporcionan datos específicos
+      const dataToUse = planData || {
+        monthlyIncome: optimizedData?.monthlyIncome || 0,
+        monthlyExpenses: optimizedData?.monthlyExpenses || 0,
+        currentSavings: optimizedData?.currentSavings || 0,
+        savingsCapacity: optimizedData?.savingsCapacity || 0,
+        debts: optimizedData?.activeDebts?.map(debt => ({
+          name: debt.creditor,
+          amount: debt.balance,
+          monthlyPayment: debt.payment
+        })) || [],
+        goals: optimizedData?.activeGoals?.map(goal => goal.title) || [],
+        expenseCategories: optimizedData?.expenseCategories || {}
+      }
+
+      console.log('🚀 Generating financial plan with data:', dataToUse)
 
       // Llamar al edge function de OpenAI
       const { data: aiPlan, error } = await supabase.functions.invoke('generate-financial-plan', {
-        body: { financialData: planData }
+        body: { financialData: dataToUse }
       })
 
       if (error) {
@@ -124,7 +139,7 @@ export const useFinancialPlanManager = () => {
       
       toast({
         title: "¡Plan generado exitosamente! 🎯",
-        description: "Tu plan financiero personalizado está listo",
+        description: "Tu plan financiero personalizado está listo con tu información actual",
       })
     },
     onError: (error: Error) => {
@@ -181,23 +196,7 @@ export const useFinancialPlanManager = () => {
   const generatePlan = async (data?: PlanGenerationData) => {
     setIsGenerating(true)
     try {
-      // Usar datos consolidados si no se proporcionan datos específicos
-      const planData = data || {
-        monthlyIncome: consolidatedData?.monthlyIncome || 0,
-        monthlyExpenses: consolidatedData?.monthlyExpenses || 0,
-        currentSavings: consolidatedData?.currentSavings || 0,
-        savingsCapacity: consolidatedData?.savingsCapacity || 0,
-        debts: consolidatedData?.debts.map(debt => ({
-          name: debt.name,
-          amount: debt.balance,
-          monthlyPayment: debt.payment
-        })) || [],
-        goals: consolidatedData?.financialGoals || [],
-        expenseCategories: consolidatedData?.expenseCategories || {}
-      }
-
-      console.log('📤 Using plan data:', planData)
-      await generatePlanMutation.mutateAsync(planData)
+      await generatePlanMutation.mutateAsync(data)
     } finally {
       setIsGenerating(false)
     }
@@ -205,7 +204,7 @@ export const useFinancialPlanManager = () => {
 
   // Función mejorada para regenerar plan
   const regeneratePlan = async () => {
-    if (!consolidatedData) {
+    if (!optimizedData) {
       toast({
         title: "Error",
         description: "No se pueden obtener los datos financieros actuales.",
@@ -214,7 +213,7 @@ export const useFinancialPlanManager = () => {
       return
     }
 
-    console.log('🔄 Regenerating plan with latest data')
+    console.log('🔄 Regenerating plan with latest data:', optimizedData)
     await generatePlan()
     
     toast({
@@ -229,6 +228,9 @@ export const useFinancialPlanManager = () => {
     isLoadingPlan,
     planError,
     hasPlan: !!activePlan,
+
+    // Datos financieros
+    financialData: optimizedData,
 
     // Generación de plan
     generatePlan,

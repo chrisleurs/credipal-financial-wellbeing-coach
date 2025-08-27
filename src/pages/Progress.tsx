@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { useFinancialPlanManager } from '@/hooks/useFinancialPlanManager'
-import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,7 +13,6 @@ import { useAuth } from '@/hooks/useAuth'
 export default function Progress() {
   const { toast } = useToast()
   const { user } = useAuth()
-  const { data: financialData, isLoading: isLoadingData } = useOptimizedFinancialData()
   const { 
     activePlan, 
     hasPlan, 
@@ -22,7 +20,8 @@ export default function Progress() {
     isGenerating, 
     isLoadingPlan,
     regeneratePlan,
-    updateGoalProgress 
+    updateGoalProgress,
+    financialData
   } = useFinancialPlanManager()
 
   const [lastDataHash, setLastDataHash] = useState<string>('')
@@ -35,7 +34,12 @@ export default function Progress() {
     planError: 'none',
     isGenerating,
     activePlan: activePlan ? 'exists' : 'null',
-    userEmail: user?.email
+    userEmail: user?.email,
+    financialData: financialData ? {
+      monthlyIncome: financialData.monthlyIncome,
+      monthlyExpenses: financialData.monthlyExpenses,
+      hasRealData: financialData.hasRealData
+    } : 'loading'
   })
 
   // Generar hash de los datos financieros para detectar cambios
@@ -56,7 +60,7 @@ export default function Progress() {
 
   // Detectar cambios en los datos financieros
   useEffect(() => {
-    if (!financialData || isLoadingData) return
+    if (!financialData || isLoadingPlan) return
 
     const currentHash = generateDataHash(financialData)
     
@@ -71,34 +75,32 @@ export default function Progress() {
         description: "Tu información financiera ha cambiado. Considera actualizar tu plan.",
       })
     }
-  }, [financialData, isLoadingData, lastDataHash, toast])
+  }, [financialData, isLoadingPlan, lastDataHash, toast])
 
   // Función para generar plan inicial
   const handleGeneratePlan = async () => {
-    if (!financialData?.hasRealData) {
+    if (!financialData) {
       toast({
-        title: "Datos insuficientes",
-        description: "Agrega más información financiera antes de generar un plan.",
+        title: "Datos no disponibles",
+        description: "Por favor espera mientras cargamos tu información financiera.",
         variant: "destructive"
       })
       return
     }
 
-    const planData = {
-      monthlyIncome: financialData.monthlyIncome,
-      monthlyExpenses: financialData.monthlyExpenses,
-      currentSavings: financialData.currentSavings || 0,
-      savingsCapacity: financialData.savingsCapacity,
-      debts: financialData.activeDebts.map(debt => ({
-        name: debt.creditor,
-        amount: debt.balance,
-        monthlyPayment: debt.payment
-      })),
-      goals: financialData.activeGoals.map(goal => goal.title),
-      expenseCategories: financialData.expenseCategories || {}
+    // Verificar si tiene al menos gastos para generar un plan básico
+    if (financialData.monthlyExpenses === 0 && (!financialData.expenseCategories || Object.keys(financialData.expenseCategories).length === 0)) {
+      toast({
+        title: "Datos insuficientes",
+        description: "Agrega información sobre gastos para generar un plan.",
+        variant: "destructive"
+      })
+      return
     }
 
-    await generatePlan(planData)
+    console.log('📤 Generating plan with financial data:', financialData)
+    
+    await generatePlan()
     setHasDataChanged(false)
   }
 
@@ -118,7 +120,7 @@ export default function Progress() {
     updateGoalProgress({ goalId: actionId, progress })
   }
 
-  if (isLoadingData || isLoadingPlan) {
+  if (isLoadingPlan || !financialData) {
     return (
       <AppLayout>
         <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
@@ -150,11 +152,14 @@ export default function Progress() {
             <div className="flex items-center gap-3 mb-2">
               <User className="h-6 w-6 text-primary" />
               <h1 className="text-3xl font-bold text-gray-900">
-                Plan Financiero Completo
+                Mi Progreso Financiero
               </h1>
             </div>
             <p className="text-gray-600">
               Usuario: <span className="font-medium">{user?.email}</span>
+            </p>
+            <p className="text-sm text-gray-500">
+              Seguimiento detallado de tus metas y avances
             </p>
             {activePlan && (
               <p className="text-sm text-gray-500">
@@ -171,38 +176,63 @@ export default function Progress() {
                 <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                   <Brain className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">No hay plan financiero disponible</CardTitle>
+                <CardTitle className="text-xl">Generar tu Plan Financiero</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-gray-600 mb-6">
-                  Genera tu plan financiero personalizado para ver el análisis completo de tu situación.
+                  Basado en tu información del onboarding, podemos crear tu plan personalizado.
                 </p>
                 
-                {!financialData?.hasRealData ? (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                    <div className="flex items-center gap-2 text-yellow-800">
-                      <AlertCircle className="h-5 w-5" />
-                      <span className="font-medium">Datos insuficientes</span>
+                {/* Mostrar resumen de datos disponibles */}
+                {financialData && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h3 className="font-medium text-blue-900 mb-2">Tu información actual:</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm text-blue-800">
+                      <div>
+                        <span className="font-medium">Gastos mensuales:</span>
+                        <p>${financialData.monthlyExpenses.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Ingresos mensuales:</span>
+                        <p>${financialData.monthlyIncome.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Deudas activas:</span>
+                        <p>{financialData.activeDebts?.length || 0}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Categorías de gastos:</span>
+                        <p>{Object.keys(financialData.expenseCategories || {}).length}</p>
+                      </div>
                     </div>
-                    <p className="text-yellow-700 text-sm mt-1">
-                      Agrega información sobre ingresos, gastos o deudas para generar tu plan.
-                    </p>
                   </div>
-                ) : (
+                )}
+
+                {financialData.monthlyExpenses > 0 || Object.keys(financialData.expenseCategories || {}).length > 0 ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                     <div className="flex items-center gap-2 text-green-800">
                       <Brain className="h-5 w-5" />
                       <span className="font-medium">Listo para generar</span>
                     </div>
                     <p className="text-green-700 text-sm mt-1">
-                      Tienes suficiente información para crear tu plan personalizado.
+                      Tienes información suficiente para crear tu plan personalizado.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-2 text-yellow-800">
+                      <AlertCircle className="h-5 w-5" />
+                      <span className="font-medium">Información limitada</span>
+                    </div>
+                    <p className="text-yellow-700 text-sm mt-1">
+                      Agrega más información sobre gastos e ingresos para un mejor plan.
                     </p>
                   </div>
                 )}
 
                 <Button 
                   onClick={handleGeneratePlan}
-                  disabled={isGenerating || !financialData?.hasRealData}
+                  disabled={isGenerating}
                   size="lg"
                   className="w-full sm:w-auto"
                 >
@@ -214,7 +244,7 @@ export default function Progress() {
                   ) : (
                     <>
                       <Brain className="mr-2 h-4 w-4" />
-                      Generar Plan Financiero
+                      Generar Mi Plan Financiero
                     </>
                   )}
                 </Button>
@@ -278,7 +308,7 @@ export default function Progress() {
                   ) : (
                     <>
                       <RefreshCw className="mr-2 h-4 w-4" />
-                      Actualizar con datos recientes
+                      Actualizar Plan
                     </>
                   )}
                 </Button>
