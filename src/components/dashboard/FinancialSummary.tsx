@@ -3,17 +3,28 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/utils/helpers'
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react'
+import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
 
-interface FinancialSummaryProps {
-  consolidatedData: {
-    monthlyIncome: number
-    monthlyExpenses: number
-    currentSavings: number
-    savingsCapacity: number
+export const FinancialSummary: React.FC = () => {
+  const { data: financialData, isLoading } = useOptimizedFinancialData()
+
+  if (isLoading || !financialData) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="animate-pulse space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
   }
-}
 
-export const FinancialSummary: React.FC<FinancialSummaryProps> = ({ consolidatedData }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <Card>
@@ -25,7 +36,7 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({ consolidated
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-green-600">
-            {formatCurrency(consolidatedData.monthlyIncome)}
+            {formatCurrency(financialData.monthlyIncome)}
           </div>
         </CardContent>
       </Card>
@@ -39,7 +50,7 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({ consolidated
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-600">
-            {formatCurrency(consolidatedData.monthlyExpenses)}
+            {formatCurrency(financialData.monthlyExpenses)}
           </div>
         </CardContent>
       </Card>
@@ -53,7 +64,7 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({ consolidated
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-blue-600">
-            {formatCurrency(consolidatedData.currentSavings)}
+            {formatCurrency(financialData.currentSavings)}
           </div>
         </CardContent>
       </Card>
@@ -67,7 +78,7 @@ export const FinancialSummary: React.FC<FinancialSummaryProps> = ({ consolidated
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-purple-600">
-            {formatCurrency(consolidatedData.savingsCapacity)}
+            {formatCurrency(financialData.savingsCapacity)}
           </div>
         </CardContent>
       </Card>
