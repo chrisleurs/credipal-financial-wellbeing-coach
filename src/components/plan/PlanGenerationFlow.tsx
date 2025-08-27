@@ -4,15 +4,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Brain, CheckCircle2, Loader2 } from 'lucide-react'
 import { useFinancialPlanManager } from '@/hooks/useFinancialPlanManager'
-import type { PlanGenerationData } from '@/types/financialPlan'
 
 interface PlanGenerationFlowProps {
-  planData: PlanGenerationData
   onPlanGenerated: () => void
 }
 
 export const PlanGenerationFlow: React.FC<PlanGenerationFlowProps> = ({
-  planData,
   onPlanGenerated
 }) => {
   const { generatePlan, isGenerating } = useFinancialPlanManager()
@@ -47,8 +44,8 @@ export const PlanGenerationFlow: React.FC<PlanGenerationFlowProps> = ({
           }, steps.slice(0, index).reduce((acc, step) => acc + step.duration, 0))
         })
 
-        // Generar plan real
-        await generatePlan(planData)
+        // Generar plan real - no necesita parámetros ya que usa los datos del hook
+        generatePlan()
         
         // Completar progreso
         setProgress(100)
@@ -66,7 +63,7 @@ export const PlanGenerationFlow: React.FC<PlanGenerationFlowProps> = ({
     }
 
     generatePlanWithProgress()
-  }, [planData, generatePlan, onPlanGenerated])
+  }, [generatePlan, onPlanGenerated])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex flex-col items-center justify-center p-6">

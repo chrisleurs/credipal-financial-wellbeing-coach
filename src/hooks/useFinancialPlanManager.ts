@@ -6,76 +6,7 @@ import { useOptimizedFinancialData } from './useOptimizedFinancialData'
 import { supabase } from '@/integrations/supabase/client'
 import { CrediPalPlanGenerator } from '@/services/crediPalPlanGenerator'
 import { useToast } from './use-toast'
-
-export interface FinancialPlan {
-  id: string
-  user_id: string
-  plan_data: any
-  status: string
-  plan_type: string
-  version: number
-  created_at: string
-  updated_at: string
-  generatedAt: string
-  
-  // Plan data properties from the unified interface
-  userId: string
-  currentSnapshot: {
-    monthlyIncome: number
-    monthlyExpenses: number
-    totalDebt: number
-    currentSavings: number
-  }
-  projectedSnapshot: {
-    debtIn12Months: number
-    emergencyFundIn12Months: number
-    netWorthIn12Months: number
-  }
-  recommendedBudget: {
-    needs: { percentage: number; amount: number }
-    lifestyle: { percentage: number; amount: number }
-    savings: { percentage: number; amount: number }
-  }
-  debtPayoffPlan: Array<{
-    debtName: string
-    currentBalance: number
-    payoffDate: string
-    monthlyPayment: number
-    interestSaved: number
-  }>
-  emergencyFund: {
-    targetAmount: number
-    currentAmount: number
-    monthlySaving: number
-    completionDate: string
-  }
-  wealthGrowth: {
-    year1: number
-    year3: number
-    year5: number
-  }
-  shortTermGoals: {
-    weekly: Array<{
-      title: string
-      target: number
-      progress: number
-      type: string
-    }>
-    monthly: Array<{
-      title: string
-      target: number
-      progress: number
-      type: string
-    }>
-  }
-  actionRoadmap: Array<{
-    step: number
-    title: string
-    targetDate: string
-    completed: boolean
-    description?: string
-  }>
-}
+import type { FinancialPlan } from '@/types/financialPlan'
 
 export const useFinancialPlanManager = () => {
   const { user } = useAuth()
@@ -101,58 +32,89 @@ export const useFinancialPlanManager = () => {
       if (error) throw error
       
       if (data) {
-        // Parse plan_data and merge with base data
+        // Parse plan_data and create unified FinancialPlan structure
         const planData = data.plan_data || {}
-        const basePlan = {
-          ...data,
-          generatedAt: data.created_at,
+        
+        // Convert database plan to unified FinancialPlan interface
+        const unifiedPlan: FinancialPlan = {
+          id: data.id,
           userId: data.user_id,
-          // Provide default values for required properties
-          currentSnapshot: {
-            monthlyIncome: 0,
-            monthlyExpenses: 0,
-            totalDebt: 0,
-            currentSavings: 0
+          
+          // Current and projected snapshots
+          currentSnapshot: planData.currentSnapshot || {
+            monthlyIncome: financialData?.monthlyIncome || 0,
+            monthlyExpenses: financialData?.monthlyExpenses || 0,
+            totalDebt: financialData?.totalDebtBalance || 0,
+            currentSavings: financialData?.currentSavings || 0
           },
-          projectedSnapshot: {
-            debtIn12Months: 0,
-            emergencyFundIn12Months: 0,
-            netWorthIn12Months: 0
+          
+          projectedSnapshot: planData.projectedSnapshot || {
+            debtIn12Months: Math.max(0, (financialData?.totalDebtBalance || 0) - ((financialData?.totalMonthlyDebtPayments || 0) * 12)),
+            emergencyFundIn12Months: (financialData?.currentSavings || 0) + ((financialData?.savingsCapacity || 0) * 12),
+            netWorthIn12Months: ((financialData?.currentSavings || 0) + ((financialData?.savingsCapacity || 0) * 12)) - Math.max(0, (financialData?.totalDebtBalance || 0) - ((financialData?.totalMonthlyDebtPayments || 0) * 12))
           },
-          recommendedBudget: {
-            needs: { percentage: 50, amount: 0 },
-            lifestyle: { percentage: 30, amount: 0 },
-            savings: { percentage: 20, amount: 0 }
+          
+          // Budget recommendations
+          recommendedBudget: planData.recommendedBudget || {
+            needs: { percentage: 50, amount: (financialData?.monthlyIncome || 0) * 0.5 },
+            lifestyle: { percentage: 30, amount: (financialData?.monthlyIncome || 0) * 0.3 },
+            savings: { percentage: 20, amount: (financialData?.monthlyIncome || 0) * 0.2 }
           },
-          debtPayoffPlan: [],
-          emergencyFund: {
-            targetAmount: 0,
-            currentAmount: 0,
-            monthlySaving: 0,
-            completionDate: ''
+          
+          // Debt payoff plan
+          debtPayoffPlan: planData.debtPayoffPlan || (financialData?.activeDebts || []).map(debt => ({
+            debtName: debt.creditor,
+            currentBalance: debt.balance,
+            payoffDate: new Date(Date.now() + (debt.balance / Math.max(debt.payment, 1000)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            monthlyPayment: debt.payment,
+            interestSaved: debt.balance * 0.1 // Estimated 10% interest savings
+          })),
+          
+          // Emergency fund
+          emergencyFund: planData.emergencyFund || {
+            targetAmount: (financialData?.monthlyExpenses || 0) * 6,
+            currentAmount: financialData?.currentSavings || 0,
+            monthlySaving: financialData?.savingsCapacity || 0,
+            completionDate: new Date(Date.now() + (((financialData?.monthlyExpenses || 0) * 6 - (financialData?.currentSavings || 0)) / Math.max(financialData?.savingsCapacity || 1, 1)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
           },
-          wealthGrowth: {
-            year1: 0,
-            year3: 0,
-            year5: 0
+          
+          // Wealth growth projections
+          wealthGrowth: planData.wealthGrowth || {
+            year1: (financialData?.savingsCapacity || 0) * 12,
+            year3: (financialData?.savingsCapacity || 0) * 12 * 3 * 1.15, // 5% annual growth
+            year5: (financialData?.savingsCapacity || 0) * 12 * 5 * 1.35 // 7% annual growth
           },
-          shortTermGoals: {
-            weekly: [],
-            monthly: []
+          
+          // Short term goals
+          shortTermGoals: planData.shortTermGoals || {
+            weekly: [
+              { title: 'Revisar gastos semanales', target: 100, progress: 0, type: 'expense_control' },
+              { title: 'Ahorrar para fondo de emergencia', target: (financialData?.savingsCapacity || 0) / 4, progress: 0, type: 'savings' }
+            ],
+            monthly: [
+              { title: 'Cumplir presupuesto mensual', target: 100, progress: 0, type: 'budget' },
+              { title: 'Reducir deudas', target: financialData?.totalMonthlyDebtPayments || 0, progress: 0, type: 'debt' }
+            ]
           },
-          actionRoadmap: []
+          
+          // Action roadmap
+          actionRoadmap: planData.actionRoadmap || [
+            { step: 1, title: 'Establecer presupuesto mensual', targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false },
+            { step: 2, title: 'Crear fondo de emergencia', targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false },
+            { step: 3, title: 'Optimizar pagos de deuda', targetDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false }
+          ],
+          
+          // Metadata
+          generatedAt: data.created_at,
+          status: data.status as 'active' | 'draft' | 'completed'
         }
         
-        // Merge plan_data properties, giving precedence to actual data
-        return {
-          ...basePlan,
-          ...planData
-        } as FinancialPlan
+        return unifiedPlan
       }
       
       return null
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!financialData,
     staleTime: 10 * 60 * 1000,
   })
 
@@ -186,13 +148,63 @@ export const useFinancialPlanManager = () => {
         .eq('user_id', user.id)
         .eq('status', 'active')
 
-      // Save new plan to database
+      // Convert generated plan to database format and save
       const { data, error } = await supabase
         .from('financial_plans')
         .insert({
           user_id: user.id,
           plan_type: 'credipal-3-2-1',
-          plan_data: generatedPlan as any,
+          plan_data: {
+            currentSnapshot: {
+              monthlyIncome: financialData.monthlyIncome,
+              monthlyExpenses: financialData.monthlyExpenses,
+              totalDebt: financialData.totalDebtBalance,
+              currentSavings: financialData.currentSavings
+            },
+            projectedSnapshot: {
+              debtIn12Months: Math.max(0, financialData.totalDebtBalance - (financialData.totalMonthlyDebtPayments * 12)),
+              emergencyFundIn12Months: financialData.currentSavings + (financialData.savingsCapacity * 12),
+              netWorthIn12Months: (financialData.currentSavings + (financialData.savingsCapacity * 12)) - Math.max(0, financialData.totalDebtBalance - (financialData.totalMonthlyDebtPayments * 12))
+            },
+            recommendedBudget: {
+              needs: { percentage: 50, amount: financialData.monthlyIncome * 0.5 },
+              lifestyle: { percentage: 30, amount: financialData.monthlyIncome * 0.3 },
+              savings: { percentage: 20, amount: financialData.monthlyIncome * 0.2 }
+            },
+            debtPayoffPlan: financialData.activeDebts.map(debt => ({
+              debtName: debt.creditor,
+              currentBalance: debt.balance,
+              payoffDate: new Date(Date.now() + (debt.balance / Math.max(debt.payment, 1000)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              monthlyPayment: debt.payment,
+              interestSaved: debt.balance * 0.1
+            })),
+            emergencyFund: {
+              targetAmount: financialData.monthlyExpenses * 6,
+              currentAmount: financialData.currentSavings,
+              monthlySaving: financialData.savingsCapacity,
+              completionDate: new Date(Date.now() + ((financialData.monthlyExpenses * 6 - financialData.currentSavings) / Math.max(financialData.savingsCapacity, 1)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            },
+            wealthGrowth: {
+              year1: financialData.savingsCapacity * 12,
+              year3: financialData.savingsCapacity * 12 * 3 * 1.15,
+              year5: financialData.savingsCapacity * 12 * 5 * 1.35
+            },
+            shortTermGoals: {
+              weekly: [
+                { title: 'Revisar gastos semanales', target: 100, progress: 0, type: 'expense_control' },
+                { title: 'Ahorrar para fondo de emergencia', target: financialData.savingsCapacity / 4, progress: 0, type: 'savings' }
+              ],
+              monthly: [
+                { title: 'Cumplir presupuesto mensual', target: 100, progress: 0, type: 'budget' },
+                { title: 'Reducir deudas', target: financialData.totalMonthlyDebtPayments, progress: 0, type: 'debt' }
+              ]
+            },
+            actionRoadmap: [
+              { step: 1, title: 'Establecer presupuesto mensual', targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false },
+              { step: 2, title: 'Crear fondo de emergencia', targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false },
+              { step: 3, title: 'Optimizar pagos de deuda', targetDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false }
+            ]
+          } as any,
           status: 'active'
         })
         .select()
@@ -200,13 +212,64 @@ export const useFinancialPlanManager = () => {
 
       if (error) throw error
       
-      // Return properly structured plan
-      return {
-        ...data,
-        generatedAt: data.created_at,
+      // Return properly structured plan matching FinancialPlan interface
+      const unifiedPlan: FinancialPlan = {
+        id: data.id,
         userId: data.user_id,
-        ...generatedPlan
-      } as FinancialPlan
+        currentSnapshot: {
+          monthlyIncome: financialData.monthlyIncome,
+          monthlyExpenses: financialData.monthlyExpenses,
+          totalDebt: financialData.totalDebtBalance,
+          currentSavings: financialData.currentSavings
+        },
+        projectedSnapshot: {
+          debtIn12Months: Math.max(0, financialData.totalDebtBalance - (financialData.totalMonthlyDebtPayments * 12)),
+          emergencyFundIn12Months: financialData.currentSavings + (financialData.savingsCapacity * 12),
+          netWorthIn12Months: (financialData.currentSavings + (financialData.savingsCapacity * 12)) - Math.max(0, financialData.totalDebtBalance - (financialData.totalMonthlyDebtPayments * 12))
+        },
+        recommendedBudget: {
+          needs: { percentage: 50, amount: financialData.monthlyIncome * 0.5 },
+          lifestyle: { percentage: 30, amount: financialData.monthlyIncome * 0.3 },
+          savings: { percentage: 20, amount: financialData.monthlyIncome * 0.2 }
+        },
+        debtPayoffPlan: financialData.activeDebts.map(debt => ({
+          debtName: debt.creditor,
+          currentBalance: debt.balance,
+          payoffDate: new Date(Date.now() + (debt.balance / Math.max(debt.payment, 1000)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          monthlyPayment: debt.payment,
+          interestSaved: debt.balance * 0.1
+        })),
+        emergencyFund: {
+          targetAmount: financialData.monthlyExpenses * 6,
+          currentAmount: financialData.currentSavings,
+          monthlySaving: financialData.savingsCapacity,
+          completionDate: new Date(Date.now() + ((financialData.monthlyExpenses * 6 - financialData.currentSavings) / Math.max(financialData.savingsCapacity, 1)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        },
+        wealthGrowth: {
+          year1: financialData.savingsCapacity * 12,
+          year3: financialData.savingsCapacity * 12 * 3 * 1.15,
+          year5: financialData.savingsCapacity * 12 * 5 * 1.35
+        },
+        shortTermGoals: {
+          weekly: [
+            { title: 'Revisar gastos semanales', target: 100, progress: 0, type: 'expense_control' },
+            { title: 'Ahorrar para fondo de emergencia', target: financialData.savingsCapacity / 4, progress: 0, type: 'savings' }
+          ],
+          monthly: [
+            { title: 'Cumplir presupuesto mensual', target: 100, progress: 0, type: 'budget' },
+            { title: 'Reducir deudas', target: financialData.totalMonthlyDebtPayments, progress: 0, type: 'debt' }
+          ]
+        },
+        actionRoadmap: [
+          { step: 1, title: 'Establecer presupuesto mensual', targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false },
+          { step: 2, title: 'Crear fondo de emergencia', targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false },
+          { step: 3, title: 'Optimizar pagos de deuda', targetDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false }
+        ],
+        generatedAt: data.created_at,
+        status: data.status as 'active' | 'draft' | 'completed'
+      }
+      
+      return unifiedPlan
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-financial-plan'] })
@@ -242,11 +305,8 @@ export const useFinancialPlanManager = () => {
   const updateGoalProgress = ({ goalId, progress }: { goalId: string; progress: number }) => {
     if (!activePlan) return
 
-    const updatedPlanData = { ...activePlan.plan_data }
-    // Update the specific goal progress in plan_data
-    // This would depend on the structure of your plan_data
-    
     console.log('🎯 Updating goal progress:', { goalId, progress })
+    // Implementation would update specific goal progress in the plan
   }
 
   return {
