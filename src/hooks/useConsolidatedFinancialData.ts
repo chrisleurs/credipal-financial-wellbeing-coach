@@ -41,7 +41,7 @@ export const useConsolidatedFinancialData = () => {
   const { user } = useAuth()
   const { loans, kueskiLoan } = useLoans()
   
-  return useQuery({
+  const query = useQuery({
     queryKey: ['consolidated-financial-data', user?.id],
     queryFn: async (): Promise<ConsolidatedFinancialData> => {
       if (!user?.id) {
@@ -247,4 +247,14 @@ export const useConsolidatedFinancialData = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false
   })
+
+  return {
+    // New format
+    data: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    
+    // Backward compatibility
+    consolidatedData: query.data,
+  }
 }
