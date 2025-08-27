@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
-import { useConsolidatedFinancialData } from './useConsolidatedFinancialData';
+import { useOptimizedFinancialData } from './useOptimizedFinancialData';
 
 export interface UserFinancialData {
   id: string;
@@ -25,39 +25,39 @@ export interface UserFinancialData {
 export const useUserFinancialData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { consolidatedData, isLoading: isConsolidatedLoading } = useConsolidatedFinancialData();
+  const { data: optimizedData, isLoading } = useOptimizedFinancialData();
 
-  // Convert consolidated data to legacy format for compatibility
-  const userFinancialData: UserFinancialData | null = consolidatedData ? {
-    id: user?.id || '',
-    user_id: user?.id || '',
-    ingresos: consolidatedData.monthlyIncome,
-    ingresos_extras: 0,
-    gastos_categorizados: Object.entries(consolidatedData.expenseCategories || {}).map(([category, amount]) => ({
+  // Convert optimized data to legacy format for compatibility
+  const userFinancialData: UserFinancialData | null = optimizedData && user ? {
+    id: user.id,
+    user_id: user.id,
+    ingresos: optimizedData.monthlyIncome,
+    ingresos_extras: 0, // This could be extracted from incomeBreakdown if needed
+    gastos_categorizados: Object.entries(optimizedData.expenseCategories || {}).map(([category, amount]) => ({
       category,
       amount
     })),
-    deudas: consolidatedData.debts || [],
+    deudas: optimizedData.activeDebts || [],
     ahorros: {
-      actual: consolidatedData.currentSavings
+      actual: optimizedData.currentSavings
     },
-    metas: consolidatedData.financialGoals?.map(goal => ({ name: goal })) || [],
+    metas: optimizedData.activeGoals?.map(goal => ({ name: goal.title })) || [],
     user_data: {},
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    gastos_totales: consolidatedData.monthlyExpenses,
-    ahorros_actuales: consolidatedData.currentSavings,
-    capacidad_ahorro: consolidatedData.savingsCapacity,
-    metas_financieras: consolidatedData.financialGoals?.map(goal => ({ name: goal })) || []
+    gastos_totales: optimizedData.monthlyExpenses,
+    ahorros_actuales: optimizedData.currentSavings,
+    capacidad_ahorro: optimizedData.savingsCapacity,
+    metas_financieras: optimizedData.activeGoals?.map(goal => ({ name: goal.title })) || []
   } : null;
 
   const refetch = () => {
-    console.log('Refetching user financial data...');
+    console.log('🔄 Refetching user financial data from optimized source...');
   };
 
   return {
     userFinancialData,
-    isLoading: isConsolidatedLoading,
+    isLoading,
     error: null,
     refetch
   };

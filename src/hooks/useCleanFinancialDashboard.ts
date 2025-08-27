@@ -1,147 +1,53 @@
 
-import { useSimplifiedFinancialData } from './useSimplifiedFinancialData'
-import { useIncomes } from '@/domains/income/hooks/useIncomes'
-import { useExpenses } from '@/domains/expenses/hooks/useExpenses'
-import { useDebts } from '@/domains/debts/hooks/useDebts'
-import { useGoals } from '@/domains/savings/hooks/useGoals'
-import { useMemo } from 'react'
-
-export interface CleanDashboardData {
-  // Summary data (always up-to-date via triggers)
-  summary: {
-    monthlyIncome: number
-    monthlyExpenses: number
-    totalDebt: number
-    emergencyFund: number
-    savingsCapacity: number
-    lastUpdated: string | null
-  }
-  
-  // Recent activity (for dashboard cards)
-  recentActivity: {
-    latestExpenses: Array<{ id: string; amount: number; category: string; date: string }>
-    upcomingPayments: Array<{ id: string; creditor: string; amount: number; dueDate: string }>
-    activeGoals: Array<{ id: string; title: string; progress: number; targetAmount: number }>
-  }
-  
-  // Quick stats
-  quickStats: {
-    expensesThisMonth: number
-    debtPaymentsThisMonth: number
-    savingsThisMonth: number
-    goalCompletionRate: number
-  }
-  
-  // Status
-  isLoading: boolean
-  hasError: boolean
-  isEmpty: boolean
-}
+import { useOptimizedFinancialData } from './useOptimizedFinancialData'
 
 export const useCleanFinancialDashboard = () => {
-  const { data: summaryData, isLoading: summaryLoading } = useSimplifiedFinancialData()
-  const { expenses, isLoading: expensesLoading } = useExpenses()
-  const { debts, isLoading: debtsLoading } = useDebts()
-  const { activeGoals, isLoading: goalsLoading } = useGoals()
+  const { data: financialData, isLoading } = useOptimizedFinancialData()
 
-  const dashboardData = useMemo((): CleanDashboardData => {
-    const isLoading = summaryLoading || expensesLoading || debtsLoading || goalsLoading
-    
-    if (isLoading || !summaryData) {
-      return {
-        summary: {
-          monthlyIncome: 0,
-          monthlyExpenses: 0,
-          totalDebt: 0,
-          emergencyFund: 0,
-          savingsCapacity: 0,
-          lastUpdated: null
-        },
-        recentActivity: {
-          latestExpenses: [],
-          upcomingPayments: [],
-          activeGoals: []
-        },
-        quickStats: {
-          expensesThisMonth: 0,
-          debtPaymentsThisMonth: 0,
-          savingsThisMonth: 0,
-          goalCompletionRate: 0
-        },
-        isLoading,
-        hasError: false,
-        isEmpty: true
-      }
-    }
+  if (isLoading) {
+    return { isLoading: true, isEmpty: false, summary: {}, quickStats: {}, recentActivity: {} }
+  }
 
-    // Get current month expenses
-    const currentMonth = new Date().getMonth()
-    const currentYear = new Date().getFullYear()
-    const thisMonthExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.date)
-      return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear
-    })
+  if (!financialData || !financialData.hasRealData) {
+    return { isLoading: false, isEmpty: true, summary: {}, quickStats: {}, recentActivity: {} }
+  }
 
-    // Latest 5 expenses
-    const latestExpenses = expenses
-      .slice(0, 5)
-      .map(expense => ({
-        id: expense.id,
-        amount: expense.amount,
-        category: expense.category,
-        date: expense.date
-      }))
-
-    // Upcoming debt payments (next 30 days)
-    const upcomingPayments = debts
-      .filter(debt => debt.status === 'active')
-      .map(debt => ({
-        id: debt.id,
+  return {
+    isLoading: false,
+    isEmpty: false,
+    summary: {
+      monthlyIncome: financialData.monthlyIncome,
+      monthlyExpenses: financialData.monthlyExpenses,
+      currentSavings: financialData.currentSavings,
+      savingsCapacity: financialData.savingsCapacity,
+      lastUpdated: financialData.lastCalculated
+    },
+    quickStats: {
+      expensesThisMonth: financialData.monthlyExpenses,
+      debtPaymentsThisMonth: financialData.totalMonthlyDebtPayments,
+      savingsThisMonth: financialData.savingsCapacity,
+      goalCompletionRate: financialData.activeGoals.length > 0 
+        ? (financialData.totalGoalsCurrent / financialData.totalGoalsTarget) * 100 
+        : 0
+    },
+    recentActivity: {
+      latestExpenses: Object.entries(financialData.expenseCategories).map(([category, amount], index) => ({
+        id: `expense-${index}`,
+        category,
+        amount: amount as number,
+        date: new Date().toLocaleDateString('es-MX')
+      })),
+      upcomingPayments: financialData.activeDebts.map((debt, index) => ({
+        id: `payment-${index}`,
         creditor: debt.creditor,
-        amount: debt.monthly_payment,
-        dueDate: debt.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        amount: debt.payment,
+        dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('es-MX')
+      })),
+      activeGoals: financialData.activeGoals.map((goal, index) => ({
+        id: `goal-${index}`,
+        title: goal.title,
+        progress: goal.progress
       }))
-      .slice(0, 3)
-
-    // Active goals with progress
-    const activeGoalsData = activeGoals.map(goal => ({
-      id: goal.id,
-      title: goal.title,
-      progress: goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0,
-      targetAmount: goal.target_amount
-    }))
-
-    // Calculate quick stats
-    const expensesThisMonth = thisMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0)
-    const goalCompletionRate = activeGoals.length > 0 
-      ? activeGoals.filter(goal => (goal.current_amount / goal.target_amount) >= 1).length / activeGoals.length * 100
-      : 0
-
-    return {
-      summary: {
-        monthlyIncome: summaryData.monthlyIncome,
-        monthlyExpenses: summaryData.monthlyExpenses,
-        totalDebt: summaryData.totalDebt,
-        emergencyFund: summaryData.emergencyFund,
-        savingsCapacity: summaryData.savingsCapacity,
-        lastUpdated: summaryData.lastUpdated
-      },
-      recentActivity: {
-        latestExpenses,
-        upcomingPayments,
-        activeGoals: activeGoalsData
-      },
-      quickStats: {
-        expensesThisMonth,
-        debtPaymentsThisMonth: summaryData.monthlyDebtPayments,
-        savingsThisMonth: Math.max(0, summaryData.savingsCapacity),
-        goalCompletionRate
-      },
-      isLoading: false,
-      hasError: false,
-      isEmpty: !summaryData.hasData
     }
-  }, [summaryData, expenses, debts, activeGoals, summaryLoading, expensesLoading, debtsLoading, goalsLoading])
-
-  return dashboardData
+  }
 }
