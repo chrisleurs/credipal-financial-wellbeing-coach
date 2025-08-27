@@ -1,3 +1,4 @@
+
 import React from 'react'
 import {
   Sheet,
@@ -75,7 +76,7 @@ export function AppSidebar({ items, sidebarItems }: AppSidebarProps) {
             </div>
             <div className="flex justify-center mt-2">
               <button
-                onClick={() => signOut({ redirectTo: '/auth' })}
+                onClick={() => signOut()}
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-4 py-2"
               >
                 Cerrar Sesión
