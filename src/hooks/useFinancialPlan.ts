@@ -17,8 +17,16 @@ export const useFinancialPlan = (userId?: string) => {
   // Get base financial data from useOptimizedFinancialData
   const { data: financialData, isLoading: isDataLoading, error: dataError } = useOptimizedFinancialData()
   
-  // Check if we have complete data for plan generation
-  const hasCompleteData = financialData?.hasRealData && financialData?.monthlyIncome > 0
+  // Check if we have complete data for plan generation - more flexible check
+  const hasCompleteData = financialData?.hasRealData && (financialData?.monthlyIncome > 0 || financialData?.monthlyExpenses > 0)
+
+  console.log('🔍 Financial Plan Hook - Data Check:', {
+    hasRealData: financialData?.hasRealData,
+    monthlyIncome: financialData?.monthlyIncome,
+    monthlyExpenses: financialData?.monthlyExpenses,
+    hasCompleteData,
+    isDataLoading
+  })
 
   // Generate AI Plan using OpenAI edge function
   const aiPlanQuery = useQuery({
@@ -158,6 +166,14 @@ export const useFinancialPlan = (userId?: string) => {
   // Error handling
   const error = dataError || aiPlanQuery.error
 
+  console.log('📊 Financial Plan Hook - Final State:', {
+    loading,
+    hasPlan,
+    hasCompleteData,
+    planExists: !!aiPlanQuery.data,
+    error: error?.message
+  })
+
   return {
     // Original financial data
     financialData,
@@ -187,4 +203,3 @@ export const useFinancialPlan = (userId?: string) => {
     isStale: aiPlanQuery.isStale
   }
 }
-

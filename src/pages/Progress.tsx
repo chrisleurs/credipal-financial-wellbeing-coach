@@ -4,7 +4,7 @@ import { useFinancialPlan } from '@/hooks/useFinancialPlan'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { RefreshCw, Target, TrendingUp } from 'lucide-react'
+import { RefreshCw, Target, TrendingUp, AlertCircle } from 'lucide-react'
 import { ComprehensivePlanView } from '@/components/dashboard/ComprehensivePlanView'
 
 export default function Progress() {
@@ -15,8 +15,18 @@ export default function Progress() {
     regeneratePlan,
     isGenerating,
     hasPlan,
-    hasCompleteData
+    hasCompleteData,
+    financialData
   } = useFinancialPlan()
+
+  console.log('🔍 Progress Page - Current State:', {
+    plan: !!plan,
+    loading,
+    error,
+    hasPlan,
+    hasCompleteData,
+    financialData: !!financialData
+  })
 
   if (loading) {
     return (
@@ -33,7 +43,7 @@ export default function Progress() {
           <Card className="max-w-2xl mx-auto text-center">
             <CardHeader>
               <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <Target className="h-8 w-8 text-red-600" />
+                <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
               <CardTitle>Error cargando el plan</CardTitle>
               <CardDescription>{error}</CardDescription>
@@ -49,6 +59,43 @@ export default function Progress() {
                   <>
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Intentar de nuevo
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Show plan generation option for users with some data but no income
+  if (!hasPlan && financialData?.monthlyExpenses > 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <Card className="max-w-2xl mx-auto text-center">
+            <CardHeader>
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <TrendingUp className="h-8 w-8 text-blue-600" />
+              </div>
+              <CardTitle>Genera tu Plan Financiero</CardTitle>
+              <CardDescription>
+                Tienes datos de gastos registrados. Podemos crear un plan financiero 
+                personalizado para ayudarte a optimizar tus finanzas.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={regeneratePlan} disabled={isGenerating} size="lg">
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generando tu plan...
+                  </>
+                ) : (
+                  <>
+                    <Target className="h-4 w-4 mr-2" />
+                    Generar Mi Plan
                   </>
                 )}
               </Button>
