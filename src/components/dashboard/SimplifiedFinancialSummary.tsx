@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/utils/helpers'
@@ -31,7 +30,7 @@ export const SimplifiedFinancialSummary = () => {
       <Card className="mb-8">
         <CardContent className="p-6 text-center">
           <p className="text-muted-foreground">No hay datos financieros disponibles</p>
-          <Button onClick={recalculate} disabled={isRecalculating} className="mt-4">
+          <Button onClick={() => recalculate()} disabled={isRecalculating} className="mt-4">
             {isRecalculating ? 'Calculando...' : 'Recalcular Resumen'}
           </Button>
         </CardContent>
@@ -97,7 +96,7 @@ export const SimplifiedFinancialSummary = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={recalculate} 
+            onClick={() => recalculate()} 
             disabled={isRecalculating}
           >
             {isRecalculating ? 'Recalculando...' : 'Actualizar'}
