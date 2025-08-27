@@ -12,16 +12,9 @@ export interface SidebarNavItem {
   disabled?: boolean
   external?: boolean
   icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
-} & (
-  | {
-      href: string
-      items?: never
-    }
-  | {
-      href?: string
-      items: NavLink[]
-    }
-)
+  href?: string
+  items?: NavLink[]
+}
 
 export interface NavLink {
   title: string
