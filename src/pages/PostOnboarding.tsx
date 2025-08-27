@@ -7,7 +7,6 @@ import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
 import { PlanGenerationFlow } from '@/components/plan/PlanGenerationFlow'
 import { useToast } from '@/hooks/use-toast'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import type { PlanGenerationData } from '@/types/financialPlan'
 
 export default function PostOnboarding() {
   const navigate = useNavigate()
@@ -32,25 +31,6 @@ export default function PostOnboarding() {
 
     consolidateIfNeeded()
   }, [consolidateData, isConsolidating, planGenerated])
-
-  // Preparar datos para generación del plan
-  const planGenerationData: PlanGenerationData | null = React.useMemo(() => {
-    if (!financialData || !financialData.hasRealData) return null
-
-    return {
-      monthlyIncome: financialData.monthlyIncome,
-      monthlyExpenses: financialData.monthlyExpenses,
-      currentSavings: financialData.currentSavings || 0,
-      savingsCapacity: financialData.savingsCapacity,
-      debts: financialData.activeDebts.map(debt => ({
-        name: debt.creditor,
-        amount: debt.balance,
-        monthlyPayment: debt.payment
-      })),
-      goals: financialData.activeGoals.map(goal => goal.title),
-      expenseCategories: financialData.expenseCategories || {}
-    }
-  }, [financialData])
 
   const handlePlanGenerated = async () => {
     try {
@@ -99,7 +79,7 @@ export default function PostOnboarding() {
   }
 
   // Si no hay datos suficientes, redirigir al onboarding
-  if (!planGenerationData) {
+  if (!financialData?.hasRealData) {
     React.useEffect(() => {
       navigate('/onboarding', { replace: true })
     }, [navigate])
@@ -109,7 +89,6 @@ export default function PostOnboarding() {
 
   return (
     <PlanGenerationFlow 
-      planData={planGenerationData}
       onPlanGenerated={handlePlanGenerated}
     />
   )

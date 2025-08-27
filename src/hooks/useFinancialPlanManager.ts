@@ -33,7 +33,7 @@ export const useFinancialPlanManager = () => {
       
       if (data) {
         // Parse plan_data and create unified FinancialPlan structure
-        const planData = data.plan_data || {}
+        const planData = (typeof data.plan_data === 'string' ? JSON.parse(data.plan_data) : data.plan_data) as any || {}
         
         // Convert database plan to unified FinancialPlan interface
         const unifiedPlan: FinancialPlan = {
@@ -127,20 +127,6 @@ export const useFinancialPlanManager = () => {
 
       console.log('🎯 Generating plan with financial data:', financialData)
 
-      // Generate plan using CrediPal service
-      const generatedPlan = CrediPalPlanGenerator.generateCompletePlan({
-        monthlyIncome: financialData.monthlyIncome,
-        monthlyExpenses: financialData.monthlyExpenses,
-        currentSavings: financialData.currentSavings,
-        savingsCapacity: financialData.savingsCapacity,
-        totalDebtBalance: financialData.totalDebtBalance,
-        totalMonthlyDebtPayments: financialData.totalMonthlyDebtPayments,
-        activeDebts: financialData.activeDebts,
-        activeGoals: financialData.activeGoals,
-        expenseCategories: financialData.expenseCategories,
-        hasRealData: financialData.hasRealData
-      })
-      
       // Deactivate old plans
       await supabase
         .from('financial_plans')
