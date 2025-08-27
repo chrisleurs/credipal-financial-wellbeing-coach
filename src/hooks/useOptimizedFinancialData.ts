@@ -43,75 +43,140 @@ export const useOptimizedFinancialData = () => {
     queryFn: async (): Promise<OptimizedFinancialData> => {
       if (!user?.id) throw new Error('User not authenticated')
 
-      // Single query to get financial summary (calculated by triggers)
-      const { data: summary } = await supabase
-        .from('financial_summary')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+      console.log('🔍 Fetching optimized financial data for user:', user.id)
 
-      // Parallel queries for detailed data
-      const [incomesResult, expensesResult, debtsResult, goalsResult] = await Promise.all([
-        supabase.from('income_sources').select('*').eq('user_id', user.id).eq('is_active', true),
-        supabase.from('expenses').select('*').eq('user_id', user.id).gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
-        supabase.from('debts').select('*').eq('user_id', user.id).eq('status', 'active'),
-        supabase.from('goals').select('*').eq('user_id', user.id).eq('status', 'active')
+      // Parallel queries for all financial data
+      const [summaryResult, incomesResult, expensesResult, debtsResult, goalsResult] = await Promise.all([
+        // Financial summary (calculated by triggers)
+        supabase
+          .from('financial_summary')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+          
+        // Income sources  
+        supabase
+          .from('income_sources')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_active', true),
+          
+        // Recent expenses (last 90 days)
+        supabase
+          .from('expenses')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('date', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+          .order('date', { ascending: false }),
+          
+        // Active debts
+        supabase
+          .from('debts')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active'),
+          
+        // Active goals
+        supabase
+          .from('goals')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
       ])
 
+      const summary = summaryResult.data
       const incomes = incomesResult.data || []
       const expenses = expensesResult.data || []
       const debts = debtsResult.data || []
       const goals = goalsResult.data || []
 
+      console.log('📊 Raw financial data:', {
+        summary,
+        incomesCount: incomes.length,
+        expensesCount: expenses.length,
+        debtsCount: debts.length,
+        goalsCount: goals.length
+      })
+
       // Calculate expense categories
       const expenseCategories = expenses.reduce((acc: Record<string, number>, expense) => {
-        acc[expense.category] = (acc[expense.category] || 0) + expense.amount
+        acc[expense.category] = (acc[expense.category] || 0) + Number(expense.amount)
         return acc
       }, {})
 
       // Map income breakdown
       const incomeBreakdown = incomes.map(income => ({
         source: income.source_name,
-        amount: income.amount,
+        amount: Number(income.amount),
         frequency: income.frequency
       }))
 
       // Map active debts
       const activeDebts = debts.map(debt => ({
         creditor: debt.creditor,
-        balance: debt.current_balance,
-        payment: debt.monthly_payment
+        balance: Number(debt.current_balance),
+        payment: Number(debt.monthly_payment)
       }))
 
       // Map active goals with progress
       const activeGoals = goals.map(goal => ({
         title: goal.title,
-        target: goal.target_amount,
-        current: goal.current_amount,
-        progress: goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0
+        target: Number(goal.target_amount),
+        current: Number(goal.current_amount),
+        progress: goal.target_amount > 0 ? (Number(goal.current_amount) / Number(goal.target_amount)) * 100 : 0
       }))
 
-      return {
-        monthlyIncome: summary?.total_monthly_income || 0,
-        monthlyExpenses: summary?.total_monthly_expenses || 0,
-        monthlyBalance: (summary?.total_monthly_income || 0) - (summary?.total_monthly_expenses || 0),
-        savingsCapacity: summary?.savings_capacity || 0,
-        totalDebtBalance: summary?.total_debt || 0,
-        totalMonthlyDebtPayments: summary?.monthly_debt_payments || 0,
+      // Use summary data if available, otherwise calculate from raw data
+      const monthlyIncome = summary?.total_monthly_income || 
+        incomes.reduce((sum, income) => {
+          const amount = Number(income.amount)
+          switch (income.frequency) {
+            case 'weekly': return sum + (amount * 4)
+            case 'biweekly': return sum + (amount * 2)
+            case 'yearly': return sum + (amount / 12)
+            default: return sum + amount // monthly
+          }
+        }, 0)
+
+      const monthlyExpenses = summary?.total_monthly_expenses || 
+        (expenses.length > 0 ? expenses.reduce((sum, expense) => sum + Number(expense.amount), 0) / 3 : 0) // Average over 3 months
+
+      const totalDebtBalance = summary?.total_debt || 
+        debts.reduce((sum, debt) => sum + Number(debt.current_balance), 0)
+
+      const totalMonthlyDebtPayments = summary?.monthly_debt_payments || 
+        debts.reduce((sum, debt) => sum + Number(debt.monthly_payment), 0)
+
+      const savingsCapacity = summary?.savings_capacity || 
+        Math.max(0, monthlyIncome - monthlyExpenses - totalMonthlyDebtPayments)
+
+      const hasRealData = monthlyIncome > 0 || monthlyExpenses > 0 || totalDebtBalance > 0 || 
+                         goals.length > 0 || Object.keys(expenseCategories).length > 0
+
+      const result: OptimizedFinancialData = {
+        monthlyIncome,
+        monthlyExpenses,
+        monthlyBalance: monthlyIncome - monthlyExpenses,
+        savingsCapacity,
+        totalDebtBalance,
+        totalMonthlyDebtPayments,
         currentSavings: summary?.emergency_fund || 0,
-        totalGoalsTarget: goals.reduce((sum, goal) => sum + goal.target_amount, 0),
-        totalGoalsCurrent: goals.reduce((sum, goal) => sum + goal.current_amount, 0),
-        hasRealData: incomes.length > 0 || expenses.length > 0 || debts.length > 0,
+        totalGoalsTarget: goals.reduce((sum, goal) => sum + Number(goal.target_amount), 0),
+        totalGoalsCurrent: goals.reduce((sum, goal) => sum + Number(goal.current_amount), 0),
+        hasRealData,
         lastCalculated: summary?.last_calculated || null,
         expenseCategories,
         incomeBreakdown,
         activeDebts,
         activeGoals
       }
+
+      console.log('✅ Optimized financial data:', result)
+      return result
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes (renamed from cacheTime)
+    staleTime: 2 * 60 * 1000, // 2 minutes (reduced for more frequent updates)
+    gcTime: 10 * 60 * 1000, // 10 minutes
   })
 
   return {

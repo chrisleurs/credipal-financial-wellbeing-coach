@@ -31,13 +31,14 @@ export class DataConsolidationService {
     }
 
     try {
-      console.log('🔄 Starting optimized data consolidation...')
+      console.log('🔄 Starting optimized data consolidation for user:', userId)
+      console.log('📊 Onboarding data received:', onboardingData)
 
       // 1. Migrate expenses (from onboarding_expenses + categories)
       const expensesCount = await this.migrateExpenses(userId, onboardingData)
       result.migratedRecords.expenses = expensesCount
 
-      // 2. Migrate incomes
+      // 2. Migrate incomes (CRITICAL - this was missing proper handling)
       const incomesCount = await this.migrateIncomes(userId, onboardingData)
       result.migratedRecords.incomes = incomesCount
 
@@ -77,55 +78,67 @@ export class DataConsolidationService {
   ): Promise<number> {
     let migratedCount = 0
 
-    // Get detailed expenses from onboarding_expenses table
-    const { data: onboardingExpenses } = await supabase
-      .from('onboarding_expenses')
-      .select('*')
-      .eq('user_id', userId)
+    try {
+      // Get detailed expenses from onboarding_expenses table
+      const { data: onboardingExpenses } = await supabase
+        .from('onboarding_expenses')
+        .select('*')
+        .eq('user_id', userId)
 
-    const expensesToCreate = []
+      const expensesToCreate = []
 
-    if (onboardingExpenses && onboardingExpenses.length > 0) {
-      // Use detailed expenses
-      for (const expense of onboardingExpenses) {
-        expensesToCreate.push({
-          user_id: userId,
-          amount: expense.amount,
-          category: expense.category,
-          subcategory: expense.subcategory,
-          description: expense.subcategory || expense.category,
-          date: new Date().toISOString().split('T')[0],
-          is_recurring: true
-        })
-      }
-    } else if (onboardingData.expenseCategories) {
-      // Use category totals as fallback
-      const categoryMapping: Record<string, string> = {
-        'food': 'Food & Dining',
-        'transport': 'Transportation',
-        'housing': 'Housing & Utilities',
-        'bills': 'Bills & Services',
-        'entertainment': 'Entertainment'
-      }
-
-      Object.entries(onboardingData.expenseCategories).forEach(([key, amount]) => {
-        if (typeof amount === 'number' && amount > 0) {
+      if (onboardingExpenses && onboardingExpenses.length > 0) {
+        // Use detailed expenses
+        for (const expense of onboardingExpenses) {
           expensesToCreate.push({
             user_id: userId,
-            amount: amount,
-            category: categoryMapping[key] || 'Other',
-            subcategory: 'Monthly Budget',
-            description: `Monthly ${categoryMapping[key] || key} expenses`,
+            amount: expense.amount,
+            category: expense.category,
+            subcategory: expense.subcategory,
+            description: expense.subcategory || expense.category,
             date: new Date().toISOString().split('T')[0],
             is_recurring: true
           })
         }
-      })
-    }
+      } else if (onboardingData.expenseCategories) {
+        // Use category totals as fallback
+        const categoryMapping: Record<string, string> = {
+          'food': 'Alimentación',
+          'transport': 'Transporte',
+          'housing': 'Vivienda',
+          'bills': 'Servicios',
+          'entertainment': 'Entretenimiento',
+          'healthcare': 'Salud',
+          'shopping': 'Compras',
+          'other': 'Otros'
+        }
 
-    if (expensesToCreate.length > 0) {
-      const { error } = await supabase.from('expenses').insert(expensesToCreate)
-      if (!error) migratedCount = expensesToCreate.length
+        Object.entries(onboardingData.expenseCategories).forEach(([key, amount]) => {
+          if (typeof amount === 'number' && amount > 0) {
+            expensesToCreate.push({
+              user_id: userId,
+              amount: amount,
+              category: categoryMapping[key] || 'Otros',
+              subcategory: 'Presupuesto Mensual',
+              description: `Gastos mensuales en ${categoryMapping[key] || key}`,
+              date: new Date().toISOString().split('T')[0],
+              is_recurring: true
+            })
+          }
+        })
+      }
+
+      if (expensesToCreate.length > 0) {
+        const { error } = await supabase.from('expenses').insert(expensesToCreate)
+        if (!error) {
+          migratedCount = expensesToCreate.length
+          console.log(`✅ Migrated ${migratedCount} expenses`)
+        } else {
+          console.error('❌ Error migrating expenses:', error)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error in migrateExpenses:', error)
     }
 
     return migratedCount
@@ -137,27 +150,52 @@ export class DataConsolidationService {
   ): Promise<number> {
     let migratedCount = 0
 
-    if (onboardingData.monthlyIncome && onboardingData.monthlyIncome > 0) {
-      const { error } = await supabase.from('income_sources').insert({
-        user_id: userId,
-        source_name: 'Primary Income',
-        amount: onboardingData.monthlyIncome,
-        frequency: 'monthly',
-        is_active: true
+    try {
+      console.log('💰 Migrating incomes for user:', userId)
+      console.log('💰 Income data:', {
+        monthlyIncome: onboardingData.monthlyIncome,
+        extraIncome: onboardingData.extraIncome
       })
-      if (!error) migratedCount++
 
-      // Add extra income if exists
-      if (onboardingData.extraIncome && onboardingData.extraIncome > 0) {
-        const { error: extraError } = await supabase.from('income_sources').insert({
+      const incomesToCreate = []
+
+      // Primary income
+      if (onboardingData.monthlyIncome && onboardingData.monthlyIncome > 0) {
+        incomesToCreate.push({
           user_id: userId,
-          source_name: 'Additional Income',
+          source_name: 'Ingreso Principal',
+          amount: onboardingData.monthlyIncome,
+          frequency: 'monthly',
+          is_active: true
+        })
+      }
+
+      // Extra income
+      if (onboardingData.extraIncome && onboardingData.extraIncome > 0) {
+        incomesToCreate.push({
+          user_id: userId,
+          source_name: 'Ingresos Adicionales',
           amount: onboardingData.extraIncome,
           frequency: 'monthly',
           is_active: true
         })
-        if (!extraError) migratedCount++
       }
+
+      if (incomesToCreate.length > 0) {
+        console.log('💰 Creating income sources:', incomesToCreate)
+        
+        const { error } = await supabase.from('income_sources').insert(incomesToCreate)
+        if (!error) {
+          migratedCount = incomesToCreate.length
+          console.log(`✅ Migrated ${migratedCount} income sources`)
+        } else {
+          console.error('❌ Error migrating incomes:', error)
+        }
+      } else {
+        console.log('⚠️ No income data to migrate')
+      }
+    } catch (error) {
+      console.error('❌ Error in migrateIncomes:', error)
     }
 
     return migratedCount
@@ -169,19 +207,28 @@ export class DataConsolidationService {
   ): Promise<number> {
     let migratedCount = 0
 
-    if (onboardingData.debts && onboardingData.debts.length > 0) {
-      const debtsToCreate = onboardingData.debts.map(debt => ({
-        user_id: userId,
-        creditor: debt.name,
-        original_amount: debt.amount,
-        current_balance: debt.amount,
-        monthly_payment: debt.monthlyPayment,
-        interest_rate: 0, // Default, user can update later
-        status: 'active' as const
-      }))
+    try {
+      if (onboardingData.debts && onboardingData.debts.length > 0) {
+        const debtsToCreate = onboardingData.debts.map(debt => ({
+          user_id: userId,
+          creditor: debt.name || 'Acreedor',
+          original_amount: debt.amount || 0,
+          current_balance: debt.amount || 0,
+          monthly_payment: debt.monthlyPayment || 0,
+          interest_rate: 0, // Default, user can update later
+          status: 'active' as const
+        }))
 
-      const { error } = await supabase.from('debts').insert(debtsToCreate)
-      if (!error) migratedCount = debtsToCreate.length
+        const { error } = await supabase.from('debts').insert(debtsToCreate)
+        if (!error) {
+          migratedCount = debtsToCreate.length
+          console.log(`✅ Migrated ${migratedCount} debts`)
+        } else {
+          console.error('❌ Error migrating debts:', error)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error in migrateDebts:', error)
     }
 
     return migratedCount
@@ -193,34 +240,54 @@ export class DataConsolidationService {
   ): Promise<number> {
     let migratedCount = 0
 
-    if (onboardingData.financialGoals && onboardingData.financialGoals.length > 0) {
-      const goalsToCreate = onboardingData.financialGoals.map(goalTitle => ({
-        user_id: userId,
-        title: goalTitle,
-        description: `Goal set during onboarding: ${goalTitle}`,
-        target_amount: onboardingData.monthlySavingsCapacity ? onboardingData.monthlySavingsCapacity * 12 : 10000,
-        current_amount: onboardingData.currentSavings || 0,
-        priority: 'medium' as const,
-        status: 'active' as const
-      }))
+    try {
+      if (onboardingData.financialGoals && onboardingData.financialGoals.length > 0) {
+        const goalsToCreate = onboardingData.financialGoals.map(goalTitle => ({
+          user_id: userId,
+          title: goalTitle,
+          description: `Meta establecida durante el onboarding: ${goalTitle}`,
+          target_amount: onboardingData.monthlySavingsCapacity ? onboardingData.monthlySavingsCapacity * 12 : 10000,
+          current_amount: onboardingData.currentSavings || 0,
+          priority: 'medium' as const,
+          status: 'active' as const
+        }))
 
-      const { error } = await supabase.from('goals').insert(goalsToCreate)
-      if (!error) migratedCount = goalsToCreate.length
+        const { error } = await supabase.from('goals').insert(goalsToCreate)
+        if (!error) {
+          migratedCount = goalsToCreate.length
+          console.log(`✅ Migrated ${migratedCount} goals`)
+        } else {
+          console.error('❌ Error migrating goals:', error)
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error in migrateGoals:', error)
     }
 
     return migratedCount
   }
 
   private static async cleanupTemporaryData(userId: string): Promise<void> {
-    // Clean up onboarding expenses
-    await supabase.from('onboarding_expenses').delete().eq('user_id', userId)
+    try {
+      // Clean up onboarding expenses
+      await supabase.from('onboarding_expenses').delete().eq('user_id', userId)
+      console.log('🧹 Cleaned up temporary onboarding data')
+    } catch (error) {
+      console.error('❌ Error cleaning up temporary data:', error)
+    }
   }
 
   private static async markOnboardingCompleted(userId: string): Promise<void> {
-    await supabase.from('profiles').update({
-      onboarding_completed: true,
-      onboarding_step: 0,
-      onboarding_data: {}
-    }).eq('user_id', userId)
+    try {
+      await supabase.from('profiles').update({
+        onboarding_completed: true,
+        onboarding_step: 0,
+        onboarding_data: {}
+      }).eq('user_id', userId)
+      
+      console.log('✅ Marked onboarding as completed')
+    } catch (error) {
+      console.error('❌ Error marking onboarding completed:', error)
+    }
   }
 }
