@@ -21,6 +21,9 @@ export interface ConsolidatedFinancialData {
     balance: number
     payment: number
     source: 'database' | 'kueski' | 'onboarding'
+    interest_rate?: number
+    current_balance: number
+    monthly_payment: number
   }>
   
   expenseCategories: Record<string, number>
@@ -143,7 +146,10 @@ export const useConsolidatedFinancialData = () => {
           creditor: debt.creditor,
           balance: Number(debt.current_balance),
           payment: Number(debt.monthly_payment),
-          source: 'database'
+          source: 'database',
+          interest_rate: debt.interest_rate,
+          current_balance: Number(debt.current_balance),
+          monthly_payment: Number(debt.monthly_payment)
         })
       })
       
@@ -155,7 +161,9 @@ export const useConsolidatedFinancialData = () => {
           creditor: 'Kueski',
           balance: Number(kueskiLoan.amount),
           payment: Number(kueskiLoan.payment_amount) * 2, // Biweekly to monthly
-          source: 'kueski'
+          source: 'kueski',
+          current_balance: Number(kueskiLoan.amount),
+          monthly_payment: Number(kueskiLoan.payment_amount) * 2
         })
       }
       
@@ -176,7 +184,9 @@ export const useConsolidatedFinancialData = () => {
               creditor: debt.name || 'Acreedor desconocido',
               balance: Number(debt.amount) || 0,
               payment: Number(debt.monthlyPayment) || 0,
-              source: 'onboarding'
+              source: 'onboarding',
+              current_balance: Number(debt.amount) || 0,
+              monthly_payment: Number(debt.monthlyPayment) || 0
             })
           }
         })

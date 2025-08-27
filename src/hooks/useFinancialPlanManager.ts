@@ -137,6 +137,46 @@ export const useFinancialPlanManager = () => {
     }
   })
 
+  // Update goal progress mutation
+  const updateGoalProgressMutation = useMutation({
+    mutationFn: async ({ goalId, progress }: { goalId: string, progress: number }) => {
+      if (!activePlan) throw new Error('No active plan found')
+
+      // Update the plan's actionRoadmap
+      const updatedPlan = { ...activePlan }
+      if (updatedPlan.actionRoadmap) {
+        const actionIndex = updatedPlan.actionRoadmap.findIndex(action => action.step.toString() === goalId)
+        if (actionIndex !== -1) {
+          updatedPlan.actionRoadmap[actionIndex] = {
+            ...updatedPlan.actionRoadmap[actionIndex],
+            completed: progress >= 100
+          }
+        }
+      }
+
+      // Save updated plan
+      const { data, error } = await supabase
+        .from('financial_plans')
+        .update({
+          plan_data: updatedPlan as any,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', activePlan.id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financial-plan'] })
+      toast({
+        title: "Progreso actualizado",
+        description: "Has completado una acción del plan",
+      })
+    }
+  })
+
   // Función principal para generar plan
   const generatePlan = async (data?: PlanGenerationData) => {
     setIsGenerating(true)
@@ -193,6 +233,10 @@ export const useFinancialPlanManager = () => {
     // Generación de plan
     generatePlan,
     isGenerating: isGenerating || generatePlanMutation.isPending,
+    
+    // Progress updates
+    updateGoalProgress: updateGoalProgressMutation.mutate,
+    isUpdatingProgress: updateGoalProgressMutation.isPending,
     
     // Utilidades
     regeneratePlan
