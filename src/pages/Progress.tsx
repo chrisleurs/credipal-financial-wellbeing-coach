@@ -4,10 +4,10 @@ import { useFinancialPlanManager } from '@/hooks/useFinancialPlanManager'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
+import { Progress as UIProgress } from '@/components/ui/progress'
 import { RefreshCw, Target, TrendingUp, AlertCircle, PlusCircle, BarChart3, Calendar, CheckCircle } from 'lucide-react'
 
-export default function Progress() {
+export default function ProgressPage() {
   const { 
     activePlan,
     isLoadingPlan,
@@ -117,7 +117,7 @@ export default function Progress() {
                     <span className="text-2xl font-bold text-primary">{overallProgress}%</span>
                     <Target className="h-6 w-6 text-primary" />
                   </div>
-                  <Progress value={overallProgress} className="h-3" />
+                  <UIProgress value={overallProgress} className="h-3" />
                   <p className="text-sm text-muted-foreground">
                     {activePlan.actionRoadmap.filter(a => a.completed).length} de {activePlan.actionRoadmap.length} acciones completadas
                   </p>
@@ -136,7 +136,7 @@ export default function Progress() {
                       ${activePlan.emergencyFund.currentAmount.toLocaleString()}
                     </span>
                   </div>
-                  <Progress value={emergencyFundProgress} className="h-3" />
+                  <UIProgress value={emergencyFundProgress} className="h-3" />
                   <p className="text-sm text-muted-foreground">
                     Meta: ${activePlan.emergencyFund.targetAmount.toLocaleString()}
                   </p>
@@ -241,7 +241,7 @@ export default function Progress() {
                           {goal.progress}%
                         </span>
                       </div>
-                      <Progress value={goal.progress} className="h-2" />
+                      <UIProgress value={goal.progress} className="h-2" />
                     </div>
                   ))}
                 </div>
@@ -262,7 +262,7 @@ export default function Progress() {
                           ${goal.target.toLocaleString()}
                         </span>
                       </div>
-                      <Progress value={goal.progress} className="h-2" />
+                      <UIProgress value={goal.progress} className="h-2" />
                     </div>
                   ))}
                 </div>
