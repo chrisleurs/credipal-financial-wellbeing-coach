@@ -5,14 +5,29 @@ export const useCleanFinancialDashboard = () => {
   const { data: financialData, isLoading } = useOptimizedFinancialData()
 
   if (isLoading) {
-    return { isLoading: true, isEmpty: false, summary: {}, quickStats: {}, recentActivity: {} }
+    return { 
+      data: null, 
+      isLoading: true, 
+      isEmpty: false, 
+      summary: {}, 
+      quickStats: {}, 
+      recentActivity: {} 
+    }
   }
 
   if (!financialData || !financialData.hasRealData) {
-    return { isLoading: false, isEmpty: true, summary: {}, quickStats: {}, recentActivity: {} }
+    return { 
+      data: null,
+      isLoading: false, 
+      isEmpty: true, 
+      summary: {}, 
+      quickStats: {}, 
+      recentActivity: {} 
+    }
   }
 
   return {
+    data: financialData,
     isLoading: false,
     isEmpty: false,
     summary: {

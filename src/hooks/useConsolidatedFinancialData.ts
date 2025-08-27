@@ -10,6 +10,8 @@ export interface ConsolidatedFinancialData {
   expenseCategories: Record<string, number>
   debts: Array<{ creditor: string; balance: number; payment: number }>
   financialGoals: string[]
+  totalDebtBalance: number
+  totalMonthlyDebtPayments: number
 }
 
 export const useConsolidatedFinancialData = () => {
@@ -23,7 +25,9 @@ export const useConsolidatedFinancialData = () => {
     hasRealData: optimizedData.hasRealData,
     expenseCategories: optimizedData.expenseCategories,
     debts: optimizedData.activeDebts,
-    financialGoals: optimizedData.activeGoals.map(goal => goal.title)
+    financialGoals: optimizedData.activeGoals.map(goal => goal.title),
+    totalDebtBalance: optimizedData.totalDebtBalance,
+    totalMonthlyDebtPayments: optimizedData.totalMonthlyDebtPayments
   } : null
 
   return {

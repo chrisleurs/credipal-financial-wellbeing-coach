@@ -128,6 +128,27 @@ export const OptimizedFinancialDashboard = () => {
     savingsCapacity: 0
   }
 
+  // Transform debts to expected format
+  const transformedDebts = financialData.debts.map((debt, index) => ({
+    id: `debt-${index}`,
+    name: debt.creditor,
+    creditor: debt.creditor,
+    amount: debt.balance,
+    monthlyPayment: debt.payment,
+    source: 'onboarding' as const,
+    isKueski: false
+  }))
+
+  // Transform goals to expected format
+  const transformedGoals = financialData.financialGoals.map((goal, index) => ({
+    id: `goal-${index}`,
+    title: goal,
+    targetAmount: 50000, // Default target
+    currentAmount: 0,
+    progress: 0,
+    source: 'onboarding' as const
+  }))
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 space-y-6">
@@ -179,7 +200,7 @@ export const OptimizedFinancialDashboard = () => {
         <section id="debts">
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando deudas..." />}>
             <DebtsSection
-              debts={financialData.debts}
+              debts={transformedDebts}
               totalDebt={financialData.totalDebtBalance}
               totalMonthlyPayments={financialData.totalMonthlyDebtPayments}
             />
@@ -196,7 +217,7 @@ export const OptimizedFinancialDashboard = () => {
         {/* 6. Metas Financieras */}
         <section id="goals">
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando metas..." />}>
-            <FinancialGoalsSection goals={financialData.financialGoals} />
+            <FinancialGoalsSection goals={transformedGoals} />
           </Suspense>
         </section>
       </div>

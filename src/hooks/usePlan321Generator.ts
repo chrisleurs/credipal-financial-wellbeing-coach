@@ -26,22 +26,20 @@ export const usePlan321Generator = () => {
 
     // Hito 1: Eliminar deuda prioritaria
     if (consolidatedData.debts.length > 0) {
-      // Seleccionar deuda prioritaria (mayor interés o menor monto si no hay interés)
+      // Seleccionar deuda prioritaria (menor balance para pagar más rápido)
       const deudaPrioritaria = consolidatedData.debts.reduce((prev, current) => {
-        if (current.interest_rate > prev.interest_rate) return current
-        if (current.interest_rate === prev.interest_rate && current.current_balance < prev.current_balance) return current
-        return prev
+        return current.balance < prev.balance ? current : prev
       })
 
       const mesesParaEliminar = dineroDisponible > 0 
-        ? Math.ceil(deudaPrioritaria.current_balance / dineroDisponible)
+        ? Math.ceil(deudaPrioritaria.balance / dineroDisponible)
         : 12 // Default si no hay dinero disponible
 
       milestones.push({
         id: 'debt-elimination',
         title: 'Eliminar Deuda Prioritaria',
         description: `Eliminar deuda con ${deudaPrioritaria.creditor}`,
-        targetAmount: deudaPrioritaria.current_balance,
+        targetAmount: deudaPrioritaria.balance,
         currentAmount: 0,
         progress: 0,
         estimatedMonths: Math.min(mesesParaEliminar, 24), // Máximo 24 meses

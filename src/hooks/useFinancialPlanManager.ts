@@ -17,6 +17,33 @@ export interface FinancialPlan {
   created_at: string
   updated_at: string
   generatedAt: string
+  
+  // Plan data properties
+  actionRoadmap?: Array<{
+    step: number
+    title: string
+    targetDate: string
+    completed: boolean
+    description?: string
+  }>
+  debtPayoffPlan?: Array<{
+    debtName: string
+    currentBalance: number
+    payoffDate: string
+    monthlyPayment: number
+    interestSaved: number
+  }>
+  emergencyFund?: {
+    targetAmount: number
+    currentAmount: number
+    monthlySaving: number
+    completionDate: string
+  }
+  recommendedBudget?: {
+    needs: { percentage: number; amount: number }
+    lifestyle: { percentage: number; amount: number }
+    savings: { percentage: number; amount: number }
+  }
 }
 
 export const useFinancialPlanManager = () => {
@@ -43,9 +70,12 @@ export const useFinancialPlanManager = () => {
       if (error) throw error
       
       if (data) {
+        // Parse plan_data and merge with base data
+        const planData = data.plan_data || {}
         return {
           ...data,
-          generatedAt: data.created_at
+          generatedAt: data.created_at,
+          ...planData // Merge plan_data properties into the main object
         } as FinancialPlan
       }
       
@@ -78,10 +108,10 @@ export const useFinancialPlanManager = () => {
         hasRealData: financialData.hasRealData
       })
       
-      // Deactivate old plans
+      // Deactivate old plans - use 'inactive' as text since it's stored as text
       await supabase
         .from('financial_plans')
-        .update({ status: 'inactive' })
+        .update({ status: 'draft' }) // Use 'draft' instead of 'inactive'
         .eq('user_id', user.id)
         .eq('status', 'active')
 
@@ -100,7 +130,8 @@ export const useFinancialPlanManager = () => {
       if (error) throw error
       return {
         ...data,
-        generatedAt: data.created_at
+        generatedAt: data.created_at,
+        ...generatedPlan // Merge plan_data properties
       } as FinancialPlan
     },
     onSuccess: () => {
@@ -152,6 +183,7 @@ export const useFinancialPlanManager = () => {
     generatePlan: generatePlanMutation.mutate,
     regeneratePlan: regeneratePlanMutation.mutate,
     isGenerating: generatePlanMutation.isPending || regeneratePlanMutation.isPending,
+    isUpdatingProgress: false, // Add missing property
     updateGoalProgress,
     financialData,
     canGeneratePlan: !!financialData?.hasRealData
