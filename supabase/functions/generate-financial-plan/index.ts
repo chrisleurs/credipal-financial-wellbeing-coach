@@ -23,117 +23,162 @@ serve(async (req) => {
     const { financialData } = await req.json()
     
     console.log('🤖 Generating financial plan for:', {
-      monthlyIncome: financialData.monthlyIncome,
-      monthlyExpenses: financialData.monthlyExpenses,
-      savingsCapacity: financialData.savingsCapacity,
-      debtsCount: financialData.debts?.length || 0
+      monthlyIncome: financialData?.monthlyIncome || 0,
+      monthlyExpenses: financialData?.monthlyExpenses || 0,
+      savingsCapacity: financialData?.savingsCapacity || 0,
+      debtsCount: financialData?.debts?.length || 0
     })
 
-    // Generar plan con OpenAI
-    const aiPlan = await generatePlanWithOpenAI(financialData)
-    
-    return new Response(JSON.stringify(aiPlan), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    // Validar que tenemos datos financieros
+    if (!financialData) {
+      throw new Error('No financial data provided')
+    }
+
+    // Generar plan con OpenAI si tenemos la API key
+    if (openaiApiKey) {
+      console.log('🔄 Using OpenAI to generate plan')
+      const aiPlan = await generatePlanWithOpenAI(financialData)
+      return new Response(JSON.stringify(aiPlan), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    } else {
+      console.log('⚠️ No OpenAI API key, using fallback plan')
+      const fallbackPlan = generateFallbackPlan(financialData)
+      return new Response(JSON.stringify(fallbackPlan), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
   } catch (error) {
     console.error('❌ Error in financial plan generation:', error)
     
-    // Fallback plan si OpenAI falla
-    const fallbackPlan = generateFallbackPlan(financialData)
-    
-    return new Response(JSON.stringify(fallbackPlan), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    // Crear plan de fallback más básico en caso de error
+    try {
+      const { financialData } = await req.json().catch(() => ({ financialData: null }))
+      const emergencyPlan = generateEmergencyFallbackPlan(financialData)
+      
+      return new Response(JSON.stringify(emergencyPlan), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    } catch (fallbackError) {
+      console.error('❌ Even fallback failed:', fallbackError)
+      
+      return new Response(JSON.stringify({ 
+        error: 'Failed to generate financial plan',
+        message: error.message 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
   }
 })
 
 async function generatePlanWithOpenAI(data: any) {
   const prompt = createFinancialPlanPrompt(data)
   
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-5-2025-08-07',
-      messages: [
-        {
-          role: 'system',
-          content: 'Eres CrediPal, un experto en finanzas personales que crea planes financieros estructurados y motivacionales.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_completion_tokens: 2000,
-      response_format: { type: "json_object" }
-    }),
-  })
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-2025-08-07',
+        messages: [
+          {
+            role: 'system',
+            content: 'Eres CrediPal, un experto en finanzas personales que crea planes financieros estructurados y motivacionales. Siempre respondes con JSON válido.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_completion_tokens: 2000,
+        response_format: { type: "json_object" }
+      }),
+    })
 
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('OpenAI API error:', response.status, errorText)
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`)
+    }
+
+    const result = await response.json()
+    
+    if (!result.choices || !result.choices[0] || !result.choices[0].message) {
+      console.error('Invalid OpenAI response structure:', result)
+      throw new Error('Invalid response structure from OpenAI')
+    }
+
+    const planContent = JSON.parse(result.choices[0].message.content)
+    console.log('✅ OpenAI plan generated successfully')
+    return planContent
+    
+  } catch (error) {
+    console.error('❌ OpenAI generation failed:', error)
+    throw error
   }
-
-  const result = await response.json()
-  const planContent = JSON.parse(result.choices[0].message.content)
-  
-  return planContent
 }
 
 function createFinancialPlanPrompt(data: any): string {
+  const monthlyIncome = data.monthlyIncome || 0
+  const monthlyExpenses = data.monthlyExpenses || 0
+  const currentSavings = data.currentSavings || 0
+  const savingsCapacity = data.savingsCapacity || Math.max(0, monthlyIncome - monthlyExpenses)
+  const debts = data.debts || []
+  const goals = data.goals || []
+
   return `
 Crea un plan financiero personalizado basado en estos datos:
 
 SITUACIÓN ACTUAL:
-- Ingresos mensuales: $${data.monthlyIncome}
-- Gastos mensuales: $${data.monthlyExpenses}
-- Ahorros actuales: $${data.currentSavings || 0}
-- Capacidad de ahorro: $${data.savingsCapacity}
-- Deudas: ${JSON.stringify(data.debts || [])}
-- Metas: ${JSON.stringify(data.goals || [])}
+- Ingresos mensuales: $${monthlyIncome}
+- Gastos mensuales: $${monthlyExpenses}
+- Ahorros actuales: $${currentSavings}
+- Capacidad de ahorro: $${savingsCapacity}
+- Deudas: ${JSON.stringify(debts)}
+- Metas: ${JSON.stringify(goals)}
 
 Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
 
 {
   "currentSnapshot": {
-    "monthlyIncome": ${data.monthlyIncome},
-    "monthlyExpenses": ${data.monthlyExpenses},
-    "totalDebt": [suma total de deudas],
-    "currentSavings": ${data.currentSavings || 0}
+    "monthlyIncome": ${monthlyIncome},
+    "monthlyExpenses": ${monthlyExpenses},
+    "totalDebt": ${debts.reduce((sum: number, debt: any) => sum + (debt.amount || 0), 0)},
+    "currentSavings": ${currentSavings}
   },
   "projectedSnapshot": {
-    "debtIn12Months": [proyección de deuda en 12 meses],
-    "emergencyFundIn12Months": [fondo de emergencia en 12 meses],
-    "netWorthIn12Months": [patrimonio neto en 12 meses]
+    "debtIn12Months": ${Math.max(0, debts.reduce((sum: number, debt: any) => sum + (debt.amount || 0), 0) - (savingsCapacity * 0.6 * 12))},
+    "emergencyFundIn12Months": ${monthlyExpenses * 3},
+    "netWorthIn12Months": ${savingsCapacity * 12}
   },
   "recommendedBudget": {
-    "needs": { "percentage": 50, "amount": [50% de ingresos] },
-    "lifestyle": { "percentage": 30, "amount": [30% de ingresos] },
-    "savings": { "percentage": 20, "amount": [20% de ingresos] }
+    "needs": { "percentage": 50, "amount": ${monthlyIncome * 0.5} },
+    "lifestyle": { "percentage": 30, "amount": ${monthlyIncome * 0.3} },
+    "savings": { "percentage": 20, "amount": ${monthlyIncome * 0.2} }
   },
-  "debtPayoffPlan": [
-    {
-      "debtName": "[nombre de deuda]",
-      "currentBalance": [balance actual],
-      "payoffDate": "[fecha de liquidación YYYY-MM-DD]",
-      "monthlyPayment": [pago mensual sugerido],
-      "interestSaved": [intereses ahorrados]
-    }
-  ],
+  "debtPayoffPlan": ${JSON.stringify(debts.map((debt: any) => ({
+    debtName: debt.name || 'Deuda',
+    currentBalance: debt.amount || 0,
+    payoffDate: new Date(Date.now() + 24 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    monthlyPayment: debt.monthlyPayment || Math.ceil((debt.amount || 0) / 24),
+    interestSaved: (debt.amount || 0) * 0.15
+  })))},
   "emergencyFund": {
-    "targetAmount": [3 meses de gastos],
-    "currentAmount": ${data.currentSavings || 0},
-    "monthlySaving": [ahorro mensual sugerido],
-    "completionDate": "[fecha de completion YYYY-MM-DD]"
+    "targetAmount": ${monthlyExpenses * 3},
+    "currentAmount": ${currentSavings},
+    "monthlySaving": ${savingsCapacity * 0.4},
+    "completionDate": "${new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}"
   },
   "wealthGrowth": {
-    "year1": [patrimonio proyectado año 1],
-    "year3": [patrimonio proyectado año 3],
-    "year5": [patrimonio proyectado año 5]
+    "year1": ${savingsCapacity * 12},
+    "year3": ${savingsCapacity * 36 * 1.05},
+    "year5": ${savingsCapacity * 60 * 1.1}
   },
   "shortTermGoals": {
     "weekly": [
@@ -146,8 +191,8 @@ Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
     ],
     "monthly": [
       {
-        "title": "Ahorrar para fondo de emergencia",
-        "target": [meta mensual],
+        "title": "Ahorrar para emergencias",
+        "target": ${savingsCapacity * 0.4},
         "progress": 0,
         "type": "savings"
       }
@@ -156,10 +201,17 @@ Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
   "actionRoadmap": [
     {
       "step": 1,
-      "title": "[acción prioritaria]",
-      "targetDate": "[fecha YYYY-MM-DD]",
+      "title": "Establecer presupuesto mensual",
+      "targetDate": "${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}",
       "completed": false,
-      "description": "[descripción breve]"
+      "description": "Definir límites de gasto por categoría"
+    },
+    {
+      "step": 2,
+      "title": "Iniciar fondo de emergencia",
+      "targetDate": "${new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}",
+      "completed": false,
+      "description": "Separar primer ahorro mensual"
     }
   ]
 }
@@ -169,18 +221,27 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional. Usa números reales 
 }
 
 function generateFallbackPlan(data: any) {
-  const totalDebt = data.debts?.reduce((sum: number, debt: any) => sum + debt.amount, 0) || 0
-  const monthlyIncome = data.monthlyIncome || 0
-  const monthlyExpenses = data.monthlyExpenses || 0
-  const savingsCapacity = monthlyIncome - monthlyExpenses
+  const monthlyIncome = data?.monthlyIncome || 0
+  const monthlyExpenses = data?.monthlyExpenses || 0
+  const currentSavings = data?.currentSavings || 0
+  const debts = data?.debts || []
+  const totalDebt = debts.reduce((sum: number, debt: any) => sum + (debt.amount || 0), 0)
+  const savingsCapacity = Math.max(0, monthlyIncome - monthlyExpenses)
   const emergencyFundTarget = monthlyExpenses * 3
+
+  console.log('🔄 Generating fallback plan with:', {
+    monthlyIncome,
+    monthlyExpenses,
+    savingsCapacity,
+    totalDebt
+  })
 
   return {
     currentSnapshot: {
       monthlyIncome,
       monthlyExpenses,
       totalDebt,
-      currentSavings: data.currentSavings || 0
+      currentSavings
     },
     projectedSnapshot: {
       debtIn12Months: Math.max(0, totalDebt - (savingsCapacity * 0.6 * 12)),
@@ -192,18 +253,18 @@ function generateFallbackPlan(data: any) {
       lifestyle: { percentage: 30, amount: monthlyIncome * 0.3 },
       savings: { percentage: 20, amount: monthlyIncome * 0.2 }
     },
-    debtPayoffPlan: data.debts?.map((debt: any) => ({
-      debtName: debt.name,
-      currentBalance: debt.amount,
-      payoffDate: new Date(Date.now() + (debt.amount / (debt.monthlyPayment || 100)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      monthlyPayment: debt.monthlyPayment || Math.ceil(debt.amount / 24),
-      interestSaved: debt.amount * 0.15
-    })) || [],
+    debtPayoffPlan: debts.map((debt: any) => ({
+      debtName: debt.name || 'Deuda',
+      currentBalance: debt.amount || 0,
+      payoffDate: new Date(Date.now() + (debt.amount || 0) / Math.max(debt.monthlyPayment || 100, 100) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      monthlyPayment: debt.monthlyPayment || Math.ceil((debt.amount || 0) / 24),
+      interestSaved: (debt.amount || 0) * 0.15
+    })),
     emergencyFund: {
       targetAmount: emergencyFundTarget,
-      currentAmount: data.currentSavings || 0,
+      currentAmount: currentSavings,
       monthlySaving: savingsCapacity * 0.4,
-      completionDate: new Date(Date.now() + ((emergencyFundTarget - (data.currentSavings || 0)) / (savingsCapacity * 0.4)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      completionDate: new Date(Date.now() + ((emergencyFundTarget - currentSavings) / Math.max(savingsCapacity * 0.4, 100)) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     },
     wealthGrowth: {
       year1: savingsCapacity * 12,
@@ -222,7 +283,7 @@ function generateFallbackPlan(data: any) {
       monthly: [
         {
           title: "Ahorrar para emergencias",
-          target: savingsCapacity * 0.4,
+          target: Math.max(savingsCapacity * 0.4, 100),
           progress: 0,
           type: "savings"
         }
@@ -242,6 +303,68 @@ function generateFallbackPlan(data: any) {
         targetDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         completed: false,
         description: "Separar primer ahorro mensual"
+      }
+    ]
+  }
+}
+
+function generateEmergencyFallbackPlan(data: any) {
+  console.log('🚨 Generating emergency fallback plan')
+  
+  return {
+    currentSnapshot: {
+      monthlyIncome: 0,
+      monthlyExpenses: 0,
+      totalDebt: 0,
+      currentSavings: 0
+    },
+    projectedSnapshot: {
+      debtIn12Months: 0,
+      emergencyFundIn12Months: 3000,
+      netWorthIn12Months: 1000
+    },
+    recommendedBudget: {
+      needs: { percentage: 50, amount: 0 },
+      lifestyle: { percentage: 30, amount: 0 },
+      savings: { percentage: 20, amount: 0 }
+    },
+    debtPayoffPlan: [],
+    emergencyFund: {
+      targetAmount: 3000,
+      currentAmount: 0,
+      monthlySaving: 250,
+      completionDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    },
+    wealthGrowth: {
+      year1: 1000,
+      year3: 3000,
+      year5: 5000
+    },
+    shortTermGoals: {
+      weekly: [
+        {
+          title: "Registrar gastos",
+          target: 100,
+          progress: 0,
+          type: "tracking"
+        }
+      ],
+      monthly: [
+        {
+          title: "Comenzar a ahorrar",
+          target: 250,
+          progress: 0,
+          type: "savings"
+        }
+      ]
+    },
+    actionRoadmap: [
+      {
+        step: 1,
+        title: "Completar información financiera",
+        targetDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        completed: false,
+        description: "Agregar ingresos y gastos mensuales"
       }
     ]
   }
