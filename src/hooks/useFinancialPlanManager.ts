@@ -18,32 +18,63 @@ export interface FinancialPlan {
   updated_at: string
   generatedAt: string
   
-  // Plan data properties
-  actionRoadmap?: Array<{
-    step: number
-    title: string
-    targetDate: string
-    completed: boolean
-    description?: string
-  }>
-  debtPayoffPlan?: Array<{
+  // Plan data properties from the unified interface
+  userId: string
+  currentSnapshot: {
+    monthlyIncome: number
+    monthlyExpenses: number
+    totalDebt: number
+    currentSavings: number
+  }
+  projectedSnapshot: {
+    debtIn12Months: number
+    emergencyFundIn12Months: number
+    netWorthIn12Months: number
+  }
+  recommendedBudget: {
+    needs: { percentage: number; amount: number }
+    lifestyle: { percentage: number; amount: number }
+    savings: { percentage: number; amount: number }
+  }
+  debtPayoffPlan: Array<{
     debtName: string
     currentBalance: number
     payoffDate: string
     monthlyPayment: number
     interestSaved: number
   }>
-  emergencyFund?: {
+  emergencyFund: {
     targetAmount: number
     currentAmount: number
     monthlySaving: number
     completionDate: string
   }
-  recommendedBudget?: {
-    needs: { percentage: number; amount: number }
-    lifestyle: { percentage: number; amount: number }
-    savings: { percentage: number; amount: number }
+  wealthGrowth: {
+    year1: number
+    year3: number
+    year5: number
   }
+  shortTermGoals: {
+    weekly: Array<{
+      title: string
+      target: number
+      progress: number
+      type: string
+    }>
+    monthly: Array<{
+      title: string
+      target: number
+      progress: number
+      type: string
+    }>
+  }
+  actionRoadmap: Array<{
+    step: number
+    title: string
+    targetDate: string
+    completed: boolean
+    description?: string
+  }>
 }
 
 export const useFinancialPlanManager = () => {
@@ -72,10 +103,50 @@ export const useFinancialPlanManager = () => {
       if (data) {
         // Parse plan_data and merge with base data
         const planData = data.plan_data || {}
-        return {
+        const basePlan = {
           ...data,
           generatedAt: data.created_at,
-          ...planData // Merge plan_data properties into the main object
+          userId: data.user_id,
+          // Provide default values for required properties
+          currentSnapshot: {
+            monthlyIncome: 0,
+            monthlyExpenses: 0,
+            totalDebt: 0,
+            currentSavings: 0
+          },
+          projectedSnapshot: {
+            debtIn12Months: 0,
+            emergencyFundIn12Months: 0,
+            netWorthIn12Months: 0
+          },
+          recommendedBudget: {
+            needs: { percentage: 50, amount: 0 },
+            lifestyle: { percentage: 30, amount: 0 },
+            savings: { percentage: 20, amount: 0 }
+          },
+          debtPayoffPlan: [],
+          emergencyFund: {
+            targetAmount: 0,
+            currentAmount: 0,
+            monthlySaving: 0,
+            completionDate: ''
+          },
+          wealthGrowth: {
+            year1: 0,
+            year3: 0,
+            year5: 0
+          },
+          shortTermGoals: {
+            weekly: [],
+            monthly: []
+          },
+          actionRoadmap: []
+        }
+        
+        // Merge plan_data properties, giving precedence to actual data
+        return {
+          ...basePlan,
+          ...planData
         } as FinancialPlan
       }
       
@@ -108,10 +179,10 @@ export const useFinancialPlanManager = () => {
         hasRealData: financialData.hasRealData
       })
       
-      // Deactivate old plans - use 'inactive' as text since it's stored as text
+      // Deactivate old plans
       await supabase
         .from('financial_plans')
-        .update({ status: 'draft' }) // Use 'draft' instead of 'inactive'
+        .update({ status: 'draft' })
         .eq('user_id', user.id)
         .eq('status', 'active')
 
@@ -128,10 +199,13 @@ export const useFinancialPlanManager = () => {
         .single()
 
       if (error) throw error
+      
+      // Return properly structured plan
       return {
         ...data,
         generatedAt: data.created_at,
-        ...generatedPlan // Merge plan_data properties
+        userId: data.user_id,
+        ...generatedPlan
       } as FinancialPlan
     },
     onSuccess: () => {
@@ -183,7 +257,7 @@ export const useFinancialPlanManager = () => {
     generatePlan: generatePlanMutation.mutate,
     regeneratePlan: regeneratePlanMutation.mutate,
     isGenerating: generatePlanMutation.isPending || regeneratePlanMutation.isPending,
-    isUpdatingProgress: false, // Add missing property
+    isUpdatingProgress: false,
     updateGoalProgress,
     financialData,
     canGeneratePlan: !!financialData?.hasRealData

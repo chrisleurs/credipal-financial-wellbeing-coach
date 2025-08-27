@@ -220,10 +220,10 @@ export const MobileFirstDashboard = () => {
         )}
 
         {/* Plan Section */}
-        {hasPlan ? (
+        {hasPlan && activePlan ? (
           <div className="mb-8">
             <PlanSummaryCard 
-              plan={activePlan} 
+              plan={activePlan as any}
               onUpdatePlan={regeneratePlan}
             />
           </div>
