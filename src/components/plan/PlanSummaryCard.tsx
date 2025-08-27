@@ -18,14 +18,34 @@ export const PlanSummaryCard: React.FC<PlanSummaryCardProps> = ({
 }) => {
   const navigate = useNavigate()
 
-  // Calcular progreso general del plan
+  // Calcular progreso general del plan con validaciones defensivas
   const overallProgress = React.useMemo(() => {
-    const completedActions = plan.actionRoadmap.filter(action => action.completed).length
+    if (!plan?.actionRoadmap || !Array.isArray(plan.actionRoadmap) || plan.actionRoadmap.length === 0) {
+      return 0
+    }
+    
+    const completedActions = plan.actionRoadmap.filter(action => action?.completed).length
     return Math.round((completedActions / plan.actionRoadmap.length) * 100)
-  }, [plan.actionRoadmap])
+  }, [plan?.actionRoadmap])
 
-  // Próxima acción pendiente
-  const nextAction = plan.actionRoadmap.find(action => !action.completed)
+  // Próxima acción pendiente con validación
+  const nextAction = React.useMemo(() => {
+    if (!plan?.actionRoadmap || !Array.isArray(plan.actionRoadmap)) {
+      return null
+    }
+    return plan.actionRoadmap.find(action => action && !action.completed)
+  }, [plan?.actionRoadmap])
+
+  // Validar que el plan existe y tiene las propiedades mínimas necesarias
+  if (!plan) {
+    return (
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+        <CardContent className="p-6">
+          <p className="text-center text-muted-foreground">No hay plan financiero disponible</p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
@@ -66,7 +86,7 @@ export const PlanSummaryCard: React.FC<PlanSummaryCardProps> = ({
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-lg font-bold text-green-600">
-              ${plan.emergencyFund.currentAmount.toLocaleString()}
+              ${plan.emergencyFund?.currentAmount?.toLocaleString() || '0'}
             </div>
             <div className="text-xs text-muted-foreground">
               Fondo Emergencia
@@ -75,7 +95,7 @@ export const PlanSummaryCard: React.FC<PlanSummaryCardProps> = ({
           
           <div className="text-center">
             <div className="text-lg font-bold text-blue-600">
-              ${plan.currentSnapshot.totalDebt.toLocaleString()}
+              ${plan.currentSnapshot?.totalDebt?.toLocaleString() || '0'}
             </div>
             <div className="text-xs text-muted-foreground">
               Deuda Restante
@@ -84,7 +104,7 @@ export const PlanSummaryCard: React.FC<PlanSummaryCardProps> = ({
           
           <div className="text-center">
             <div className="text-lg font-bold text-purple-600">
-              ${plan.wealthGrowth.year1.toLocaleString()}
+              ${plan.wealthGrowth?.year1?.toLocaleString() || '0'}
             </div>
             <div className="text-xs text-muted-foreground">
               Meta Año 1
@@ -102,7 +122,7 @@ export const PlanSummaryCard: React.FC<PlanSummaryCardProps> = ({
                   {nextAction.title}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Fecha objetivo: {new Date(nextAction.targetDate).toLocaleDateString()}
+                  Fecha objetivo: {nextAction.targetDate ? new Date(nextAction.targetDate).toLocaleDateString() : 'Sin fecha'}
                 </p>
               </div>
             </div>
