@@ -1,331 +1,300 @@
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { AppLayout } from '@/components/layout/AppLayout'
 import { useFinancialPlanManager } from '@/hooks/useFinancialPlanManager'
+import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress as UIProgress } from '@/components/ui/progress'
-import { RefreshCw, Target, TrendingUp, AlertCircle, PlusCircle, BarChart3, Calendar, CheckCircle } from 'lucide-react'
+import { CompletePlanViewer } from '@/components/plan/CompletePlanViewer'
+import { Brain, RefreshCw, AlertCircle, ArrowLeft, User } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/useAuth'
 
-export default function ProgressPage() {
+export default function Progress() {
+  const { toast } = useToast()
+  const { user } = useAuth()
+  const { data: financialData, isLoading: isLoadingData } = useOptimizedFinancialData()
   const { 
-    activePlan,
+    activePlan, 
+    hasPlan, 
+    generatePlan, 
+    isGenerating, 
     isLoadingPlan,
-    planError,
     regeneratePlan,
-    isGenerating,
-    hasPlan,
-    updateGoalProgress,
-    isUpdatingProgress
+    updateGoalProgress 
   } = useFinancialPlanManager()
 
-  // Move all useMemo hooks to the top, before any conditional returns
-  const overallProgress = React.useMemo(() => {
-    if (!activePlan?.actionRoadmap || !Array.isArray(activePlan.actionRoadmap) || activePlan.actionRoadmap.length === 0) {
-      return 0
-    }
-    const completedActions = activePlan.actionRoadmap.filter(action => action?.completed).length
-    return Math.round((completedActions / activePlan.actionRoadmap.length) * 100)
-  }, [activePlan?.actionRoadmap])
+  const [lastDataHash, setLastDataHash] = useState<string>('')
+  const [hasDataChanged, setHasDataChanged] = useState(false)
 
-  const emergencyFundProgress = React.useMemo(() => {
-    if (!activePlan?.emergencyFund?.targetAmount || activePlan.emergencyFund.targetAmount === 0) {
-      return 0
-    }
-    return Math.round(
-      (activePlan.emergencyFund.currentAmount / activePlan.emergencyFund.targetAmount) * 100
-    )
-  }, [activePlan?.emergencyFund])
-
+  // Log del estado actual para debugging
   console.log('📄 Progress Page - Plan Manager State:', {
     hasPlan,
     isLoadingPlan,
-    planError: planError || 'none',
-    isGenerating
+    planError: 'none',
+    isGenerating,
+    activePlan: activePlan ? 'exists' : 'null',
+    userEmail: user?.email
   })
 
-  // Loading state
-  if (isLoadingPlan) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Cargando tu plan financiero..." />
-      </div>
-    )
+  // Generar hash de los datos financieros para detectar cambios
+  const generateDataHash = (data: any) => {
+    if (!data) return ''
+    
+    const relevantData = {
+      monthlyIncome: data.monthlyIncome,
+      monthlyExpenses: data.monthlyExpenses,
+      currentSavings: data.currentSavings,
+      debtsCount: data.activeDebts?.length || 0,
+      goalsCount: data.activeGoals?.length || 0,
+      expenseCategoriesCount: Object.keys(data.expenseCategories || {}).length
+    }
+    
+    return JSON.stringify(relevantData)
   }
 
-  // Error state
-  if (planError) {
+  // Detectar cambios en los datos financieros
+  useEffect(() => {
+    if (!financialData || isLoadingData) return
+
+    const currentHash = generateDataHash(financialData)
+    
+    if (lastDataHash === '') {
+      setLastDataHash(currentHash)
+    } else if (lastDataHash !== currentHash) {
+      setHasDataChanged(true)
+      setLastDataHash(currentHash)
+      
+      toast({
+        title: "Datos actualizados detectados",
+        description: "Tu información financiera ha cambiado. Considera actualizar tu plan.",
+      })
+    }
+  }, [financialData, isLoadingData, lastDataHash, toast])
+
+  // Función para generar plan inicial
+  const handleGeneratePlan = async () => {
+    if (!financialData?.hasRealData) {
+      toast({
+        title: "Datos insuficientes",
+        description: "Agrega más información financiera antes de generar un plan.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const planData = {
+      monthlyIncome: financialData.monthlyIncome,
+      monthlyExpenses: financialData.monthlyExpenses,
+      currentSavings: financialData.currentSavings || 0,
+      savingsCapacity: financialData.savingsCapacity,
+      debts: financialData.activeDebts.map(debt => ({
+        name: debt.creditor,
+        amount: debt.balance,
+        monthlyPayment: debt.payment
+      })),
+      goals: financialData.activeGoals.map(goal => goal.title),
+      expenseCategories: financialData.expenseCategories || {}
+    }
+
+    await generatePlan(planData)
+    setHasDataChanged(false)
+  }
+
+  // Función para actualizar plan existente
+  const handleUpdatePlan = async () => {
+    await regeneratePlan()
+    setHasDataChanged(false)
+    
+    toast({
+      title: "Plan actualizado",
+      description: "Tu plan financiero ha sido actualizado con la información más reciente.",
+    })
+  }
+
+  // Función para actualizar progreso de acciones
+  const handleUpdateProgress = (actionId: string, progress: number) => {
+    updateGoalProgress({ goalId: actionId, progress })
+  }
+
+  if (isLoadingData || isLoadingPlan) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-2xl mx-auto text-center">
-            <CardHeader>
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <AlertCircle className="h-8 w-8 text-red-600" />
-              </div>
-              <CardTitle>Error cargando tu plan</CardTitle>
-              <CardDescription>
-                {planError.message || 'Hubo un problema al cargar tu plan financiero'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => window.location.reload()}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Recargar página
-              </Button>
-            </CardContent>
-          </Card>
+      <AppLayout>
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
+          <LoadingSpinner size="lg" text="Cargando información del plan..." />
         </div>
-      </div>
+      </AppLayout>
     )
   }
 
-  // Show existing plan
-  if (hasPlan && activePlan) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">Mi Progreso Financiero</h1>
-                <p className="text-muted-foreground">
-                  Seguimiento detallado de tus metas y avances
-                </p>
-              </div>
-              <Button 
-                onClick={() => regeneratePlan()} 
-                disabled={isGenerating}
-                variant="outline"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Actualizando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Actualizar Plan
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Progress Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Progreso General</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-primary">{overallProgress}%</span>
-                    <Target className="h-6 w-6 text-primary" />
-                  </div>
-                  <UIProgress value={overallProgress} className="h-3" />
-                  <p className="text-sm text-muted-foreground">
-                    {activePlan.actionRoadmap?.filter(a => a?.completed).length || 0} de {activePlan.actionRoadmap?.length || 0} acciones completadas
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Fondo de Emergencia</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-green-600">
-                      ${activePlan.emergencyFund?.currentAmount?.toLocaleString() || '0'}
-                    </span>
-                  </div>
-                  <UIProgress value={emergencyFundProgress} className="h-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Meta: ${activePlan.emergencyFund?.targetAmount?.toLocaleString() || '0'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Patrimonio Proyectado</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-blue-600">
-                      ${activePlan.wealthGrowth?.year1?.toLocaleString() || '0'}
-                    </span>
-                    <TrendingUp className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Proyección a 1 año
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Action Roadmap */}
-          {activePlan.actionRoadmap && activePlan.actionRoadmap.length > 0 && (
-            <Card className="mb-8">
-              <CardHeader>
-                <CardTitle>Plan de Acción</CardTitle>
-                <CardDescription>
-                  Pasos específicos para alcanzar tus metas financieras
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activePlan.actionRoadmap.map((action, index) => (
-                    <div 
-                      key={action.step}
-                      className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
-                        action.completed 
-                          ? 'bg-green-50 border-green-200' 
-                          : 'bg-white border-gray-200 hover:border-primary/20'
-                      }`}
-                    >
-                      <div className="flex-shrink-0">
-                        {action.completed ? (
-                          <CheckCircle className="h-6 w-6 text-green-600" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                            <span className="text-xs font-medium text-gray-600">{action.step}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <h3 className={`font-medium ${action.completed ? 'text-green-800' : 'text-gray-900'}`}>
-                          {action.title}
-                        </h3>
-                        <div className="flex items-center gap-4 mt-1">
-                          <span className="text-sm text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {action.targetDate ? new Date(action.targetDate).toLocaleDateString() : 'Sin fecha'}
-                          </span>
-                          {action.description && (
-                            <span className="text-sm text-muted-foreground">
-                              {action.description}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {!action.completed && (
-                        <Button 
-                          size="sm"
-                          onClick={() => updateGoalProgress({ goalId: action.step.toString(), progress: 100 })}
-                          disabled={isUpdatingProgress}
-                        >
-                          Marcar Completado
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Short Term Goals */}
-          {(activePlan.shortTermGoals?.weekly || activePlan.shortTermGoals?.monthly) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {activePlan.shortTermGoals?.weekly && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Metas Semanales</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {activePlan.shortTermGoals.weekly.map((goal, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">{goal.title}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {goal.progress || 0}%
-                            </span>
-                          </div>
-                          <UIProgress value={goal.progress || 0} className="h-2" />
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {activePlan.shortTermGoals?.monthly && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Metas Mensuales</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {activePlan.shortTermGoals.monthly.map((goal, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium">{goal.title}</span>
-                            <span className="text-sm text-muted-foreground">
-                              ${goal.target?.toLocaleString() || '0'}
-                            </span>
-                          </div>
-                          <UIProgress value={goal.progress || 0} className="h-2" />
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // No plan state - redirect to generate one
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-2xl mx-auto text-center">
-          <CardHeader>
-            <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-              <BarChart3 className="h-8 w-8 text-orange-600" />
-            </div>
-            <CardTitle>Aún no tienes un plan financiero</CardTitle>
-            <CardDescription>
-              Completa tu información financiera para generar un plan personalizado
-              que te ayude a alcanzar tus metas.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+    <AppLayout>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100">
+        <div className="container mx-auto px-4 py-6 max-w-6xl">
+          
+          {/* Header con información del usuario */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
               <Button 
-                onClick={() => window.location.href = '/onboarding'}
-                variant="default"
+                variant="ghost" 
+                size="sm"
+                onClick={() => window.history.back()}
+                className="text-muted-foreground hover:text-foreground"
               >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Completar Información
-              </Button>
-              <Button 
-                onClick={() => window.location.href = '/dashboard'}
-                variant="outline"
-              >
-                <Target className="h-4 w-4 mr-2" />
-                Ir al Dashboard
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver
               </Button>
             </div>
-          </CardContent>
-        </Card>
+            
+            <div className="flex items-center gap-3 mb-2">
+              <User className="h-6 w-6 text-primary" />
+              <h1 className="text-3xl font-bold text-gray-900">
+                Plan Financiero Completo
+              </h1>
+            </div>
+            <p className="text-gray-600">
+              Usuario: <span className="font-medium">{user?.email}</span>
+            </p>
+            {activePlan && (
+              <p className="text-sm text-gray-500">
+                Plan ID: {activePlan.id} • Último actualizado: {new Date(activePlan.generatedAt).toLocaleDateString('es-MX')}
+              </p>
+            )}
+          </div>
+
+          {/* Estado del Plan */}
+          {!hasPlan ? (
+            // No hay plan - Mostrar opción para generar
+            <Card className="mb-8 border-2 border-dashed border-primary/30">
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <Brain className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl">No hay plan financiero disponible</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <p className="text-gray-600 mb-6">
+                  Genera tu plan financiero personalizado para ver el análisis completo de tu situación.
+                </p>
+                
+                {!financialData?.hasRealData ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-2 text-yellow-800">
+                      <AlertCircle className="h-5 w-5" />
+                      <span className="font-medium">Datos insuficientes</span>
+                    </div>
+                    <p className="text-yellow-700 text-sm mt-1">
+                      Agrega información sobre ingresos, gastos o deudas para generar tu plan.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-2 text-green-800">
+                      <Brain className="h-5 w-5" />
+                      <span className="font-medium">Listo para generar</span>
+                    </div>
+                    <p className="text-green-700 text-sm mt-1">
+                      Tienes suficiente información para crear tu plan personalizado.
+                    </p>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handleGeneratePlan}
+                  disabled={isGenerating || !financialData?.hasRealData}
+                  size="lg"
+                  className="w-full sm:w-auto"
+                >
+                  {isGenerating ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Generando Plan...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="mr-2 h-4 w-4" />
+                      Generar Plan Financiero
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            // Hay plan - Mostrar plan completo y opción de actualizar
+            <>
+              {/* Notificación de cambios detectados */}
+              {hasDataChanged && (
+                <Card className="mb-6 border-orange-200 bg-orange-50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <AlertCircle className="h-5 w-5 text-orange-600" />
+                        <div>
+                          <h3 className="font-medium text-orange-900">
+                            Cambios detectados en tu información
+                          </h3>
+                          <p className="text-sm text-orange-700">
+                            Tu plan puede estar desactualizado. Considera actualizarlo.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleUpdatePlan}
+                        disabled={isGenerating}
+                        variant="outline"
+                        className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                            Actualizando...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Actualizar Plan
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Botón de actualización fijo */}
+              <div className="mb-6 text-right">
+                <Button
+                  onClick={handleUpdatePlan}
+                  disabled={isGenerating}
+                  variant="outline"
+                  size="sm"
+                >
+                  {isGenerating ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Actualizando...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Actualizar con datos recientes
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Plan Completo */}
+              {activePlan && (
+                <CompletePlanViewer 
+                  plan={activePlan} 
+                  onUpdateProgress={handleUpdateProgress}
+                />
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </AppLayout>
   )
 }
