@@ -91,6 +91,30 @@ export const MobileFirstDashboard = () => {
     )
   }
 
+  // Preparar datos para los componentes
+  const mappedGoals = financialData?.activeGoals.map(goal => ({
+    id: goal.title,
+    title: goal.title,
+    targetAmount: goal.target,
+    currentAmount: goal.current,
+    progress: goal.progress,
+    source: 'database' as const
+  })) || []
+
+  const consolidatedData = {
+    monthlyIncome: financialData?.monthlyIncome || 0,
+    monthlyExpenses: financialData?.monthlyExpenses || 0,
+    currentSavings: financialData?.currentSavings || 0,
+    savingsCapacity: financialData?.savingsCapacity || 0
+  }
+
+  const defaultMessage = {
+    id: '1',
+    text: '¡Hola! Soy CrediPal, tu asistente financiero. ¿En qué puedo ayudarte hoy?',
+    timestamp: new Date().toISOString(),
+    type: 'motivational' as const
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100">
       <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -118,16 +142,19 @@ export const MobileFirstDashboard = () => {
 
         {/* Metas Financieras */}
         <div className="mb-6">
-          <FinancialGoalsSection />
+          <FinancialGoalsSection goals={mappedGoals} />
         </div>
 
         {/* Recomendaciones Inteligentes */}
         <div className="mb-6">
-          <SmartRecommendations />
+          <SmartRecommendations consolidatedData={consolidatedData} />
         </div>
 
         {/* Asistente CrediPal */}
-        <CrediAssistant />
+        <CrediAssistant 
+          message={defaultMessage}
+          onChat={(message: string) => console.log('Chat message:', message)}
+        />
       </div>
     </div>
   )

@@ -228,7 +228,7 @@ export default function Plan() {
               )}
 
               {/* Plan Completo */}
-              <ComprehensivePlanView />
+              {activePlan && <ComprehensivePlanView plan={activePlan} />}
             </>
           )}
         </div>
