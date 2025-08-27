@@ -1,8 +1,8 @@
-
 import React, { Suspense } from 'react'
 import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
-import { useFinancialPlan } from '@/hooks/useFinancialPlan'
+import { useFinancialPlanManager } from '@/hooks/useFinancialPlanManager'
 import { useAuth } from '@/hooks/useAuth'
+import { PlanSummaryCard } from '@/components/plan/PlanSummaryCard'
 import { HeroCoachCard } from './HeroCoachCard'
 import { ModernFinancialSummary } from './ModernFinancialSummary'
 import { LoanCard } from './LoanCard'
@@ -87,15 +87,9 @@ const EmptyState = () => (
 export const OptimizedFinancialDashboard = () => {
   const { user } = useAuth()
   const { data: financialData, isLoading: financialLoading, error: financialError } = useUnifiedFinancialData()
-  
-  const {
-    plan,
-    loading: isLoadingPlan,
-    regeneratePlan,
-    isGenerating
-  } = useFinancialPlan()
+  const { activePlan, isLoadingPlan, regeneratePlan, isGenerating } = useFinancialPlanManager()
 
-  if (financialLoading) {
+  if (financialLoading || isLoadingPlan) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-6 space-y-6">
@@ -137,7 +131,19 @@ export const OptimizedFinancialDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* 1. Coach Card */}
+        {/* 1. Plan Financiero - NUEVA SECCIÓN PRINCIPAL */}
+        {activePlan && (
+          <section id="financial-plan">
+            <Suspense fallback={<LoadingSpinner size="md" text="Cargando plan..." />}>
+              <PlanSummaryCard 
+                plan={activePlan}
+                onUpdatePlan={regeneratePlan}
+              />
+            </Suspense>
+          </section>
+        )}
+
+        {/* 2. Coach Card */}
         <section id="coach">
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando coach..." />}>
             <HeroCoachCard 
@@ -148,7 +154,7 @@ export const OptimizedFinancialDashboard = () => {
           </Suspense>
         </section>
 
-        {/* 2. Préstamo Kueski */}
+        {/* 3. Préstamo Kueski */}
         {financialData.kueskiLoan && (
           <section id="kueski-loan">
             <LoanCard loan={{
@@ -169,7 +175,7 @@ export const OptimizedFinancialDashboard = () => {
           </section>
         )}
 
-        {/* 3. Deudas del onboarding y sistema */}
+        {/* 4. Deudas del onboarding y sistema */}
         <section id="debts">
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando deudas..." />}>
             <DebtsSection
@@ -180,36 +186,19 @@ export const OptimizedFinancialDashboard = () => {
           </Suspense>
         </section>
 
-        {/* 4. Financial Summary */}
+        {/* 5. Financial Summary */}
         <section id="summary">
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando resumen..." />}>
             <ModernFinancialSummary consolidatedData={consolidatedData} />
           </Suspense>
         </section>
 
-        {/* 5. Metas Financieras */}
+        {/* 6. Metas Financieras */}
         <section id="goals">
           <Suspense fallback={<LoadingSpinner size="md" text="Cargando metas..." />}>
             <FinancialGoalsSection goals={financialData.financialGoals} />
           </Suspense>
         </section>
-
-        {/* 6. AI Plan Section (if available) */}
-        {plan && (
-          <section id="ai-plan" className="mt-8">
-            <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-6">
-              <h2 className="text-xl font-bold mb-4">Tu Plan Financiero Personalizado</h2>
-              <div className="space-y-4">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <p className="text-sm text-muted-foreground">
-                    Plan generado con tus datos financieros actuales. 
-                    Incluye estrategias para el fondo de emergencia, pago de deudas y crecimiento patrimonial.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
       </div>
     </div>
   )

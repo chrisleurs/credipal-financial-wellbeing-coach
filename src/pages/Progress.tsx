@@ -1,48 +1,42 @@
 
 import React from 'react'
-import { useFinancialPlan } from '@/hooks/useFinancialPlan'
+import { useFinancialPlanManager } from '@/hooks/useFinancialPlanManager'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { RefreshCw, Target, TrendingUp, AlertCircle, PlusCircle, BarChart3 } from 'lucide-react'
-import { ComprehensivePlanView } from '@/components/dashboard/ComprehensivePlanView'
+import { Progress } from '@/components/ui/progress'
+import { RefreshCw, Target, TrendingUp, AlertCircle, PlusCircle, BarChart3, Calendar, CheckCircle } from 'lucide-react'
 
 export default function Progress() {
   const { 
-    plan,
-    loading,
-    error,
-    generatePlan,
+    activePlan,
+    isLoadingPlan,
+    planError,
+    regeneratePlan,
     isGenerating,
     hasPlan,
-    hasCompleteData,
-    canGeneratePlan,
-    financialData
-  } = useFinancialPlan()
+    updateGoalProgress,
+    isUpdatingProgress
+  } = useFinancialPlanManager()
 
-  console.log('📄 Progress Page - Complete State Analysis:', {
-    plan: !!plan,
-    loading,
-    error: error || 'none',
+  console.log('📄 Progress Page - Plan Manager State:', {
     hasPlan,
-    hasCompleteData,
-    canGeneratePlan,
-    financialData: !!financialData,
-    monthlyIncome: financialData?.monthlyIncome || 0,
-    monthlyExpenses: financialData?.monthlyExpenses || 0
+    isLoadingPlan,
+    planError: planError || 'none',
+    isGenerating
   })
 
   // Loading state
-  if (loading) {
+  if (isLoadingPlan) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Cargando tu información financiera..." />
+        <LoadingSpinner size="lg" text="Cargando tu plan financiero..." />
       </div>
     )
   }
 
   // Error state
-  if (error) {
+  if (planError) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
@@ -51,9 +45,9 @@ export default function Progress() {
               <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
                 <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
-              <CardTitle>Error cargando información</CardTitle>
+              <CardTitle>Error cargando tu plan</CardTitle>
               <CardDescription>
-                {error}
+                {planError.message || 'Hubo un problema al cargar tu plan financiero'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -69,7 +63,16 @@ export default function Progress() {
   }
 
   // Show existing plan
-  if (hasPlan && plan) {
+  if (hasPlan && activePlan) {
+    const overallProgress = React.useMemo(() => {
+      const completedActions = activePlan.actionRoadmap.filter(action => action.completed).length
+      return Math.round((completedActions / activePlan.actionRoadmap.length) * 100)
+    }, [activePlan.actionRoadmap])
+
+    const emergencyFundProgress = Math.round(
+      (activePlan.emergencyFund.currentAmount / activePlan.emergencyFund.targetAmount) * 100
+    )
+
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
@@ -77,20 +80,20 @@ export default function Progress() {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">Mi Plan Financiero</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Mi Progreso Financiero</h1>
                 <p className="text-muted-foreground">
-                  Tu roadmap personalizado hacia la libertad financiera
+                  Seguimiento detallado de tus metas y avances
                 </p>
               </div>
               <Button 
-                onClick={() => generatePlan()} 
+                onClick={() => regeneratePlan()} 
                 disabled={isGenerating}
                 variant="outline"
               >
                 {isGenerating ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Regenerando...
+                    Actualizando...
                   </>
                 ) : (
                   <>
@@ -102,76 +105,176 @@ export default function Progress() {
             </div>
           </div>
 
-          {/* Plan Content */}
-          <ComprehensivePlanView plan={plan} />
-        </div>
-      </div>
-    )
-  }
+          {/* Progress Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Progreso General</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold text-primary">{overallProgress}%</span>
+                    <Target className="h-6 w-6 text-primary" />
+                  </div>
+                  <Progress value={overallProgress} className="h-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {activePlan.actionRoadmap.filter(a => a.completed).length} de {activePlan.actionRoadmap.length} acciones completadas
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-  // Can generate plan but don't have one yet
-  if (canGeneratePlan) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-2xl mx-auto text-center">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Fondo de Emergencia</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold text-green-600">
+                      ${activePlan.emergencyFund.currentAmount.toLocaleString()}
+                    </span>
+                  </div>
+                  <Progress value={emergencyFundProgress} className="h-3" />
+                  <p className="text-sm text-muted-foreground">
+                    Meta: ${activePlan.emergencyFund.targetAmount.toLocaleString()}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Patrimonio Proyectado</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold text-blue-600">
+                      ${activePlan.wealthGrowth.year1.toLocaleString()}
+                    </span>
+                    <TrendingUp className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Proyección a 1 año
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Action Roadmap */}
+          <Card className="mb-8">
             <CardHeader>
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <TrendingUp className="h-8 w-8 text-blue-600" />
-              </div>
-              <CardTitle>¡Genera tu Plan Financiero Personalizado!</CardTitle>
+              <CardTitle>Plan de Acción</CardTitle>
               <CardDescription>
-                {financialData?.monthlyIncome > 0 ? (
-                  <>Tienes información completa. Podemos crear un plan financiero 
-                  personalizado powered by OpenAI.</>
-                ) : (
-                  <>Tienes gastos registrados. Podemos crear un plan optimizado 
-                  para ayudarte a controlar tus finanzas y generar ingresos.</>
-                )}
+                Pasos específicos para alcanzar tus metas financieras
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 gap-4">
-                {financialData?.monthlyIncome > 0 && (
-                  <div className="p-4 bg-green-50 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      ${financialData.monthlyIncome.toLocaleString()}
+            <CardContent>
+              <div className="space-y-4">
+                {activePlan.actionRoadmap.map((action, index) => (
+                  <div 
+                    key={action.step}
+                    className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
+                      action.completed 
+                        ? 'bg-green-50 border-green-200' 
+                        : 'bg-white border-gray-200 hover:border-primary/20'
+                    }`}
+                  >
+                    <div className="flex-shrink-0">
+                      {action.completed ? (
+                        <CheckCircle className="h-6 w-6 text-green-600" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                          <span className="text-xs font-medium text-gray-600">{action.step}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-green-700">Ingresos Mensuales</div>
-                  </div>
-                )}
-                {financialData?.monthlyExpenses > 0 && (
-                  <div className="p-4 bg-red-50 rounded-lg text-center">
-                    <div className="text-2xl font-bold text-red-600">
-                      ${financialData.monthlyExpenses.toLocaleString()}
+                    
+                    <div className="flex-1">
+                      <h3 className={`font-medium ${action.completed ? 'text-green-800' : 'text-gray-900'}`}>
+                        {action.title}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(action.targetDate).toLocaleDateString()}
+                        </span>
+                        {action.description && (
+                          <span className="text-sm text-muted-foreground">
+                            {action.description}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-sm text-red-700">Gastos Mensuales</div>
+                    
+                    {!action.completed && (
+                      <Button 
+                        size="sm"
+                        onClick={() => updateGoalProgress({ goalId: action.step.toString(), progress: 100 })}
+                        disabled={isUpdatingProgress}
+                      >
+                        Marcar Completado
+                      </Button>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-
-              <Button onClick={() => generatePlan()} disabled={isGenerating} size="lg" className="w-full">
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generando tu plan personalizado...
-                  </>
-                ) : (
-                  <>
-                    <Target className="h-4 w-4 mr-2" />
-                    Generar Mi Plan con IA
-                  </>
-                )}
-              </Button>
             </CardContent>
           </Card>
+
+          {/* Short Term Goals */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Metas Semanales</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {activePlan.shortTermGoals.weekly.map((goal, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{goal.title}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {goal.progress}%
+                        </span>
+                      </div>
+                      <Progress value={goal.progress} className="h-2" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Metas Mensuales</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {activePlan.shortTermGoals.monthly.map((goal, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">{goal.title}</span>
+                        <span className="text-sm text-muted-foreground">
+                          ${goal.target.toLocaleString()}
+                        </span>
+                      </div>
+                      <Progress value={goal.progress} className="h-2" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     )
   }
 
-  // No data - redirect to onboarding or data entry
+  // No plan state - redirect to generate one
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -180,10 +283,10 @@ export default function Progress() {
             <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
               <BarChart3 className="h-8 w-8 text-orange-600" />
             </div>
-            <CardTitle>Completa tu Información Financiera</CardTitle>
+            <CardTitle>Aún no tienes un plan financiero</CardTitle>
             <CardDescription>
-              Para generar tu plan financiero personalizado, necesitamos información 
-              sobre tus ingresos, gastos y metas financieras.
+              Completa tu información financiera para generar un plan personalizado
+              que te ayude a alcanzar tus metas.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -196,11 +299,11 @@ export default function Progress() {
                 Completar Información
               </Button>
               <Button 
-                onClick={() => window.location.href = '/expenses'}
+                onClick={() => window.location.href = '/dashboard'}
                 variant="outline"
               >
                 <Target className="h-4 w-4 mr-2" />
-                Agregar Gastos
+                Ir al Dashboard
               </Button>
             </div>
           </CardContent>
