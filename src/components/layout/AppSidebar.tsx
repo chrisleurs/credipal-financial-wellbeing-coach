@@ -1,213 +1,89 @@
-
 import React from 'react'
-import { NavLink } from 'react-router-dom'
-import { cn } from '@/lib/utils'
-import { 
-  BarChart3, 
-  CreditCard, 
-  Target, 
-  Calendar,
-  PiggyBank,
-  Home,
-  Settings,
-  LogOut,
-  RefreshCw,
-  TrendingUp
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { Menu } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from '@/hooks/useAuth'
-import { 
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar
-} from '@/components/ui/sidebar'
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { MainNavItem, SidebarNavItem } from "@/types/nav"
+import { NavItem } from "@/components/shared/NavItem"
+import { Home, CreditCard, AlertTriangle, Target, TrendingUp, User, Settings } from 'lucide-react'
+import { Link } from 'react-router-dom'
+
+interface AppSidebarProps {
+  items?: MainNavItem[]
+  sidebarItems?: SidebarNavItem[]
+}
 
 const navigationItems = [
-  {
-    name: 'Resumen',
-    href: '/dashboard',
-    icon: Home,
-    description: 'Vista general de tus finanzas'
-  },
-  {
-    name: 'Gastos & Ingresos',
-    href: '/expenses',
-    icon: BarChart3,
-    description: 'Gestiona tus transacciones'
-  },
-  {
-    name: 'Deudas',
-    href: '/debts',
-    icon: CreditCard,
-    description: 'Controla tus deudas'
-  },
-  {
-    name: 'Plan & Metas',
-    href: '/plan',
-    icon: Target,
-    description: 'Objetivos financieros'
-  },
-  {
-    name: 'Calendario',
-    href: '/calendar',
-    icon: Calendar,
-    description: 'Programa tus pagos'
-  },
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Gastos', href: '/expenses', icon: CreditCard },
+  { name: 'Deudas', href: '/debts', icon: AlertTriangle },
+  { name: 'Plan', href: '/plan', icon: Target },
+  { name: 'Progreso', href: '/progress', icon: TrendingUp },
+  { name: 'Perfil', href: '/profile', icon: User },
 ]
 
-const quickActions = [
-  {
-    name: 'Actualizar Plan',
-    action: 'update-plan',
-    icon: RefreshCw,
-    description: 'Regenerar recomendaciones'
-  },
-  {
-    name: 'Ver Progreso',
-    action: 'view-progress',
-    icon: TrendingUp,
-    description: 'Analizar evolución'
-  }
-]
-
-export const AppSidebar = () => {
-  const { signOut } = useAuth()
-  const { open } = useSidebar()
-
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case 'update-plan':
-        // Lógica para actualizar el plan
-        console.log('Actualizando plan financiero...')
-        break
-      case 'view-progress':
-        // Lógica para ver progreso
-        console.log('Mostrando progreso...')
-        break
-    }
-  }
+export function AppSidebar({ items, sidebarItems }: AppSidebarProps) {
+  const { user, signOut } = useAuth()
 
   return (
-    <Sidebar 
-      className="border-r border-gray-200 bg-white"
-      collapsible="icon"
-    >
-      <SidebarContent>
-        {/* Logo - Simplified */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <PiggyBank className="h-5 w-5 text-white" />
-            </div>
-            {open && (
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">CrediPal</h1>
-                <p className="text-xs text-gray-500">Coach financiero</p>
+    <Sheet>
+      <SheetTrigger asChild>
+        <Menu className="w-5 h-5 md:hidden" />
+      </SheetTrigger>
+      <SheetContent className="w-full sm:w-64 border-right padding-x">
+        <SheetHeader className="space-y-2.5">
+          <SheetTitle>Menú</SheetTitle>
+          <SheetDescription>
+            Navega a través de tu información financiera.
+          </SheetDescription>
+        </SheetHeader>
+        <ScrollArea className="my-4">
+          <div className="py-4">
+            <div className="px-3 py-2">
+              <Avatar className="w-9 h-9">
+                <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name} />
+                <AvatarFallback>{user?.email?.substring(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="space-y-0.5 font-medium leading-none mt-2">
+                <p className="text-sm font-semibold">{user?.user_metadata?.full_name || user?.email}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Main Navigation */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild tooltip={open ? undefined : item.description}>
-                      <NavLink
-                        to={item.href}
-                        className={({ isActive }) =>
-                          cn(
-                            'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 w-full',
-                            isActive
-                              ? 'bg-primary text-white shadow-lg shadow-primary/25'
-                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                          )
-                        }
-                      >
-                        <Icon className="h-4 w-4 flex-shrink-0" />
-                        {open && (
-                          <div className="flex flex-col min-w-0">
-                            <span className="truncate">{item.name}</span>
-                            {item.description && (
-                              <span className="text-xs opacity-75 truncate">{item.description}</span>
-                            )}
-                          </div>
-                        )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Quick Actions - Only when expanded */}
-        {open && (
-          <SidebarGroup>
-            <div className="px-4 py-2">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Acciones Rápidas
-              </h3>
             </div>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {quickActions.map((action) => {
-                  const Icon = action.icon
-                  return (
-                    <SidebarMenuItem key={action.name}>
-                      <SidebarMenuButton asChild>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start h-auto p-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                          onClick={() => handleQuickAction(action.action)}
-                        >
-                          <Icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                          <div className="flex flex-col items-start min-w-0">
-                            <span className="text-sm font-medium truncate">{action.name}</span>
-                            <span className="text-xs opacity-75 truncate">{action.description}</span>
-                          </div>
-                        </Button>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* Footer Actions */}
-        <div className="mt-auto p-4 border-t border-gray-200 space-y-2">
-          <SidebarMenuButton asChild>
-            <Button variant="ghost" className="w-full justify-start" size="sm">
-              <Settings className="h-4 w-4 mr-2 flex-shrink-0" />
-              {open && <span>Configuración</span>}
-            </Button>
-          </SidebarMenuButton>
-          
-          <SidebarMenuButton asChild>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" 
-              size="sm"
-              onClick={signOut}
-            >
-              <LogOut className="h-4 w-4 mr-2 flex-shrink-0" />
-              {open && <span>Cerrar Sesión</span>}
-            </Button>
-          </SidebarMenuButton>
-        </div>
-      </SidebarContent>
-    </Sidebar>
+            <ul className="mt-6 space-y-1">
+              {navigationItems.map((item) => (
+                <NavItem
+                  key={item.name}
+                  title={item.name}
+                  href={item.href}
+                  icon={item.icon}
+                />
+              ))}
+            </ul>
+            <div className="flex justify-center mt-4">
+              <Link to="/profile" className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2">
+                <Settings className="w-4 h-4 mr-2" />
+                Configuración
+              </Link>
+            </div>
+            <div className="flex justify-center mt-2">
+              <button
+                onClick={() => signOut({ redirectTo: '/auth' })}
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-4 py-2"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        </ScrollArea>
+      </SheetContent>
+    </Sheet>
   )
 }

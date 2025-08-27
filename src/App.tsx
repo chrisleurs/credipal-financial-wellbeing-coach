@@ -1,50 +1,118 @@
 
 import React from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
+import { AuthRedirect } from '@/components/auth/AuthRedirect'
+import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
+import { AppLayout } from '@/components/layout/AppLayout'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+
+// Pages
+import Index from '@/pages/Index'
+import Auth from '@/pages/Auth'
 import Dashboard from '@/pages/Dashboard'
 import Expenses from '@/pages/Expenses'
 import Debts from '@/pages/Debts'
 import Plan from '@/pages/Plan'
+import Progress from '@/pages/Progress'
 import Profile from '@/pages/Profile'
-import Auth from '@/pages/Auth'
 import Onboarding from '@/pages/Onboarding'
 import PostOnboarding from '@/pages/PostOnboarding'
-import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
-import { AuthRedirect } from '@/components/auth/AuthRedirect'
-import { AuthFlowDebugger } from '@/components/debug/AuthFlowDebugger'
+import Welcome from '@/pages/Welcome'
+import NotFound from '@/pages/NotFound'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+})
 
 function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <LanguageProvider>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <Router>
           <AuthRedirect />
-          <div className="min-h-screen bg-background font-sans antialiased">
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-              <Route path="/debts" element={<ProtectedRoute><Debts /></ProtectedRoute>} />
-              <Route path="/plan" element={<ProtectedRoute><Plan /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/onboarding" element={<ProtectedRoute requireAuth={true}><Onboarding /></ProtectedRoute>} />
-              <Route path="/post-onboarding" element={<ProtectedRoute requireAuth={true}><PostOnboarding /></ProtectedRoute>} />
-            </Routes>
-          </div>
-          
-          {/* Debug component - only show in development */}
-          {process.env.NODE_ENV === 'development' && <AuthFlowDebugger />}
-          
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/welcome" element={<Welcome />} />
+            
+            {/* Protected Routes with Layout */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/expenses" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Expenses />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/debts" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Debts />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/plan" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Plan />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/progress" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Progress />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Profile />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            
+            {/* Onboarding Routes */}
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/post-onboarding" element={
+              <ProtectedRoute>
+                <PostOnboarding />
+              </ProtectedRoute>
+            } />
+            
+            {/* Fallback Routes */}
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Routes>
           <Toaster />
-        </LanguageProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+        </Router>
+      </LanguageProvider>
+    </QueryClientProvider>
   )
 }
 
