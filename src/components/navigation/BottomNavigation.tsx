@@ -3,49 +3,42 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Home, DollarSign, TrendingUp, User, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useDashboardNavigation } from '@/hooks/useDashboardNavigation'
-
-interface NavItemProps {
-  name: string
-  path: string
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  activeIcon: React.ComponentType<React.SVGProps<SVGSVGElement>>
-}
+import { useBottomNavigation } from '@/hooks/useBottomNavigation'
 
 export const BottomNavigation = () => {
   const location = useLocation()
-  const { navigateTo, canNavigate } = useDashboardNavigation()
-
+  const { badges } = useBottomNavigation()
+  
   const navItems = [
-    { 
-      name: 'Inicio', 
-      path: '/dashboard', 
+    {
+      name: 'Inicio',
+      path: '/dashboard',
       icon: Home,
-      activeIcon: Home 
+      badge: badges.home
     },
-    { 
-      name: 'Mi Plan', 
-      path: '/coach', 
-      icon: FileText,
-      activeIcon: FileText 
+    {
+      name: 'Gastos', 
+      path: '/expenses',
+      icon: DollarSign,
+      badge: badges.movements
     },
-    { 
-      name: 'Progreso', 
+    {
+      name: 'Progreso',
       path: '/progress', 
       icon: TrendingUp,
-      activeIcon: TrendingUp 
+      badge: badges.progress
     },
-    { 
-      name: 'Gastos', 
-      path: '/expenses', 
-      icon: DollarSign,
-      activeIcon: DollarSign 
+    {
+      name: 'Mi Plan',
+      path: '/plan', // Cambiado de /coach a /plan
+      icon: FileText,
+      badge: badges.coach
     },
-    { 
-      name: 'Perfil', 
-      path: '/profile', 
+    {
+      name: 'Perfil',
+      path: '/profile',
       icon: User,
-      activeIcon: User 
+      badge: badges.profile
     }
   ]
 
@@ -56,12 +49,11 @@ export const BottomNavigation = () => {
           const isActive = location.pathname === item.path
           return (
             <Link
-              key={item.name}
+              key={item.path}
               to={item.path}
               onClick={(e) => {
-                e.preventDefault()
-                if (canNavigate) {
-                  navigateTo(item.path)
+                if (item.badge && item.badge > 0) {
+                  // Handle badge clicks if needed
                 }
               }}
               className={cn(
@@ -70,7 +62,7 @@ export const BottomNavigation = () => {
               )}
             >
               {isActive ? (
-                <item.activeIcon className="w-5 h-5 mb-1" />
+                <item.icon className="w-5 h-5 mb-1 fill-current" />
               ) : (
                 <item.icon className="w-5 h-5 mb-1" />
               )}
