@@ -10,10 +10,12 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useBottomNavigation } from '@/hooks/useBottomNavigation'
+import { useDashboardNavigation } from '@/hooks/useDashboardNavigation'
 
 export function BottomNavigation() {
   const location = useLocation()
   const { badges } = useBottomNavigation()
+  const { canNavigate } = useDashboardNavigation()
 
   const navItems = [
     {
@@ -47,6 +49,11 @@ export function BottomNavigation() {
       badge: badges.profile
     }
   ]
+
+  // Si no puede navegar, no mostrar la barra
+  if (!canNavigate) {
+    return null
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">

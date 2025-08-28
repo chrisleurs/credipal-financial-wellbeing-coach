@@ -11,10 +11,11 @@ import {
 import { Menu } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from '@/hooks/useAuth'
+import { useLogout } from '@/hooks/useLogout'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MainNavItem, SidebarNavItem } from "@/types/nav"
 import { NavItem } from "@/components/shared/NavItem"
-import { Home, CreditCard, AlertTriangle, Target, TrendingUp, User, Settings } from 'lucide-react'
+import { Home, CreditCard, AlertTriangle, Target, TrendingUp, User, Settings, LogOut } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 interface AppSidebarProps {
@@ -32,7 +33,8 @@ const navigationItems = [
 ]
 
 export function AppSidebar({ items, sidebarItems }: AppSidebarProps) {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
+  const { handleLogout } = useLogout()
 
   return (
     <Sheet>
@@ -69,16 +71,20 @@ export function AppSidebar({ items, sidebarItems }: AppSidebarProps) {
               ))}
             </ul>
             <div className="flex justify-center mt-4">
-              <Link to="/profile" className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2">
+              <Link 
+                to="/profile" 
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
+              >
                 <Settings className="w-4 h-4 mr-2" />
                 Configuración
               </Link>
             </div>
             <div className="flex justify-center mt-2">
               <button
-                onClick={() => signOut()}
+                onClick={handleLogout}
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-4 py-2"
               >
+                <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión
               </button>
             </div>
