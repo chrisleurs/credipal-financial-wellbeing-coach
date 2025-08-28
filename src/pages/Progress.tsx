@@ -3,21 +3,22 @@ import React from 'react'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
+import { useConsolidatedData } from '@/hooks/useConsolidatedData'
 import { TrendingUp, Target, Calendar, DollarSign, AlertCircle } from 'lucide-react'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { formatCurrency } from '@/utils/helpers'
 
 export default function ProgressPage() {
-  const { data: financialData, isLoading, error } = useUnifiedFinancialData()
+  const { data: consolidatedData, isLoading, error } = useConsolidatedData()
 
-  console.log('🎯 PROGRESS: Rendering with data:', {
-    hasData: !!financialData,
+  console.log('🎯 PROGRESS: Rendering with consolidated data:', {
+    hasData: !!consolidatedData,
     isLoading,
-    monthlyIncome: financialData?.monthlyIncome,
-    monthlyExpenses: financialData?.monthlyExpenses,
-    totalDebtBalance: financialData?.totalDebtBalance,
-    hasRealData: financialData?.hasRealData,
-    financialGoalsCount: financialData?.financialGoals?.length
+    monthlyIncome: consolidatedData?.monthlyIncome,
+    monthlyExpenses: consolidatedData?.monthlyExpenses,
+    totalDebtBalance: consolidatedData?.totalDebtBalance,
+    hasRealData: consolidatedData?.hasRealData,
+    financialGoalsCount: consolidatedData?.financialGoals?.length
   })
 
   if (isLoading) {
@@ -47,7 +48,7 @@ export default function ProgressPage() {
     )
   }
 
-  if (!financialData) {
+  if (!consolidatedData) {
     return (
       <AppLayout>
         <div className="container mx-auto p-4 pb-20 max-w-4xl">
@@ -63,7 +64,12 @@ export default function ProgressPage() {
     )
   }
 
-  const kueskiProgress = ((500 - financialData.kueskiDebt.balance) / 500) * 100
+  // Calculate Kueski progress (assuming $500 total loan)
+  const kueskiDebt = consolidatedData.debts.find(debt => 
+    debt.creditor.toLowerCase().includes('kueski')
+  ) || { creditor: 'KueskiPay', balance: 500, payment: 100 }
+  
+  const kueskiProgress = ((500 - kueskiDebt.balance) / 500) * 100
 
   return (
     <AppLayout>
@@ -84,7 +90,7 @@ export default function ProgressPage() {
               <CardContent className="p-4 text-center">
                 <DollarSign className="h-6 w-6 text-green-600 mx-auto mb-2" />
                 <div className="text-lg font-bold">
-                  ${financialData.monthlyIncome.toFixed(0)}
+                  {formatCurrency(consolidatedData.monthlyIncome)}
                 </div>
                 <div className="text-xs text-gray-600">Ingresos</div>
               </CardContent>
@@ -94,7 +100,7 @@ export default function ProgressPage() {
               <CardContent className="p-4 text-center">
                 <TrendingUp className="h-6 w-6 text-blue-600 mx-auto mb-2" />
                 <div className="text-lg font-bold">
-                  ${financialData.savingsCapacity.toFixed(0)}
+                  {formatCurrency(consolidatedData.savingsCapacity)}
                 </div>
                 <div className="text-xs text-gray-600">Capacidad Ahorro</div>
               </CardContent>
@@ -104,7 +110,7 @@ export default function ProgressPage() {
               <CardContent className="p-4 text-center">
                 <Target className="h-6 w-6 text-purple-600 mx-auto mb-2" />
                 <div className="text-lg font-bold">
-                  {financialData.financialGoals?.length || 0}
+                  {consolidatedData.activeGoals?.length || 0}
                 </div>
                 <div className="text-xs text-gray-600">Metas Activas</div>
               </CardContent>
@@ -114,7 +120,7 @@ export default function ProgressPage() {
               <CardContent className="p-4 text-center">
                 <Calendar className="h-6 w-6 text-orange-600 mx-auto mb-2" />
                 <div className="text-lg font-bold">
-                  {financialData.debts?.length || 0}
+                  {consolidatedData.debts?.length || 0}
                 </div>
                 <div className="text-xs text-gray-600">Deudas</div>
               </CardContent>
@@ -134,12 +140,12 @@ export default function ProgressPage() {
                 <div className="flex justify-between text-sm">
                   <span>Pagado</span>
                   <span>
-                    ${500 - financialData.kueskiDebt.balance} / $500
+                    {formatCurrency(500 - kueskiDebt.balance)} / {formatCurrency(500)}
                   </span>
                 </div>
                 <Progress value={kueskiProgress} className="w-full" />
                 <div className="text-xs text-gray-600">
-                  Pagos restantes: {financialData.kueskiDebt.remainingPayments}
+                  Balance restante: {formatCurrency(kueskiDebt.balance)}
                 </div>
               </div>
             </CardContent>
@@ -154,17 +160,19 @@ export default function ProgressPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {financialData.financialGoals && financialData.financialGoals.length > 0 ? (
+              {consolidatedData.activeGoals && consolidatedData.activeGoals.length > 0 ? (
                 <div className="space-y-4">
-                  {financialData.financialGoals.map((goal, index) => (
+                  {consolidatedData.activeGoals.map((goal, index) => (
                     <div key={index} className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="font-medium">{goal}</span>
-                        <span className="text-sm text-gray-600">En progreso</span>
+                        <span className="font-medium">{goal.title}</span>
+                        <span className="text-sm text-gray-600">
+                          {formatCurrency(goal.current)} / {formatCurrency(goal.target)}
+                        </span>
                       </div>
-                      <Progress value={25} className="w-full" />
+                      <Progress value={goal.progress} className="w-full" />
                       <div className="text-xs text-gray-600">
-                        Meta establecida del onboarding
+                        {Math.round(goal.progress)}% completado
                       </div>
                     </div>
                   ))}
@@ -190,30 +198,30 @@ export default function ProgressPage() {
                   <div className="flex justify-between">
                     <span>Ingresos</span>
                     <span className="font-medium text-green-600">
-                      +${financialData.monthlyIncome.toFixed(2)}
+                      +{formatCurrency(consolidatedData.monthlyIncome)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Gastos</span>
                     <span className="font-medium text-red-600">
-                      -${financialData.monthlyExpenses.toFixed(2)}
+                      -{formatCurrency(consolidatedData.monthlyExpenses)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Pagos de deuda</span>
                     <span className="font-medium text-red-600">
-                      -${financialData.totalMonthlyDebtPayments.toFixed(2)}
+                      -{formatCurrency(consolidatedData.totalMonthlyDebtPayments)}
                     </span>
                   </div>
                   <hr className="my-2" />
                   <div className="flex justify-between font-bold">
                     <span>Balance</span>
                     <span className={
-                      financialData.savingsCapacity >= 0 
+                      consolidatedData.savingsCapacity >= 0 
                         ? "text-green-600" 
                         : "text-red-600"
                     }>
-                      ${financialData.savingsCapacity.toFixed(2)}
+                      {formatCurrency(consolidatedData.savingsCapacity)}
                     </span>
                   </div>
                 </div>
@@ -222,13 +230,19 @@ export default function ProgressPage() {
                   <div className="text-sm text-gray-600">
                     Salud financiera: 
                     <span className="ml-2 font-medium text-primary">
-                      {financialData.savingsCapacity > 0 ? "Buena" : "Necesita mejora"}
+                      {consolidatedData.savingsCapacity > 0 ? "Buena" : "Necesita mejora"}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Total en deudas: 
+                    <span className="ml-2 font-medium">
+                      {formatCurrency(consolidatedData.totalDebtBalance)}
                     </span>
                   </div>
                   <div className="text-sm text-gray-600">
                     Fuente de datos: 
                     <span className="ml-2 font-medium">
-                      {financialData.hasRealData ? "Onboarding completado" : "Datos por defecto"}
+                      {consolidatedData.hasRealData ? "Datos del usuario" : "Datos por defecto"}
                     </span>
                   </div>
                 </div>
@@ -237,7 +251,7 @@ export default function ProgressPage() {
           </Card>
 
           {/* Debug info - mostrar si no hay datos reales */}
-          {!financialData.hasRealData && (
+          {!consolidatedData.hasRealData && (
             <Card className="border-yellow-200 bg-yellow-50">
               <CardContent className="p-6">
                 <div className="flex items-center gap-2">
