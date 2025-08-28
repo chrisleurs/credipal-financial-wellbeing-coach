@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -125,38 +124,6 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ userId }
             </p>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Button
-          onClick={() => navigate('/coach')}
-          className="h-16 bg-primary hover:bg-primary/90 text-primary-foreground"
-          size="lg"
-        >
-          <Target className="h-5 w-5 mr-2" />
-          Ver Mi Plan Financiero
-        </Button>
-
-        <Button
-          onClick={() => navigate('/progress')}
-          variant="outline"
-          className="h-16 border-border hover:bg-accent hover:text-accent-foreground"
-          size="lg"
-        >
-          <TrendingUp className="h-5 w-5 mr-2" />
-          Ver Mi Progreso
-        </Button>
-
-        <Button
-          onClick={() => navigate('/expenses')}
-          variant="outline"
-          className="h-16 border-border hover:bg-accent hover:text-accent-foreground"
-          size="lg"
-        >
-          <PlusCircle className="h-5 w-5 mr-2" />
-          Registrar Movimiento
-        </Button>
       </div>
 
       {/* Quick Actions Section */}
