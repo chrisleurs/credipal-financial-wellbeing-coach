@@ -2,7 +2,7 @@
 import React from 'react'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
+import { Progress as ProgressBar } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useConsolidatedData } from '@/hooks/useConsolidatedData'
@@ -23,7 +23,8 @@ import {
 } from 'lucide-react'
 import { 
   ResponsiveContainer, 
-  PieChart as RechartsPieChart, 
+  PieChart as RechartsPieChart,
+  Pie,
   Cell, 
   AreaChart, 
   Area, 
@@ -157,7 +158,7 @@ export default function Progress() {
                   </div>
                   <Award className="h-8 w-8 text-green-600" />
                 </div>
-                <Progress value={metrics.overallHealthScore} className="mt-3 h-2" />
+                <ProgressBar value={metrics.overallHealthScore} className="mt-3 h-2" />
               </CardContent>
             </Card>
 
@@ -172,7 +173,7 @@ export default function Progress() {
                   </div>
                   <PiggyBank className="h-8 w-8 text-blue-600" />
                 </div>
-                <Progress value={Math.max(0, metrics.savingsRate)} className="mt-3 h-2" />
+                <ProgressBar value={Math.max(0, metrics.savingsRate)} className="mt-3 h-2" />
               </CardContent>
             </Card>
 
@@ -187,7 +188,7 @@ export default function Progress() {
                   </div>
                   <CreditCard className="h-8 w-8 text-orange-600" />
                 </div>
-                <Progress value={metrics.debtPayoffProgress} className="mt-3 h-2" />
+                <ProgressBar value={metrics.debtPayoffProgress} className="mt-3 h-2" />
               </CardContent>
             </Card>
 
@@ -233,7 +234,7 @@ export default function Progress() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => formatCurrency(value)} />
+                      <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                     </RechartsPieChart>
                   </ResponsiveContainer>
                 </div>
@@ -269,7 +270,7 @@ export default function Progress() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(value) => formatCurrency(value)} />
+                      <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                       <Area 
                         type="monotone" 
                         dataKey="patrimonio" 
@@ -316,7 +317,7 @@ export default function Progress() {
                           {formatCurrency(debt.balance)}
                         </span>
                       </div>
-                      <Progress value={progress} className="h-2" />
+                      <ProgressBar value={progress} className="h-2" />
                       <div className="flex justify-between text-xs text-gray-500">
                         <span>Pago mensual: {formatCurrency(debt.payment)}</span>
                         <span>{Math.round(progress)}% completado</span>
