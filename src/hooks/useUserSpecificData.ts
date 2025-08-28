@@ -37,9 +37,30 @@ export interface UserSpecificFinancialData {
   lastUpdated: string
 }
 
-// Type guard for onboarding data
+// Improved type guard for onboarding data
 const isValidOnboardingData = (data: any): data is Record<string, any> => {
   return data && typeof data === 'object' && !Array.isArray(data)
+}
+
+// Safe property access helper
+const safeGetNumber = (obj: Record<string, any>, key: string): number => {
+  const value = obj[key]
+  return typeof value === 'number' ? value : 0
+}
+
+const safeGetString = (obj: Record<string, any>, key: string): string => {
+  const value = obj[key]
+  return typeof value === 'string' ? value : ''
+}
+
+const safeGetArray = (obj: Record<string, any>, key: string): any[] => {
+  const value = obj[key]
+  return Array.isArray(value) ? value : []
+}
+
+const safeGetObject = (obj: Record<string, any>, key: string): Record<string, any> => {
+  const value = obj[key]
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 }
 
 export const useUserSpecificData = () => {
@@ -124,20 +145,22 @@ export const useUserSpecificData = () => {
         // Fallback a datos del onboarding si no hay datos consolidados
         const onboardingData = isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         
-        if (onboardingData.monthlyIncome && typeof onboardingData.monthlyIncome === 'number') {
-          monthlyIncome += onboardingData.monthlyIncome
+        const monthlyIncomeValue = safeGetNumber(onboardingData, 'monthlyIncome')
+        if (monthlyIncomeValue > 0) {
+          monthlyIncome += monthlyIncomeValue
           incomeBreakdown.push({
             source: 'Ingreso Principal (Onboarding)',
-            amount: onboardingData.monthlyIncome,
+            amount: monthlyIncomeValue,
             frequency: 'monthly'
           })
         }
         
-        if (onboardingData.extraIncome && typeof onboardingData.extraIncome === 'number') {
-          monthlyIncome += onboardingData.extraIncome
+        const extraIncomeValue = safeGetNumber(onboardingData, 'extraIncome')
+        if (extraIncomeValue > 0) {
+          monthlyIncome += extraIncomeValue
           incomeBreakdown.push({
             source: 'Ingresos Adicionales (Onboarding)',
-            amount: onboardingData.extraIncome,
+            amount: extraIncomeValue,
             frequency: 'monthly'
           })
         }
@@ -173,16 +196,20 @@ export const useUserSpecificData = () => {
         // Fallback a datos del onboarding
         const onboardingData = isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         
-        if (onboardingData.expenseCategories && typeof onboardingData.expenseCategories === 'object') {
-          Object.entries(onboardingData.expenseCategories).forEach(([key, amount]) => {
+        const expenseCategoriesData = safeGetObject(onboardingData, 'expenseCategories')
+        if (Object.keys(expenseCategoriesData).length > 0) {
+          Object.entries(expenseCategoriesData).forEach(([key, amount]) => {
             if (typeof amount === 'number' && amount > 0) {
               expenseCategories[key] = amount
               monthlyExpenses += amount
             }
           })
-        } else if (onboardingData.monthlyExpenses && typeof onboardingData.monthlyExpenses === 'number') {
-          monthlyExpenses = onboardingData.monthlyExpenses
-          expenseCategories['Gastos Generales'] = monthlyExpenses
+        } else {
+          const monthlyExpensesValue = safeGetNumber(onboardingData, 'monthlyExpenses')
+          if (monthlyExpensesValue > 0) {
+            monthlyExpenses = monthlyExpensesValue
+            expenseCategories['Gastos Generales'] = monthlyExpenses
+          }
         }
         
         console.log('📊 Usando datos de onboarding para gastos:', monthlyExpenses)
@@ -217,8 +244,9 @@ export const useUserSpecificData = () => {
         // Fallback a datos del onboarding
         const onboardingData = isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         
-        if (onboardingData.debts && Array.isArray(onboardingData.debts)) {
-          onboardingData.debts.forEach((debt: any) => {
+        const debtsArray = safeGetArray(onboardingData, 'debts')
+        if (debtsArray.length > 0) {
+          debtsArray.forEach((debt: any) => {
             const balance = Number(debt.amount || 0)
             if (balance > 0) {
               totalDebtBalance += balance
@@ -268,12 +296,14 @@ export const useUserSpecificData = () => {
         // Fallback a datos del onboarding
         const onboardingData = isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         
-        if (onboardingData.currentSavings && typeof onboardingData.currentSavings === 'number') {
-          currentSavings = onboardingData.currentSavings
+        const currentSavingsValue = safeGetNumber(onboardingData, 'currentSavings')
+        if (currentSavingsValue > 0) {
+          currentSavings = currentSavingsValue
         }
         
-        if (onboardingData.financialGoals && Array.isArray(onboardingData.financialGoals)) {
-          onboardingData.financialGoals.forEach((goalTitle: string) => {
+        const financialGoalsArray = safeGetArray(onboardingData, 'financialGoals')
+        if (financialGoalsArray.length > 0) {
+          financialGoalsArray.forEach((goalTitle: string) => {
             activeGoals.push({
               title: goalTitle,
               target: 10000, // Valor por defecto
