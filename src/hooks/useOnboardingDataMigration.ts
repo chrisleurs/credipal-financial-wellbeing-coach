@@ -114,7 +114,7 @@ export const useOnboardingDataMigration = () => {
             user_id: user.id,
             source_name: 'Ingreso Principal',
             amount: Number(onboardingData.monthlyIncome),
-            frequency: 'monthly',
+            frequency: 'monthly' as const,
             is_active: true
           })
         }
@@ -124,7 +124,7 @@ export const useOnboardingDataMigration = () => {
             user_id: user.id,
             source_name: 'Ingresos Adicionales',
             amount: Number(onboardingData.extraIncome),
-            frequency: 'monthly',
+            frequency: 'monthly' as const,
             is_active: true
           })
         }
@@ -144,7 +144,7 @@ export const useOnboardingDataMigration = () => {
           current_balance: Number(debt.amount || 0),
           monthly_payment: Number(debt.monthlyPayment || 0),
           interest_rate: Number(debt.interestRate || 0),
-          status: 'active'
+          status: 'active' as const
         })).filter((debt) => debt.current_balance > 0)
 
         if (debtsToCreate.length > 0) {
@@ -161,8 +161,8 @@ export const useOnboardingDataMigration = () => {
           description: `Meta financiera: ${goalTitle}`,
           target_amount: 50000, // Valor base
           current_amount: Math.floor((onboardingData.currentSavings || 0) / onboardingData.financialGoals!.length),
-          priority: 'medium',
-          status: 'active'
+          priority: 'medium' as const,
+          status: 'active' as const
         }))
 
         if (goalsToCreate.length > 0) {
