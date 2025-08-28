@@ -1,112 +1,164 @@
 
 import React from 'react'
-import { AppLayout } from '@/components/layout/AppLayout'
-import { DataCleanupDashboard } from '@/components/debug/DataCleanupDashboard'
-import { DataAuditDashboard } from '@/components/debug/DataAuditDashboard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
 import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
-import { Database, GitCompare } from 'lucide-react'
+import { formatCurrency } from '@/utils/helpers'
+import { AlertTriangle, CheckCircle, Database, TrendingUp } from 'lucide-react'
 
 export default function DataAudit() {
-  const { data: unifiedData, isLoading: isLoadingUnified } = useUnifiedFinancialData()
-  const { data: optimizedData, isLoading: isLoadingOptimized } = useOptimizedFinancialData()
+  const { data: unifiedData, isLoading: unifiedLoading } = useUnifiedFinancialData()
+  const { data: optimizedData, isLoading: optimizedLoading } = useOptimizedFinancialData()
+
+  if (unifiedLoading || optimizedLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <h1 className="text-2xl font-bold mb-6">Auditoría de Datos</h1>
+        <div className="animate-pulse space-y-4">
+          <div className="h-32 bg-gray-200 rounded-lg"></div>
+          <div className="h-32 bg-gray-200 rounded-lg"></div>
+        </div>
+      </div>
+    )
+  }
+
+  const hasDataDiscrepancy = unifiedData && optimizedData && (
+    Math.abs(unifiedData.monthlyIncome - optimizedData.monthlyIncome) > 0.01 ||
+    Math.abs(unifiedData.monthlyExpenses - optimizedData.monthlyExpenses) > 0.01 ||
+    unifiedData.activeDebts.length !== optimizedData.activeDebts.length ||
+    unifiedData.activeGoals.length !== optimizedData.activeGoals.length
+  )
 
   return (
-    <AppLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-          <Database className="h-6 w-6" />
-          Auditoría de Datos Financieros
-        </h1>
-        
-        {/* Data Cleanup Dashboard */}
-        <DataCleanupDashboard />
-        
-        {/* Comparison between data sources */}
-        <Card className="mb-6">
+    <div className="container mx-auto px-4 py-6">
+      <h1 className="text-2xl font-bold mb-6">Auditoría de Datos Financieros</h1>
+      
+      {/* Status Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Unified Data Source */}
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <GitCompare className="h-5 w-5" />
-              Comparación de Fuentes de Datos
+              <Database className="h-5 w-5 text-blue-600" />
+              Datos Unificados (Nuevo)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold mb-3 text-blue-600">
-                  Datos Unificados (Nueva Fuente)
-                </h3>
-                {isLoadingUnified ? (
-                  <p className="text-gray-500">Cargando...</p>
-                ) : unifiedData ? (
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Ingresos:</strong> ${unifiedData.monthlyIncome?.toLocaleString()}</p>
-                    <p><strong>Gastos:</strong> ${unifiedData.monthlyExpenses?.toLocaleString()}</p>
-                    <p><strong>Deudas:</strong> ${unifiedData.totalDebtBalance?.toLocaleString()}</p>
-                    <p><strong>Capacidad Ahorro:</strong> ${unifiedData.savingsCapacity?.toLocaleString()}</p>
-                    <p><strong>Fuente:</strong> {unifiedData.dataSource}</p>
-                    <p><strong>Tiene Datos:</strong> {unifiedData.hasRealData ? 'Sí' : 'No'}</p>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No hay datos</p>
-                )}
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-3 text-orange-600">
-                  Datos Optimizados (Fuente Original)
-                </h3>
-                {isLoadingOptimized ? (
-                  <p className="text-gray-500">Cargando...</p>
-                ) : optimizedData ? (
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Ingresos:</strong> ${optimizedData.monthlyIncome?.toLocaleString()}</p>
-                    <p><strong>Gastos:</strong> ${optimizedData.monthlyExpenses?.toLocaleString()}</p>
-                    <p><strong>Deudas:</strong> ${optimizedData.totalDebtBalance?.toLocaleString()}</p>
-                    <p><strong>Capacidad Ahorro:</strong> ${optimizedData.savingsCapacity?.toLocaleString()}</p>
-                    <p><strong>Fuente:</strong> ONBOARDING_PROFILE</p>
-                    <p><strong>Tiene Datos:</strong> {optimizedData.hasRealData ? 'Sí' : 'No'}</p>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No hay datos</p>
-                )}
-              </div>
-            </div>
-            
-            {unifiedData && optimizedData && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold mb-2">Diferencias Detectadas:</h4>
-                <div className="space-y-1 text-sm">
-                  {unifiedData.monthlyIncome !== optimizedData.monthlyIncome && (
-                    <p className="text-red-600">
-                      ⚠️ Diferencia en ingresos: ${Math.abs(unifiedData.monthlyIncome - optimizedData.monthlyIncome).toLocaleString()}
-                    </p>
-                  )}
-                  {unifiedData.monthlyExpenses !== optimizedData.monthlyExpenses && (
-                    <p className="text-red-600">
-                      ⚠️ Diferencia en gastos: ${Math.abs(unifiedData.monthlyExpenses - optimizedData.monthlyExpenses).toLocaleString()}
-                    </p>
-                  )}
-                  {unifiedData.totalDebtBalance !== optimizedData.totalDebtBalance && (
-                    <p className="text-red-600">
-                      ⚠️ Diferencia en deudas: ${Math.abs(unifiedData.totalDebtBalance - optimizedData.totalDebtBalance).toLocaleString()}
-                    </p>
-                  )}
-                  {unifiedData.monthlyIncome === optimizedData.monthlyIncome && 
-                   unifiedData.monthlyExpenses === optimizedData.monthlyExpenses && 
-                   unifiedData.totalDebtBalance === optimizedData.totalDebtBalance && (
-                    <p className="text-green-600">✅ Los datos coinciden entre ambas fuentes</p>
-                  )}
+            {unifiedData ? (
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span>Ingresos Mensuales:</span>
+                  <span className="font-semibold">{formatCurrency(unifiedData.monthlyIncome)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Gastos Mensuales:</span>
+                  <span className="font-semibold">{formatCurrency(unifiedData.monthlyExpenses)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Deudas:</span>
+                  <span className="font-semibold">{unifiedData.activeDebts.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Metas:</span>
+                  <span className="font-semibold">{unifiedData.activeGoals.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tiene Datos:</span>
+                  <Badge variant={unifiedData.hasRealData ? "default" : "secondary"}>
+                    {unifiedData.hasRealData ? "Sí" : "No"}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span>Fuente:</span>
+                  <Badge variant="outline">{unifiedData.dataSource}</Badge>
                 </div>
               </div>
+            ) : (
+              <p className="text-gray-500">No hay datos unificados disponibles</p>
             )}
           </CardContent>
         </Card>
-        
-        {/* Original Data Audit Dashboard */}
-        <DataAuditDashboard />
+
+        {/* Optimized Data Source */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              Datos Optimizados (Actual)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {optimizedData ? (
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span>Ingresos Mensuales:</span>
+                  <span className="font-semibold">{formatCurrency(optimizedData.monthlyIncome)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Gastos Mensuales:</span>
+                  <span className="font-semibold">{formatCurrency(optimizedData.monthlyExpenses)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Deudas:</span>
+                  <span className="font-semibold">{optimizedData.activeDebts.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Metas:</span>
+                  <span className="font-semibold">{optimizedData.activeGoals.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tiene Datos:</span>
+                  <Badge variant={optimizedData.hasRealData ? "default" : "secondary"}>
+                    {optimizedData.hasRealData ? "Sí" : "No"}
+                  </Badge>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500">No hay datos optimizados disponibles</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </AppLayout>
+
+      {/* Discrepancy Alert */}
+      {hasDataDiscrepancy && (
+        <Card className="mb-6 border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-orange-800 mb-2">
+                  Discrepancias Detectadas
+                </h3>
+                <p className="text-orange-700 text-sm">
+                  Los datos entre las fuentes unificada y optimizada no coinciden. 
+                  Esto puede indicar problemas de sincronización.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Discrepancy Success */}
+      {!hasDataDiscrepancy && unifiedData && optimizedData && (
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <h3 className="font-semibold text-green-800">
+                  Datos Sincronizados
+                </h3>
+                <p className="text-green-700 text-sm">
+                  Ambas fuentes de datos están sincronizadas correctamente.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   )
 }

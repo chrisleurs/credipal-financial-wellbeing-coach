@@ -11,10 +11,12 @@ import { DataCleanupDashboard } from '@/components/debug/DataCleanupDashboard'
 import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
 import { useFinancialPlanManager } from '@/hooks/useFinancialPlanManager'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { useNavigate } from 'react-router-dom'
 
 export const MobileFirstDashboard = () => {
   const { data: financialData, isLoading: isLoadingData } = useUnifiedFinancialData()
   const { activePlan, isLoadingPlan, canGeneratePlan } = useFinancialPlanManager()
+  const navigate = useNavigate()
 
   // Loading state
   if (isLoadingData) {
@@ -45,14 +47,25 @@ export const MobileFirstDashboard = () => {
     )
   }
 
+  // Handle plan generation completion
+  const handlePlanGenerated = () => {
+    navigate('/dashboard')
+  }
+
   // Show plan generation if no active plan exists
   if (!activePlan && canGeneratePlan && !isLoadingPlan) {
     return (
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <DataCleanupDashboard />
-        <PlanGenerationFlow />
+        <PlanGenerationFlow onPlanGenerated={handlePlanGenerated} />
       </div>
     )
+  }
+
+  // Handle goal updates
+  const handleUpdateGoal = async (goalId: string, updates: any) => {
+    console.log('Updating goal:', goalId, updates)
+    // TODO: Implement goal update logic
   }
 
   return (
@@ -69,7 +82,11 @@ export const MobileFirstDashboard = () => {
       <QuickStatsGrid />
       
       {/* Goals Section */}
-      <BigGoalsSection />
+      <BigGoalsSection 
+        goals={financialData.activeGoals}
+        onUpdateGoal={handleUpdateGoal}
+        isUpdating={false}
+      />
       
       {/* Action Plan Section */}
       <ActionPlanSection />

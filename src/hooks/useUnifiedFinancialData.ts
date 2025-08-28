@@ -26,14 +26,36 @@ export interface UnifiedFinancialData {
   
   // Metadata
   hasRealData: boolean
+  hasFinancialData: boolean  // Alias for compatibility
   lastCalculated: string | null
   dataSource: 'consolidated' | 'empty'
+  userId: string
+  
+  // Legacy compatibility properties
+  totalMonthlyIncome: number  // Alias for monthlyIncome
+  monthlySavingsCapacity: number  // Alias for savingsCapacity
   
   // Detailed breakdowns
   expenseCategories: Record<string, number>
   incomeBreakdown: Array<{ source: string; amount: number; frequency: string }>
   activeDebts: Array<{ creditor: string; balance: number; payment: number }>
   activeGoals: Array<{ title: string; target: number; current: number; progress: number }>
+  
+  // Raw collections for compatibility
+  debts: Array<{ creditor: string; balance: number; payment: number }>
+  financialGoals: string[]
+  
+  // Kueski loan info (optional)
+  kueskiLoan?: {
+    id: string
+    lender: string
+    amount: number
+    paymentAmount: number
+    totalPayments: number
+    remainingPayments: number
+    nextPaymentDate: string
+    status: string
+  }
 }
 
 export const useUnifiedFinancialData = () => {
@@ -143,6 +165,7 @@ export const useUnifiedFinancialData = () => {
       let totalGoalsTarget = 0
       let totalGoalsCurrent = 0
       const activeGoals = []
+      const financialGoals = []
 
       if (goals && goals.length > 0) {
         goals.forEach(goal => {
@@ -158,6 +181,8 @@ export const useUnifiedFinancialData = () => {
             current: goal.current_amount,
             progress
           })
+          
+          financialGoals.push(goal.title)
         })
       }
 
@@ -171,6 +196,15 @@ export const useUnifiedFinancialData = () => {
       const currentSavings = 0 // TODO: Implementar tabla de ahorros
       const savingsCapacity = summary?.savings_capacity || 
         Math.max(0, monthlyIncome - monthlyExpenses - totalMonthlyDebtPayments)
+
+      // 6. VERIFICAR PRÉSTAMOS KUESKI (opcional)
+      const { data: kueskiLoan } = await supabase
+        .from('loans')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('lender', 'Kueski')
+        .eq('status', 'active')
+        .single()
 
       // Determinar si hay datos reales
       const hasRealData = monthlyIncome > 0 || monthlyExpenses > 0 || totalDebtBalance > 0 || activeGoals.length > 0
@@ -186,12 +220,34 @@ export const useUnifiedFinancialData = () => {
         totalGoalsTarget,
         totalGoalsCurrent,
         hasRealData,
+        hasFinancialData: hasRealData, // Alias
         lastCalculated: summary?.last_calculated || new Date().toISOString(),
         dataSource: hasRealData ? 'consolidated' : 'empty',
+        userId: user.id,
+        
+        // Legacy compatibility
+        totalMonthlyIncome: monthlyIncome,
+        monthlySavingsCapacity: savingsCapacity,
+        
+        // Collections
         expenseCategories,
         incomeBreakdown,
         activeDebts,
-        activeGoals
+        activeGoals,
+        debts: activeDebts, // Alias
+        financialGoals,
+        
+        // Kueski loan (if exists)
+        kueskiLoan: kueskiLoan ? {
+          id: kueskiLoan.id,
+          lender: kueskiLoan.lender,
+          amount: kueskiLoan.amount,
+          paymentAmount: kueskiLoan.payment_amount,
+          totalPayments: kueskiLoan.total_payments,
+          remainingPayments: kueskiLoan.remaining_payments,
+          nextPaymentDate: kueskiLoan.next_payment_date,
+          status: kueskiLoan.status
+        } : undefined
       }
 
       console.log('✅ UNIFIED DATA RESULT:', {
@@ -207,7 +263,7 @@ export const useUnifiedFinancialData = () => {
     },
     enabled: !!user?.id,
     staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes,
   })
 
   return {
