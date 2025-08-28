@@ -100,7 +100,7 @@ export class FixedDataConsolidation {
           user_id: userId,
           source_name: 'Primary Income',
           amount: Number(onboardingData.monthlyIncome),
-          frequency: 'monthly',
+          frequency: 'monthly' as const,
           is_active: true
         })
       }
@@ -111,7 +111,7 @@ export class FixedDataConsolidation {
           user_id: userId,
           source_name: 'Additional Income',
           amount: Number(onboardingData.extraIncome),
-          frequency: 'monthly',
+          frequency: 'monthly' as const,
           is_active: true
         })
       }
@@ -218,7 +218,7 @@ export class FixedDataConsolidation {
               current_balance: Number(debt.amount),
               monthly_payment: Number(debt.monthlyPayment || 0),
               interest_rate: 0,
-              status: 'active'
+              status: 'active' as const
             })
           }
         })
@@ -232,7 +232,7 @@ export class FixedDataConsolidation {
         current_balance: 500,
         monthly_payment: 100,
         interest_rate: 15,
-        status: 'active'
+        status: 'active' as const
       })
 
       if (debtsToCreate.length > 0) {
@@ -269,8 +269,8 @@ export class FixedDataConsolidation {
             description: `Financial goal from onboarding: ${goalTitle}`,
             target_amount: 50000,
             current_amount: onboardingData.currentSavings || 0,
-            priority: 'medium',
-            status: 'active'
+            priority: 'medium' as const,
+            status: 'active' as const
           })
         })
       }

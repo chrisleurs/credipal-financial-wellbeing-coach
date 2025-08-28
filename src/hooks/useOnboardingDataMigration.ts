@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from './use-toast'
+import { FixedDataConsolidation } from '@/services/fixedDataConsolidation'
 
 // Interface para los datos del onboarding
 interface OnboardingData {
@@ -97,100 +98,35 @@ export const useOnboardingDataMigration = () => {
   }
 
   const migrateAllData = async () => {
-    if (!user?.id || !migrationStatus?.onboardingData) return false
+    if (!user?.id) return false
 
     setIsLoading(true)
-    console.log('🔄 MIGRATION: Starting complete data migration')
+    console.log('🔄 MIGRATION: Starting complete data migration using FixedDataConsolidation')
 
     try {
-      const { onboardingData } = migrationStatus
+      // Usar el servicio robusto de consolidación
+      const result = await FixedDataConsolidation.consolidateUserData(user.id)
 
-      // 1. MIGRAR INGRESOS
-      if (onboardingData.monthlyIncome && onboardingData.monthlyIncome > 0) {
-        const incomesToCreate = []
+      if (result.success) {
+        console.log('✅ MIGRATION: Complete data migration successful')
         
-        if (onboardingData.monthlyIncome > 0) {
-          incomesToCreate.push({
-            user_id: user.id,
-            source_name: 'Ingreso Principal',
-            amount: Number(onboardingData.monthlyIncome),
-            frequency: 'monthly' as const,
-            is_active: true
-          })
-        }
+        toast({
+          title: "Migración completada",
+          description: `Migrados: ${result.migratedRecords.incomes} ingresos, ${result.migratedRecords.debts} deudas, ${result.migratedRecords.goals} metas`,
+        })
 
-        if (onboardingData.extraIncome && onboardingData.extraIncome > 0) {
-          incomesToCreate.push({
-            user_id: user.id,
-            source_name: 'Ingresos Adicionales',
-            amount: Number(onboardingData.extraIncome),
-            frequency: 'monthly' as const,
-            is_active: true
-          })
-        }
-
-        if (incomesToCreate.length > 0) {
-          await supabase.from('income_sources').insert(incomesToCreate)
-          console.log('✅ MIGRATION: Created income sources:', incomesToCreate.length)
-        }
+        // Recargar la página para mostrar los datos
+        setTimeout(() => window.location.reload(), 1000)
+        return true
+      } else {
+        console.error('❌ MIGRATION: Migration failed:', result.errors)
+        toast({
+          title: "Error en la migración",
+          description: result.errors.join(', '),
+          variant: "destructive"
+        })
+        return false
       }
-
-      // 2. MIGRAR DEUDAS
-      if (onboardingData.debts && Array.isArray(onboardingData.debts)) {
-        const debtsToCreate = onboardingData.debts.map((debt) => ({
-          user_id: user.id,
-          creditor: debt.name || 'Acreedor',
-          original_amount: Number(debt.amount || 0),
-          current_balance: Number(debt.amount || 0),
-          monthly_payment: Number(debt.monthlyPayment || 0),
-          interest_rate: Number(debt.interestRate || 0),
-          status: 'active' as const
-        })).filter((debt) => debt.current_balance > 0)
-
-        if (debtsToCreate.length > 0) {
-          await supabase.from('debts').insert(debtsToCreate)
-          console.log('✅ MIGRATION: Created debts:', debtsToCreate.length)
-        }
-      }
-
-      // 3. MIGRAR METAS/AHORROS
-      if (onboardingData.financialGoals && Array.isArray(onboardingData.financialGoals)) {
-        const goalsToCreate = onboardingData.financialGoals.map((goalTitle: string) => ({
-          user_id: user.id,
-          title: goalTitle,
-          description: `Meta financiera: ${goalTitle}`,
-          target_amount: 50000, // Valor base
-          current_amount: Math.floor((onboardingData.currentSavings || 0) / onboardingData.financialGoals!.length),
-          priority: 'medium' as const,
-          status: 'active' as const
-        }))
-
-        if (goalsToCreate.length > 0) {
-          await supabase.from('goals').insert(goalsToCreate)
-          console.log('✅ MIGRATION: Created goals:', goalsToCreate.length)
-        }
-      }
-
-      // 4. ACTUALIZAR RESUMEN FINANCIERO
-      await supabase.rpc('calculate_financial_summary', { target_user_id: user.id })
-
-      // 5. MARCAR ONBOARDING COMO COMPLETADO
-      await supabase.from('profiles').update({
-        onboarding_completed: true,
-        onboarding_step: 0
-      }).eq('user_id', user.id)
-
-      console.log('✅ MIGRATION: Complete data migration successful')
-      
-      toast({
-        title: "Migración completada",
-        description: "Todos tus datos han sido migrados correctamente al dashboard",
-      })
-
-      // Recargar la página para mostrar los datos
-      setTimeout(() => window.location.reload(), 1000)
-
-      return true
 
     } catch (error) {
       console.error('❌ MIGRATION: Error during migration:', error)

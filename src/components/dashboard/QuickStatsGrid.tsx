@@ -3,13 +3,20 @@ import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { TrendingUp, PiggyBank, CreditCard, Target } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
-import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
+import { useConsolidatedData } from '@/hooks/useConsolidatedData'
 
 export const QuickStatsGrid = () => {
-  const { data: financialData } = useOptimizedFinancialData()
+  const { data: consolidatedData, isLoading } = useConsolidatedData()
 
-  // Usar datos reales del onboarding
-  const safeData = financialData || {
+  console.log('📊 QUICK_STATS: Using consolidated data:', {
+    monthlyIncome: consolidatedData?.monthlyIncome,
+    monthlyExpenses: consolidatedData?.monthlyExpenses,
+    totalDebtBalance: consolidatedData?.totalDebtBalance,
+    hasRealData: consolidatedData?.hasRealData
+  })
+
+  // Usar datos consolidados reales
+  const safeData = consolidatedData || {
     monthlyExpenses: 0,
     currentSavings: 0,
     totalDebtBalance: 0,
@@ -19,28 +26,28 @@ export const QuickStatsGrid = () => {
   const stats = [
     {
       title: 'Gastos del Mes',
-      value: formatCurrency(safeData.monthlyExpenses),
+      value: isLoading ? 'Cargando...' : formatCurrency(safeData.monthlyExpenses),
       icon: TrendingUp,
       color: 'text-[#F59E0B]',
       bgColor: 'bg-[#F59E0B]/10'
     },
     {
       title: 'Ahorros',
-      value: formatCurrency(safeData.currentSavings),
+      value: isLoading ? 'Cargando...' : formatCurrency(safeData.currentSavings),
       icon: PiggyBank,
       color: 'text-[#10B981]',
       bgColor: 'bg-[#10B981]/10'
     },
     {
       title: 'Deuda Total',
-      value: formatCurrency(safeData.totalDebtBalance),
+      value: isLoading ? 'Cargando...' : formatCurrency(safeData.totalDebtBalance),
       icon: CreditCard,
       color: 'text-[#F59E0B]',
       bgColor: 'bg-[#F59E0B]/10'
     },
     {
       title: 'Meta Anual',
-      value: formatCurrency(safeData.savingsCapacity * 12),
+      value: isLoading ? 'Cargando...' : formatCurrency(safeData.savingsCapacity * 12),
       icon: Target,
       color: 'text-[#0891B2]',
       bgColor: 'bg-[#0891B2]/10'
