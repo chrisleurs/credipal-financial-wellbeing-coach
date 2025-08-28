@@ -137,8 +137,15 @@ export const useOnboardingStatus = (): OnboardingStatus => {
       setOnboardingCompleted(completed);
       console.log('✅ Onboarding status updated successfully to:', completed);
       
-      // Force a small delay for state propagation
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Force a longer delay for state propagation and database consistency
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force a re-check to ensure consistency
+      if (completed) {
+        setTimeout(() => {
+          checkOnboardingStatus();
+        }, 1000);
+      }
       
     } catch (error) {
       console.error('💥 Exception updating onboarding status:', error);

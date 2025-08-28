@@ -62,16 +62,12 @@ export const SimplifiedAuthRedirect = () => {
       return;
     }
 
-    // Block access to onboarding if already completed
-    if (currentPath === '/onboarding' && onboardingCompleted === true) {
-      console.log('🔄 Onboarding already completed - redirecting to /dashboard');
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-
-    // Block access to kueski-debt if onboarding completed
-    if (currentPath === '/kueski-debt' && onboardingCompleted === true) {
-      console.log('🔄 Kueski debt already handled - redirecting to /dashboard');
+    // Block access to onboarding routes if already completed
+    const onboardingRoutes = ['/onboarding', '/kueski-debt', '/post-onboarding'];
+    const isOnboardingRoute = onboardingRoutes.includes(currentPath);
+    
+    if (isOnboardingRoute && onboardingCompleted === true) {
+      console.log('🔄 Onboarding already completed - redirecting to /dashboard from:', currentPath);
       navigate('/dashboard', { replace: true });
       return;
     }
