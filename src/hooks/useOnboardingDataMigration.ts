@@ -9,12 +9,27 @@ import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from './use-toast'
 
+// Interface para los datos del onboarding
+interface OnboardingData {
+  monthlyIncome?: number
+  extraIncome?: number
+  currentSavings?: number
+  debts?: Array<{
+    name: string
+    amount: number
+    monthlyPayment: number
+    interestRate?: number
+  }>
+  financialGoals?: string[]
+  expenseCategories?: Record<string, number>
+}
+
 export const useOnboardingDataMigration = () => {
   const { user } = useAuth()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [migrationStatus, setMigrationStatus] = useState<{
-    onboardingData: any
+    onboardingData: OnboardingData
     tablesData: any
     needsMigration: boolean
   } | null>(null)
@@ -40,7 +55,9 @@ export const useOnboardingDataMigration = () => {
         supabase.from('goals').select('*').eq('user_id', user.id)
       ])
 
-      const onboardingData = profile?.onboarding_data || {}
+      // Properly cast the onboarding_data from Json to our interface
+      const onboardingData: OnboardingData = (profile?.onboarding_data as OnboardingData) || {}
+      
       const tablesData = {
         incomes: incomesResult.data?.length || 0,
         expenses: expensesResult.data?.length || 0,
@@ -60,9 +77,9 @@ export const useOnboardingDataMigration = () => {
       console.log('📊 MIGRATION: Tables data:', tablesData)
 
       const needsMigration = (
-        (onboardingData.monthlyIncome > 0 && tablesData.incomes === 0) ||
-        (onboardingData.debts?.length > 0 && tablesData.debts === 0) ||
-        (onboardingData.financialGoals?.length > 0 && tablesData.goals === 0)
+        (onboardingData.monthlyIncome && onboardingData.monthlyIncome > 0 && tablesData.incomes === 0) ||
+        (onboardingData.debts && onboardingData.debts.length > 0 && tablesData.debts === 0) ||
+        (onboardingData.financialGoals && onboardingData.financialGoals.length > 0 && tablesData.goals === 0)
       )
 
       setMigrationStatus({
@@ -89,7 +106,7 @@ export const useOnboardingDataMigration = () => {
       const { onboardingData } = migrationStatus
 
       // 1. MIGRAR INGRESOS
-      if (onboardingData.monthlyIncome > 0) {
+      if (onboardingData.monthlyIncome && onboardingData.monthlyIncome > 0) {
         const incomesToCreate = []
         
         if (onboardingData.monthlyIncome > 0) {
@@ -102,7 +119,7 @@ export const useOnboardingDataMigration = () => {
           })
         }
 
-        if (onboardingData.extraIncome > 0) {
+        if (onboardingData.extraIncome && onboardingData.extraIncome > 0) {
           incomesToCreate.push({
             user_id: user.id,
             source_name: 'Ingresos Adicionales',
@@ -120,7 +137,7 @@ export const useOnboardingDataMigration = () => {
 
       // 2. MIGRAR DEUDAS
       if (onboardingData.debts && Array.isArray(onboardingData.debts)) {
-        const debtsToCreate = onboardingData.debts.map((debt: any) => ({
+        const debtsToCreate = onboardingData.debts.map((debt) => ({
           user_id: user.id,
           creditor: debt.name || 'Acreedor',
           original_amount: Number(debt.amount || 0),
@@ -128,7 +145,7 @@ export const useOnboardingDataMigration = () => {
           monthly_payment: Number(debt.monthlyPayment || 0),
           interest_rate: Number(debt.interestRate || 0),
           status: 'active'
-        })).filter((debt: any) => debt.current_balance > 0)
+        })).filter((debt) => debt.current_balance > 0)
 
         if (debtsToCreate.length > 0) {
           await supabase.from('debts').insert(debtsToCreate)
@@ -143,7 +160,7 @@ export const useOnboardingDataMigration = () => {
           title: goalTitle,
           description: `Meta financiera: ${goalTitle}`,
           target_amount: 50000, // Valor base
-          current_amount: Math.floor((onboardingData.currentSavings || 0) / onboardingData.financialGoals.length),
+          current_amount: Math.floor((onboardingData.currentSavings || 0) / onboardingData.financialGoals!.length),
           priority: 'medium',
           status: 'active'
         }))
