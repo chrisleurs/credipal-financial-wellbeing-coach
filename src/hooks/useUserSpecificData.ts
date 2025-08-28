@@ -37,6 +37,11 @@ export interface UserSpecificFinancialData {
   lastUpdated: string
 }
 
+// Type guard for onboarding data
+const isValidOnboardingData = (data: any): data is Record<string, any> => {
+  return data && typeof data === 'object' && !Array.isArray(data)
+}
+
 export const useUserSpecificData = () => {
   const { user } = useAuth()
 
@@ -117,22 +122,22 @@ export const useUserSpecificData = () => {
         })
       } else {
         // Fallback a datos del onboarding si no hay datos consolidados
-        const onboardingData = profile.onboarding_data || {}
+        const onboardingData = isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         
-        if (onboardingData.monthlyIncome) {
-          monthlyIncome += Number(onboardingData.monthlyIncome)
+        if (onboardingData.monthlyIncome && typeof onboardingData.monthlyIncome === 'number') {
+          monthlyIncome += onboardingData.monthlyIncome
           incomeBreakdown.push({
             source: 'Ingreso Principal (Onboarding)',
-            amount: Number(onboardingData.monthlyIncome),
+            amount: onboardingData.monthlyIncome,
             frequency: 'monthly'
           })
         }
         
-        if (onboardingData.extraIncome) {
-          monthlyIncome += Number(onboardingData.extraIncome)
+        if (onboardingData.extraIncome && typeof onboardingData.extraIncome === 'number') {
+          monthlyIncome += onboardingData.extraIncome
           incomeBreakdown.push({
             source: 'Ingresos Adicionales (Onboarding)',
-            amount: Number(onboardingData.extraIncome),
+            amount: onboardingData.extraIncome,
             frequency: 'monthly'
           })
         }
@@ -166,17 +171,17 @@ export const useUserSpecificData = () => {
         })
       } else {
         // Fallback a datos del onboarding
-        const onboardingData = profile.onboarding_data || {}
+        const onboardingData = isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         
-        if (onboardingData.expenseCategories) {
+        if (onboardingData.expenseCategories && typeof onboardingData.expenseCategories === 'object') {
           Object.entries(onboardingData.expenseCategories).forEach(([key, amount]) => {
             if (typeof amount === 'number' && amount > 0) {
               expenseCategories[key] = amount
               monthlyExpenses += amount
             }
           })
-        } else if (onboardingData.monthlyExpenses) {
-          monthlyExpenses = Number(onboardingData.monthlyExpenses)
+        } else if (onboardingData.monthlyExpenses && typeof onboardingData.monthlyExpenses === 'number') {
+          monthlyExpenses = onboardingData.monthlyExpenses
           expenseCategories['Gastos Generales'] = monthlyExpenses
         }
         
@@ -210,7 +215,7 @@ export const useUserSpecificData = () => {
         })
       } else {
         // Fallback a datos del onboarding
-        const onboardingData = profile.onboarding_data || {}
+        const onboardingData = isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         
         if (onboardingData.debts && Array.isArray(onboardingData.debts)) {
           onboardingData.debts.forEach((debt: any) => {
@@ -261,10 +266,10 @@ export const useUserSpecificData = () => {
         })
       } else {
         // Fallback a datos del onboarding
-        const onboardingData = profile.onboarding_data || {}
+        const onboardingData = isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         
-        if (onboardingData.currentSavings) {
-          currentSavings = Number(onboardingData.currentSavings)
+        if (onboardingData.currentSavings && typeof onboardingData.currentSavings === 'number') {
+          currentSavings = onboardingData.currentSavings
         }
         
         if (onboardingData.financialGoals && Array.isArray(onboardingData.financialGoals)) {
@@ -292,7 +297,7 @@ export const useUserSpecificData = () => {
         profileData: {
           onboardingCompleted: profile.onboarding_completed,
           onboardingStep: profile.onboarding_step || 0,
-          onboardingData: profile.onboarding_data || {}
+          onboardingData: isValidOnboardingData(profile.onboarding_data) ? profile.onboarding_data : {}
         },
         monthlyIncome,
         monthlyExpenses,
