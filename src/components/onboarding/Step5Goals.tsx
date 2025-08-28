@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface Step5GoalsProps {
   onNext: () => void
@@ -21,6 +22,7 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
   const { consolidateOnboardingData } = useOnboardingDataConsolidation()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [goals, setGoals] = useState<string[]>([])
   const [newGoal, setNewGoal] = useState('')
   const [isCompleting, setIsCompleting] = useState(false)
@@ -84,10 +86,10 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
             <Check className="h-8 w-8 text-emerald-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            ¡Completando tu configuración!
+            {t('completing_setup')}
           </h1>
           <p className="text-gray-600 mb-4">
-            Estamos procesando tu información y creando tu dashboard personalizado...
+            {t('processing_information')}
           </p>
           <LoadingSpinner size="lg" />
         </div>
@@ -96,34 +98,34 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
   }
 
   const popularGoals = [
-    'Crear un fondo de emergencia',
-    'Pagar todas mis deudas',
-    'Ahorrar para una casa',
-    'Planificar mi jubilación',
-    'Ahorrar para vacaciones',
-    'Invertir en educación',
-    'Comprar un auto',
-    'Generar ingresos pasivos'
+    t('emergency_fund_goal'),
+    t('pay_all_debts_goal'),
+    t('save_for_house_goal'),
+    t('plan_retirement_goal'),
+    t('save_for_vacation_goal'),
+    t('invest_in_education_goal'),
+    t('buy_car_goal'),
+    t('generate_passive_income_goal')
   ]
 
   return (
     <OnboardingStep
       currentStep={4}
       totalSteps={5}
-      title="¿Cuáles son tus metas financieras?"
-      subtitle="Define objetivos claros para mantener tu motivación y medir tu progreso 🎯"
+      title={t('financial_goals_question')}
+      subtitle={t('financial_goals_subtitle')}
       onNext={handleNext}
       onBack={onBack}
       canProceed={true}
-      nextButtonText="Completar Configuración"
+      nextButtonText={t('complete_setup')}
     >
       <div className="space-y-6">
         {/* Add Custom Goal */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Agregar meta personalizada</h3>
+          <h3 className="text-lg font-semibold text-gray-800">{t('add_custom_goal')}</h3>
           <div className="flex gap-2">
             <Input
-              placeholder="Ej: Ahorrar $10,000 para emergencias"
+              placeholder={t('custom_goal_placeholder')}
               value={newGoal}
               onChange={(e) => setNewGoal(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addGoal()}
@@ -141,7 +143,7 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
 
         {/* Popular Goals */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800">Metas populares</h3>
+          <h3 className="text-lg font-semibold text-gray-800">{t('popular_goals')}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {popularGoals.map((goal) => (
               <Button
@@ -151,8 +153,8 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
                 disabled={goals.includes(goal)}
                 className="h-auto p-4 text-left justify-start hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50"
               >
-                <Target className="h-4 w-4 mr-3 text-emerald-600" />
-                <span className="text-sm">{goal}</span>
+                <Target className="h-4 w-4 mr-3 text-emerald-600 flex-shrink-0" />
+                <span className="text-sm break-words">{goal}</span>
               </Button>
             ))}
           </div>
@@ -161,22 +163,22 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
         {/* Selected Goals */}
         {goals.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">Tus metas seleccionadas</h3>
+            <h3 className="text-lg font-semibold text-gray-800">{t('selected_goals')}</h3>
             <div className="space-y-2">
               {goals.map((goal, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-200"
                 >
-                  <div className="flex items-center">
-                    <Check className="h-4 w-4 text-emerald-600 mr-3" />
-                    <span className="text-sm font-medium text-gray-700">{goal}</span>
+                  <div className="flex items-center flex-1 min-w-0">
+                    <Check className="h-4 w-4 text-emerald-600 mr-3 flex-shrink-0" />
+                    <span className="text-sm font-medium text-gray-700 break-words">{goal}</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => removeGoal(index)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-shrink-0 ml-2"
                   >
                     ×
                   </Button>
@@ -189,14 +191,14 @@ export default function Step5Goals({ onNext, onBack }: Step5GoalsProps) {
         {/* Skip Option */}
         <div className="text-center pt-4">
           <p className="text-sm text-gray-500 mb-2">
-            ¿No tienes metas específicas aún?
+            {t('no_specific_goals_yet')}
           </p>
           <Button 
             variant="ghost" 
             onClick={handleNext}
             className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
           >
-            Saltar este paso por ahora
+            {t('skip_step_for_now')}
           </Button>
         </div>
       </div>

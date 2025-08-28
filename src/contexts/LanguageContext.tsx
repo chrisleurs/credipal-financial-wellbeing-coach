@@ -224,7 +224,28 @@ const translations = {
     "whats_next": "¿Qué sigue?",
     "credipal_plan_description": "CrediPal creará un plan financiero personalizado que incluye esta deuda, ayudándote a pagarla de manera eficiente junto con tus otros gastos.",
     "continue_with_plan": "Continuar con mi Plan",
-    "plan_info_usage": "Esta información se usará para crear tu plan financiero personalizado"
+    "plan_info_usage": "Esta información se usará para crear tu plan financiero personalizado",
+    
+    // Onboarding Step 5 Goals
+    "financial_goals_question": "¿Cuáles son tus metas financieras?",
+    "financial_goals_subtitle": "Define objetivos claros para mantener tu motivación y medir tu progreso 🎯",
+    "completing_setup": "¡Completando tu configuración!",
+    "processing_information": "Estamos procesando tu información y creando tu dashboard personalizado...",
+    "complete_setup": "Completar Configuración",
+    "add_custom_goal": "Agregar meta personalizada",
+    "custom_goal_placeholder": "Ej: Ahorrar $10,000 para emergencias",
+    "popular_goals": "Metas populares",
+    "selected_goals": "Tus metas seleccionadas",
+    "no_specific_goals_yet": "¿No tienes metas específicas aún?",
+    "skip_step_for_now": "Saltar este paso por ahora",
+    "emergency_fund_goal": "Crear un fondo de emergencia",
+    "pay_all_debts_goal": "Pagar todas mis deudas",
+    "save_for_house_goal": "Ahorrar para una casa",
+    "plan_retirement_goal": "Planificar mi jubilación",
+    "save_for_vacation_goal": "Ahorrar para vacaciones",
+    "invest_in_education_goal": "Invertir en educación",
+    "buy_car_goal": "Comprar un auto",
+    "generate_passive_income_goal": "Generar ingresos pasivos"
   },
   en: {
     // Hero
@@ -441,7 +462,28 @@ const translations = {
     "whats_next": "What's next?",
     "credipal_plan_description": "CrediPal will create a personalized financial plan that includes this debt, helping you pay it off efficiently alongside your other expenses.",
     "continue_with_plan": "Continue with my Plan",
-    "plan_info_usage": "This information will be used to create your personalized financial plan"
+    "plan_info_usage": "This information will be used to create your personalized financial plan",
+    
+    // Onboarding Step 5 Goals
+    "financial_goals_question": "What are your financial goals?",
+    "financial_goals_subtitle": "Define clear objectives to maintain your motivation and measure your progress 🎯",
+    "completing_setup": "Completing your setup!",
+    "processing_information": "We're processing your information and creating your personalized dashboard...",
+    "complete_setup": "Complete Setup",
+    "add_custom_goal": "Add custom goal",
+    "custom_goal_placeholder": "e.g. Save $10,000 for emergencies",
+    "popular_goals": "Popular goals",
+    "selected_goals": "Your selected goals",
+    "no_specific_goals_yet": "Don't have specific goals yet?",
+    "skip_step_for_now": "Skip this step for now",
+    "emergency_fund_goal": "Create an emergency fund",
+    "pay_all_debts_goal": "Pay off all my debts",
+    "save_for_house_goal": "Save for a house",
+    "plan_retirement_goal": "Plan my retirement",
+    "save_for_vacation_goal": "Save for vacation",
+    "invest_in_education_goal": "Invest in education",
+    "buy_car_goal": "Buy a car",
+    "generate_passive_income_goal": "Generate passive income"
   }
 }
 
