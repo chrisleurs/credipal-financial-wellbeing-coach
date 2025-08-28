@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { formatCurrency } from '@/utils/helpers'
 import { Target, Trophy, Clock, User, Database } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface FinancialGoalsSectionProps {
   goals: Array<{
@@ -20,6 +21,8 @@ interface FinancialGoalsSectionProps {
 export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
   goals
 }) => {
+  const { t } = useLanguage()
+
   const getSourceIcon = (source: string) => {
     switch (source) {
       case 'onboarding':
@@ -32,9 +35,9 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
   const getSourceLabel = (source: string) => {
     switch (source) {
       case 'onboarding':
-        return 'Del onboarding'
+        return t('from_onboarding')
       default:
-        return 'Sistema'
+        return t('from_system')
     }
   }
 
@@ -53,7 +56,7 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Mis Metas Financieras
+            {t('my_financial_goals')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -62,10 +65,10 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
               <Target className="h-8 w-8 text-blue-600" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Define tus metas financieras
+              {t('define_financial_goals')}
             </h3>
             <p className="text-gray-600">
-              Establece objetivos claros para alcanzar la libertad financiera
+              {t('clear_objectives')}
             </p>
           </div>
         </CardContent>
@@ -83,7 +86,7 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Resumen de Metas
+            {t('goal_summary')}
             <Badge variant="secondary">{goals.length}</Badge>
           </CardTitle>
         </CardHeader>
@@ -91,14 +94,14 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <Trophy className="h-6 w-6 text-green-600 mx-auto mb-2" />
-              <p className="text-sm text-green-600 mb-1">Completadas</p>
+              <p className="text-sm text-green-600 mb-1">{t('completed_goals')}</p>
               <p className="text-2xl font-bold text-green-700">
                 {completedGoals.length}
               </p>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <Clock className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-              <p className="text-sm text-blue-600 mb-1">En Progreso</p>
+              <p className="text-sm text-blue-600 mb-1">{t('in_progress_goals')}</p>
               <p className="text-2xl font-bold text-blue-700">
                 {activeGoals.length}
               </p>
@@ -110,7 +113,7 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
       {/* Lista de metas */}
       <Card>
         <CardHeader>
-          <CardTitle>Mis Metas Financieras</CardTitle>
+          <CardTitle>{t('my_financial_goals')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -127,7 +130,7 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
                     <div>
                       <h4 className="font-semibold text-gray-900">{goal.title}</h4>
                       <p className="text-sm text-gray-600">
-                        Meta: {formatCurrency(goal.targetAmount)}
+                        {t('target')}: {formatCurrency(goal.targetAmount)}
                       </p>
                     </div>
                   </div>
@@ -144,13 +147,13 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Progreso</span>
+                    <span className="text-gray-600">{t('progress')}</span>
                     <span className="font-medium">{Math.round(goal.progress)}%</span>
                   </div>
                   <Progress value={goal.progress} className="h-2" />
                   <div className="flex justify-between text-sm text-gray-600">
-                    <span>Actual: {formatCurrency(goal.currentAmount)}</span>
-                    <span>Restante: {formatCurrency(goal.targetAmount - goal.currentAmount)}</span>
+                    <span>{t('current')}: {formatCurrency(goal.currentAmount)}</span>
+                    <span>{t('remaining')}: {formatCurrency(goal.targetAmount - goal.currentAmount)}</span>
                   </div>
                 </div>
 
@@ -158,7 +161,7 @@ export const FinancialGoalsSection: React.FC<FinancialGoalsSectionProps> = ({
                   <div className="mt-3 p-2 bg-green-50 rounded text-sm text-green-700">
                     <div className="flex items-center gap-1">
                       <Trophy className="h-3 w-3" />
-                      <span>¡Meta completada! 🎉</span>
+                      <span>{t('goal_completed')}</span>
                     </div>
                   </div>
                 )}

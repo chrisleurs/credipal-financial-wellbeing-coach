@@ -11,6 +11,7 @@ import {
   Clock,
   ArrowUp
 } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface BigGoal {
   id: string
@@ -34,6 +35,8 @@ export const BigGoalsSection: React.FC<BigGoalsSectionProps> = ({
   onUpdateGoal,
   isUpdating
 }) => {
+  const { t } = useLanguage()
+
   const handleProgressUpdate = (goalId: string, newProgress: number) => {
     const goal = goals.find(g => g.id === goalId)
     if (goal) {
@@ -49,14 +52,14 @@ export const BigGoalsSection: React.FC<BigGoalsSectionProps> = ({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Metas Principales</h2>
-          <Badge variant="secondary">0/3 completadas</Badge>
+          <h2 className="text-2xl font-bold">{t('main_goals')}</h2>
+          <Badge variant="secondary">0/3 {t('completed_goals')}</Badge>
         </div>
         <Card className="p-8 text-center">
           <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">No tienes metas definidas</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('no_goals_defined')}</h3>
           <p className="text-muted-foreground mb-4">
-            Genera tu plan financiero para establecer metas personalizadas
+            {t('generate_financial_plan')}
           </p>
         </Card>
       </div>
@@ -66,9 +69,9 @@ export const BigGoalsSection: React.FC<BigGoalsSectionProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Metas Principales</h2>
+        <h2 className="text-2xl font-bold">{t('main_goals')}</h2>
         <Badge variant="secondary">
-          {goals.filter(g => g.status === 'completed').length}/{goals.length} completadas
+          {goals.filter(g => g.status === 'completed').length}/{goals.length} {t('completed_goals')}
         </Badge>
       </div>
       
@@ -82,7 +85,7 @@ export const BigGoalsSection: React.FC<BigGoalsSectionProps> = ({
                   <CardTitle className="text-base">{goal.title}</CardTitle>
                 </div>
                 <Badge variant={goal.status === 'completed' ? 'default' : 'secondary'}>
-                  {goal.status === 'completed' ? 'Completada' : 'Activa'}
+                  {goal.status === 'completed' ? t('completed') : t('active')}
                 </Badge>
               </div>
             </CardHeader>
@@ -90,7 +93,7 @@ export const BigGoalsSection: React.FC<BigGoalsSectionProps> = ({
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span>Progreso</span>
+                  <span>{t('progress')}</span>
                   <span className="font-medium">{Math.round(goal.progress)}%</span>
                 </div>
                 
@@ -105,7 +108,7 @@ export const BigGoalsSection: React.FC<BigGoalsSectionProps> = ({
               {goal.timeline && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>Meta: {goal.timeline}</span>
+                  <span>{t('main_goal_timeline')} {goal.timeline}</span>
                 </div>
               )}
 
@@ -130,7 +133,7 @@ export const BigGoalsSection: React.FC<BigGoalsSectionProps> = ({
                       className="flex-1"
                     >
                       <Trophy className="h-3 w-3 mr-1" />
-                      Completar
+                      {t('completed')}
                     </Button>
                   )}
                 </div>

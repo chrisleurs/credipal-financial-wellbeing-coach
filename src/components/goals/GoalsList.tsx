@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Target, Trash2, Edit } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export const GoalsList = () => {
   const { goals, activeGoals, completedGoals, isLoading, createGoal, deleteGoal, isCreating } = useGoals()
+  const { t } = useLanguage()
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
@@ -49,17 +51,17 @@ export const GoalsList = () => {
   }
 
   if (isLoading) {
-    return <LoadingSpinner text="Cargando metas..." />
+    return <LoadingSpinner text={t('loading_goals')} />
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Metas Financieras</h2>
+        <h2 className="text-2xl font-bold">{t('financial_goals')}</h2>
         <Button onClick={() => setShowForm(!showForm)}>
           <Plus className="h-4 w-4 mr-2" />
-          Agregar Meta
+          {t('add_goal')}
         </Button>
       </div>
 
@@ -70,7 +72,7 @@ export const GoalsList = () => {
             <div className="flex items-center">
               <Target className="h-6 w-6 text-blue-600 mr-2" />
               <div>
-                <p className="text-sm text-blue-600 font-medium">Metas Activas</p>
+                <p className="text-sm text-blue-600 font-medium">{t('active_goals')}</p>
                 <p className="text-2xl font-bold text-blue-800">
                   {activeGoals.length}
                 </p>
@@ -84,7 +86,7 @@ export const GoalsList = () => {
             <div className="flex items-center">
               <Target className="h-6 w-6 text-green-600 mr-2" />
               <div>
-                <p className="text-sm text-green-600 font-medium">Metas Completadas</p>
+                <p className="text-sm text-green-600 font-medium">{t('goals_completed')}</p>
                 <p className="text-2xl font-bold text-green-800">
                   {completedGoals.length}
                 </p>
@@ -98,16 +100,16 @@ export const GoalsList = () => {
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>Agregar Nueva Meta</CardTitle>
+            <CardTitle>{t('add_new_goal')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">
-                  Título de la Meta
+                  {t('goal_title')}
                 </label>
                 <Input
-                  placeholder="ej. Fondo de emergencia, Casa nueva, Vacaciones"
+                  placeholder={t('goal_title_placeholder')}
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   required
@@ -116,10 +118,10 @@ export const GoalsList = () => {
 
               <div>
                 <label className="text-sm font-medium mb-2 block">
-                  Descripción
+                  {t('description')}
                 </label>
                 <Input
-                  placeholder="Descripción opcional de tu meta"
+                  placeholder={t('optional_description')}
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                 />
@@ -128,7 +130,7 @@ export const GoalsList = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Monto Objetivo
+                    {t('target_amount')}
                   </label>
                   <Input
                     type="number"
@@ -142,7 +144,7 @@ export const GoalsList = () => {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Monto Actual
+                    {t('current_amount')}
                   </label>
                   <Input
                     type="number"
@@ -157,7 +159,7 @@ export const GoalsList = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Fecha Límite
+                    {t('deadline')}
                   </label>
                   <Input
                     type="date"
@@ -168,7 +170,7 @@ export const GoalsList = () => {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Prioridad
+                    {t('priority')}
                   </label>
                   <Select 
                     value={formData.priority} 
@@ -178,9 +180,9 @@ export const GoalsList = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="high">Alta</SelectItem>
-                      <SelectItem value="medium">Media</SelectItem>
-                      <SelectItem value="low">Baja</SelectItem>
+                      <SelectItem value="high">{t('high')}</SelectItem>
+                      <SelectItem value="medium">{t('medium')}</SelectItem>
+                      <SelectItem value="low">{t('low')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -188,10 +190,10 @@ export const GoalsList = () => {
 
               <div className="flex gap-2">
                 <Button type="submit" disabled={isCreating}>
-                  {isCreating ? 'Creando...' : 'Crear Meta'}
+                  {isCreating ? t('creating') : t('create_goal_action')}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancelar
+                  {t('cancel')}
                 </Button>
               </div>
             </form>
@@ -205,13 +207,13 @@ export const GoalsList = () => {
           <Card>
             <CardContent className="p-8 text-center">
               <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No hay metas definidas</h3>
+              <h3 className="text-lg font-medium mb-2">{t('no_goals_yet')}</h3>
               <p className="text-muted-foreground mb-4">
-                Crea tu primera meta financiera para comenzar a planificar tu futuro
+                {t('create_first_goal')}
               </p>
               <Button onClick={() => setShowForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Crear Meta
+                {t('create_goal')}
               </Button>
             </CardContent>
           </Card>
@@ -233,16 +235,16 @@ export const GoalsList = () => {
                           goal.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {goal.priority === 'high' ? 'Alta' :
-                           goal.priority === 'medium' ? 'Media' : 'Baja'}
+                          {goal.priority === 'high' ? t('high') :
+                           goal.priority === 'medium' ? t('medium') : t('low')}
                         </span>
                         <span className={`px-2 py-1 text-xs rounded ${
                           goal.status === 'active' ? 'bg-blue-100 text-blue-800' :
                           goal.status === 'completed' ? 'bg-green-100 text-green-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {goal.status === 'active' ? 'Activa' :
-                           goal.status === 'completed' ? 'Completada' : 'Pausada'}
+                          {goal.status === 'active' ? t('active') :
+                           goal.status === 'completed' ? t('completed') : t('paused')}
                         </span>
                       </div>
                       {goal.description && (
@@ -251,11 +253,11 @@ export const GoalsList = () => {
                         </p>
                       )}
                       <p className="text-sm text-muted-foreground">
-                        {formatCurrency(goal.current_amount)} de {formatCurrency(goal.target_amount)}
+                        {formatCurrency(goal.current_amount)} {t('of')} {formatCurrency(goal.target_amount)}
                       </p>
                       {goal.deadline && (
                         <p className="text-sm text-muted-foreground">
-                          Fecha límite: {new Date(goal.deadline).toLocaleDateString('es-ES')}
+                          {t('deadline')}: {new Date(goal.deadline).toLocaleDateString('en-US')}
                         </p>
                       )}
                     </div>
@@ -285,10 +287,10 @@ export const GoalsList = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">
-                      {progress.toFixed(1)}% completado
+                      {t('goal_progress_percent').replace('{percent}', progress.toFixed(1))}
                     </p>
                     <p className="text-sm font-medium text-green-600">
-                      Faltan {formatCurrency(Math.max(goal.target_amount - goal.current_amount, 0))}
+                      {t('missing_amount').replace('{amount}', formatCurrency(Math.max(goal.target_amount - goal.current_amount, 0)))}
                     </p>
                   </div>
                 </CardContent>

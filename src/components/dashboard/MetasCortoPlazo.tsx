@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { CheckCircle, Circle, Star, Zap, Target, Plus } from 'lucide-react'
 import { formatCurrency } from '@/utils/helpers'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface MetaData {
   id: string
@@ -29,6 +30,7 @@ interface MetasCortoPlazoProps {
 
 export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
   const { toast } = useToast()
+  const { t } = useLanguage()
   const [localData, setLocalData] = useState(data)
 
   const handleCompleteGoal = (tipo: 'semanales' | 'mensuales', goalId: string) => {
@@ -42,7 +44,7 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
     }))
 
     toast({
-      title: "¡Meta completada! 🎉",
+      title: t('goal_completed'),
       description: "Has logrado una nueva meta financiera",
     })
   }
@@ -95,7 +97,7 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
           {/* Progress section */}
           <div className="mb-3">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs text-gray-600">Progreso</span>
+              <span className="text-xs text-gray-600">{t('progress')}</span>
               <span className={`text-xs font-medium ${getProgressColor(goal.progreso, goal.meta, goal.completada)}`}>
                 {porcentaje}%
               </span>
@@ -108,11 +110,11 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
 
           {/* Amount details */}
           <div className="flex justify-between items-center mb-3 text-sm">
-            <span className="text-gray-600">Actual:</span>
+            <span className="text-gray-600">{t('current')}:</span>
             <span className="font-semibold">{formatCurrency(goal.progreso)}</span>
           </div>
           <div className="flex justify-between items-center mb-4 text-sm">
-            <span className="text-gray-600">Meta:</span>
+            <span className="text-gray-600">{t('target')}:</span>
             <span className="font-semibold">{formatCurrency(goal.meta)}</span>
           </div>
 
@@ -124,13 +126,13 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
               onClick={() => handleCompleteGoal(tipo, goal.id)}
             >
               <CheckCircle className="h-4 w-4 mr-1" />
-              Marcar como completada
+              {t('mark_completed')}
             </Button>
           )}
 
           {goal.fechaLimite && (
             <div className="mt-2 text-xs text-gray-500 text-center">
-              Fecha límite: {new Date(goal.fechaLimite).toLocaleDateString()}
+              {t('deadline')}: {new Date(goal.fechaLimite).toLocaleDateString()}
             </div>
           )}
         </CardContent>
@@ -143,10 +145,10 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5 text-yellow-500" />
-          Metas de Corto Plazo
+          {t('short_term_goals')}
         </CardTitle>
         <CardDescription>
-          Objetivos semanales y mensuales para mantener el impulso
+          {t('weekly_monthly_objectives')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -156,7 +158,7 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Target className="h-5 w-5 text-blue-500" />
-                Metas Semanales
+                {t('weekly_goals')}
               </h3>
               <Badge variant="outline">
                 {localData.semanales.filter(m => m.completada).length}/{localData.semanales.length}
@@ -169,7 +171,7 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
 
             <Button variant="outline" size="sm" className="w-full mt-3">
               <Plus className="h-4 w-4 mr-1" />
-              Agregar meta semanal
+              {t('add_weekly_goal')}
             </Button>
           </div>
 
@@ -178,7 +180,7 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Target className="h-5 w-5 text-green-500" />
-                Metas Mensuales
+                {t('monthly_goals')}
               </h3>
               <Badge variant="outline">
                 {localData.mensuales.filter(m => m.completada).length}/{localData.mensuales.length}
@@ -191,7 +193,7 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
 
             <Button variant="outline" size="sm" className="w-full mt-3">
               <Plus className="h-4 w-4 mr-1" />
-              Agregar meta mensual
+              {t('add_monthly_goal')}
             </Button>
           </div>
         </div>
@@ -203,7 +205,7 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
               <div className="text-2xl font-bold text-purple-600">
                 {localData.semanales.filter(m => m.completada).length + localData.mensuales.filter(m => m.completada).length}
               </div>
-              <div className="text-sm text-purple-700">Metas completadas</div>
+              <div className="text-sm text-purple-700">{t('goals_completed')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-pink-600">
@@ -212,13 +214,13 @@ export const MetasCortoPlazo = ({ data }: MetasCortoPlazoProps) => {
                   (localData.semanales.length + localData.mensuales.length)) * 100
                 )}%
               </div>
-              <div className="text-sm text-pink-700">Tasa de éxito</div>
+              <div className="text-sm text-pink-700">{t('success_rate')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-indigo-600">
                 {localData.semanales.filter(m => m.completada).length * 10 + localData.mensuales.filter(m => m.completada).length * 25}
               </div>
-              <div className="text-sm text-indigo-700">Puntos ganados</div>
+              <div className="text-sm text-indigo-700">{t('points_earned')}</div>
             </div>
           </div>
         </div>
