@@ -16,7 +16,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   
   return (
     <div className="min-h-screen flex flex-col w-full bg-background">
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pb-20">
         <div className="w-full">
           {children}
         </div>
@@ -25,7 +25,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Chat bubble - only show when not on coach page */}
       {showChatBubble && <ChatBubble />}
       
-      {/* Bottom Navigation - always visible now */}
+      {/* Bottom Navigation - visible on all screen sizes */}
       <BottomNavigation />
     </div>
   )
