@@ -1,73 +1,37 @@
-import React, { useState } from 'react'
-import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
+
+import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { IncomeSourcesList } from '@/components/income/IncomeSourcesList'
-import { ExpensesList } from '@/components/expenses/ExpensesList'
-import { DebtsList } from '@/components/debts/DebtsList'
-import { GoalsList } from '@/components/goals/GoalsList'
-import { MetricCard } from './MetricCard'
+import { QuickActionsSection } from './QuickActionsSection'
+import { useConsolidatedFinancialData } from '@/hooks/useConsolidatedFinancialData'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { formatCurrency } from '@/utils/helpers'
-import { useDebts } from '@/hooks/useDebts'
-import { 
-  DollarSign, 
-  CreditCard, 
-  TrendingUp, 
-  Target,
-  Plus,
-  RefreshCw
-} from 'lucide-react'
+import { PlusCircle, TrendingUp, Target, CreditCard } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-export const FinancialDashboard = () => {
-  const { consolidatedData, isLoading, error } = useConsolidatedFinancialData()
-  const { 
-    debts, 
-    updateDebt, 
-    deleteDebt, 
-    isUpdating, 
-    isDeleting 
-  } = useDebts()
-  const [activeSection, setActiveSection] = useState<'overview' | 'income' | 'expenses' | 'debts' | 'goals'>('overview')
+interface FinancialDashboardProps {
+  userId: string
+}
 
-  const handleEditDebt = (debt: any) => {
-    console.log('Edit debt:', debt)
-  }
-
-  const handleDeleteDebt = (debt: any) => {
-    if (window.confirm(`Are you sure you want to delete the debt to ${debt.creditor}?`)) {
-      deleteDebt(debt.id)
-    }
-  }
-
-  const handleMakePayment = (debt: any) => {
-    console.log('Make payment for:', debt)
-  }
-
-  const handleCreateDebt = () => {
-    console.log('Create new debt')
-  }
+export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ userId }) => {
+  const { data, isLoading, error } = useConsolidatedFinancialData(userId)
+  const navigate = useNavigate()
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Cargando tu información financiera..." />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Error al cargar datos</h2>
-            <p className="text-muted-foreground mb-4">
-              No se pudieron cargar tus datos financieros.
-            </p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-red-600 mb-4">Error cargando datos financieros</p>
             <Button onClick={() => window.location.reload()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Intentar de nuevo
+              Reintentar
             </Button>
           </CardContent>
         </Card>
@@ -75,168 +39,163 @@ export const FinancialDashboard = () => {
     )
   }
 
-  if (!consolidatedData?.hasRealData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-2xl mx-auto">
-          <CardContent className="p-8 text-center">
-            <h1 className="text-2xl font-bold mb-4">¡Bienvenido a CrediPal!</h1>
-            <p className="text-muted-foreground mb-6">
-              Para comenzar, agrega tu primera fuente de ingresos, gastos o metas financieras.
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <Button onClick={() => setActiveSection('income')} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Agregar Ingresos
-              </Button>
-              <Button onClick={() => setActiveSection('expenses')} variant="outline" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Agregar Gastos
-              </Button>
+  const totalIncome = data?.incomes?.reduce((sum, income) => sum + income.amount, 0) || 0
+  const totalExpenses = data?.expenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0
+  const totalDebts = data?.debts?.reduce((sum, debt) => sum + debt.current_balance, 0) || 0
+  const totalSavings = data?.goals?.reduce((sum, goal) => sum + goal.current_amount, 0) || 0
+
+  return (
+    <div className="p-4 space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="text-center py-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          ¡Hola! 👋
+        </h1>
+        <p className="text-muted-foreground">
+          Aquí tienes un resumen de tu situación financiera
+        </p>
+      </div>
+
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Ingresos
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              ${totalIncome.toLocaleString()}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Total mensual
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Gastos
+            </CardTitle>
+            <PlusCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              ${totalExpenses.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total mensual
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Deudas
+            </CardTitle>
+            <CreditCard className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              ${totalDebts.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Saldo total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-card-foreground">
+              Ahorros
+            </CardTitle>
+            <Target className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              ${totalSavings.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total ahorrado
+            </p>
           </CardContent>
         </Card>
       </div>
-    )
-  }
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'income':
-        return <IncomeSourcesList />
-      case 'expenses':
-        return <ExpensesList />
-      case 'debts':
-        return (
-          <DebtsList 
-            debts={debts}
-            onEdit={handleEditDebt}
-            onDelete={handleDeleteDebt}
-            onMakePayment={handleMakePayment}
-            onCreate={handleCreateDebt}
-            isUpdating={isUpdating}
-            isDeleting={isDeleting}
-          />
-        )
-      case 'goals':
-        return <GoalsList />
-      default:
-        return (
-          <div className="space-y-6">
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricCard
-                title="Ingresos Mensuales"
-                value={formatCurrency(consolidatedData.monthlyIncome)}
-                icon={DollarSign}
-                trendValue={{ direction: 'up', percentage: '12%' }}
-                className="bg-green-50 border-green-200"
-              />
-              <MetricCard
-                title="Gastos Mensuales"
-                value={formatCurrency(consolidatedData.monthlyExpenses)}
-                icon={CreditCard}
-                trendValue={{ direction: 'down', percentage: '3%' }}
-                className="bg-red-50 border-red-200"
-              />
-              <MetricCard
-                title="Capacidad de Ahorro"
-                value={formatCurrency(consolidatedData.savingsCapacity)}
-                icon={TrendingUp}
-                trendValue={{ direction: 'up', percentage: '8%' }}
-                className="bg-blue-50 border-blue-200"
-              />
-              <MetricCard
-                title="Total de Deudas"
-                value={formatCurrency(consolidatedData.totalDebtBalance)}
-                icon={Target}
-                trendValue={{ direction: 'down', percentage: '15%' }}
-                className="bg-orange-50 border-orange-200"
-              />
-            </div>
+      {/* Action Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Button
+          onClick={() => navigate('/coach')}
+          className="h-16 bg-primary hover:bg-primary/90 text-primary-foreground"
+          size="lg"
+        >
+          <Target className="h-5 w-5 mr-2" />
+          Ver Mi Plan Financiero
+        </Button>
 
-            {/* Balance Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Resumen Financiero</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span>Ingresos totales</span>
-                    <span className="font-semibold text-green-600">
-                      +{formatCurrency(consolidatedData.monthlyIncome)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Gastos totales</span>
-                    <span className="font-semibold text-red-600">
-                      -{formatCurrency(consolidatedData.monthlyExpenses)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Pagos de deudas</span>
-                    <span className="font-semibold text-orange-600">
-                      -{formatCurrency(consolidatedData.totalMonthlyDebtPayments)}
-                    </span>
-                  </div>
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Balance mensual</span>
-                      <span className={`font-bold ${
-                        consolidatedData.savingsCapacity >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {formatCurrency(consolidatedData.savingsCapacity)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )
-    }
-  }
+        <Button
+          onClick={() => navigate('/progress')}
+          variant="outline"
+          className="h-16 border-border hover:bg-accent hover:text-accent-foreground"
+          size="lg"
+        >
+          <TrendingUp className="h-5 w-5 mr-2" />
+          Ver Mi Progreso
+        </Button>
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Dashboard Financiero
-          </h1>
-          <p className="text-muted-foreground">
-            Monitorea y gestiona tus finanzas personales
-          </p>
-        </div>
-
-        {/* Navigation */}
-        <div className="mb-8">
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: 'overview', label: 'Resumen', icon: TrendingUp },
-              { key: 'income', label: 'Ingresos', icon: DollarSign },
-              { key: 'expenses', label: 'Gastos', icon: CreditCard },
-              { key: 'debts', label: 'Deudas', icon: CreditCard },
-              { key: 'goals', label: 'Metas', icon: Target },
-            ].map(({ key, label, icon: Icon }) => (
-              <Button
-                key={key}
-                variant={activeSection === key ? 'default' : 'outline'}
-                onClick={() => setActiveSection(key as any)}
-                className="flex items-center gap-2"
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Content */}
-        {renderContent()}
+        <Button
+          onClick={() => navigate('/expenses')}
+          variant="outline"
+          className="h-16 border-border hover:bg-accent hover:text-accent-foreground"
+          size="lg"
+        >
+          <PlusCircle className="h-5 w-5 mr-2" />
+          Registrar Movimiento
+        </Button>
       </div>
+
+      {/* Quick Actions Section */}
+      <QuickActionsSection userId={userId} />
+
+      {/* Financial Balance Summary */}
+      <Card className="border border-border bg-card">
+        <CardHeader>
+          <CardTitle className="text-card-foreground">Resumen Financiero</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-card-foreground">Balance mensual:</span>
+              <span className={`font-bold ${totalIncome - totalExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${(totalIncome - totalExpenses).toLocaleString()}
+              </span>
+            </div>
+            
+            {totalDebts > 0 && (
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm text-orange-800">
+                  💡 <strong>Tip de CrediPal:</strong> Con un balance mensual positivo de ${(totalIncome - totalExpenses).toLocaleString()}, 
+                  podrías destinar parte de este excedente para acelerar el pago de tus deudas.
+                </p>
+              </div>
+            )}
+            
+            {totalIncome - totalExpenses >= 0 && totalDebts === 0 && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  🎉 <strong>¡Excelente!</strong> Tienes un balance positivo sin deudas. 
+                  Es el momento perfecto para aumentar tus ahorros e inversiones.
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
