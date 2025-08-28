@@ -62,6 +62,18 @@ export const MobileFirstDashboard = () => {
     )
   }
 
+  // Transform activeGoals to match BigGoal interface
+  const transformedGoals = financialData.activeGoals.map((goal, index) => ({
+    id: `goal-${index}`,
+    title: goal.title,
+    targetAmount: goal.target,
+    currentAmount: goal.current,
+    progress: goal.progress,
+    status: 'active' as const,
+    emoji: '🎯', // Default emoji, could be enhanced based on goal type
+    timeline: undefined // Optional field
+  }))
+
   // Handle goal updates
   const handleUpdateGoal = async (goalId: string, updates: any) => {
     console.log('Updating goal:', goalId, updates)
@@ -83,7 +95,7 @@ export const MobileFirstDashboard = () => {
       
       {/* Goals Section */}
       <BigGoalsSection 
-        goals={financialData.activeGoals}
+        goals={transformedGoals}
         onUpdateGoal={handleUpdateGoal}
         isUpdating={false}
       />
