@@ -1,50 +1,84 @@
-import React from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Home, CreditCard, AlertTriangle, Target, TrendingUp } from 'lucide-react'
 
-interface NavItem {
-  name: string
-  href: string
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  current: boolean
-}
+import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { 
+  Home, 
+  CreditCard, 
+  TrendingUp, 
+  MessageCircle, 
+  User 
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useBottomNavigation } from '@/hooks/useBottomNavigation'
 
 export function BottomNavigation() {
   const location = useLocation()
-  const navigate = useNavigate()
+  const { badges } = useBottomNavigation()
 
-  const navigationItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home, current: false },
-    { name: 'Gastos', href: '/expenses', icon: CreditCard, current: false },
-    { name: 'Deudas', href: '/debts', icon: AlertTriangle, current: false },
-    { name: 'Plan', href: '/plan', icon: Target, current: false },
-    { name: 'Progreso', href: '/progress', icon: TrendingUp, current: false },
+  const navItems = [
+    {
+      name: 'Inicio',
+      href: '/dashboard',
+      icon: Home,
+      badge: badges.home
+    },
+    {
+      name: 'Movimientos',
+      href: '/expenses',
+      icon: CreditCard,
+      badge: badges.movements
+    },
+    {
+      name: 'Progreso',
+      href: '/progress',
+      icon: TrendingUp,
+      badge: badges.progress
+    },
+    {
+      name: 'Coach',
+      href: '/coach',
+      icon: MessageCircle,
+      badge: badges.coach
+    },
+    {
+      name: 'Perfil',
+      href: '/profile',
+      icon: User,
+      badge: badges.profile
+    }
   ]
 
-  const isActive = (href: string) => location.pathname === href
-
   return (
-    <div className="fixed inset-x-0 bottom-0 bg-secondary border-t z-50">
-      <div className="max-w-md mx-auto flex items-center justify-around p-2">
-        {navigationItems.map((item) => (
-          <Button
-            key={item.name}
-            variant="ghost"
-            onClick={() => navigate(item.href)}
-            className={cn(
-              'flex flex-col items-center justify-center gap-1 rounded-md p-2',
-              isActive(item.href)
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-primary'
-            )}
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-xs font-medium">{item.name}</span>
-          </Button>
-        ))}
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+      <div className="grid grid-cols-5 h-16">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.href
+          const Icon = item.icon
+          
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={cn(
+                "flex flex-col items-center justify-center text-xs font-medium transition-colors relative",
+                isActive 
+                  ? "text-primary bg-primary/10" 
+                  : "text-gray-600 hover:text-primary"
+              )}
+            >
+              <div className="relative">
+                <Icon className="h-5 w-5 mb-1" />
+                {item.badge > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {item.badge}
+                  </span>
+                )}
+              </div>
+              <span className="text-xs">{item.name}</span>
+            </Link>
+          )
+        })}
       </div>
-    </div>
+    </nav>
   )
 }
