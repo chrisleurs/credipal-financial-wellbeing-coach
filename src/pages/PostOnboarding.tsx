@@ -2,103 +2,77 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { useConsolidatedData } from '@/hooks/useConsolidatedData'
 import { ConsolidationLoader } from '@/components/shared/ConsolidationLoader'
-import { SimpleDataService } from '@/services/simpleDataService'
+import { FixedDataConsolidation } from '@/services/fixedDataConsolidation'
 import { useToast } from '@/hooks/use-toast'
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
 
 export default function PostOnboarding() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { data: consolidatedData, isLoading } = useConsolidatedData()
   const { updateOnboardingStatus } = useOnboardingStatus()
   const { toast } = useToast()
   const [isConsolidating, setIsConsolidating] = useState(true)
-  const [hasCompleted, setHasCompleted] = useState(false)
 
-  // Consolidar datos al montar el componente
   useEffect(() => {
-    const consolidateData = async () => {
-      if (!user?.id || hasCompleted) return
+    const consolidateAndComplete = async () => {
+      if (!user?.id) return
 
       try {
-        console.log('🔄 PostOnboarding: Starting data consolidation for user:', user.id)
-        setIsConsolidating(true)
+        console.log('🔧 FIXED: Starting ROBUST consolidation process')
         
-        // Dar tiempo para que se vea la animación
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        const result = await SimpleDataService.consolidateUserData(user.id)
+        // Usar el servicio de consolidación ROBUSTO
+        const result = await FixedDataConsolidation.consolidateUserData(user.id)
         
         if (result.success) {
-          console.log('✅ PostOnboarding: Data consolidated successfully')
+          console.log('✅ FIXED: Consolidation successful:', result.migratedRecords)
+          
+          toast({
+            title: "Welcome to CrediPal! 🎉",
+            description: `Successfully migrated your data: ${result.migratedRecords.incomes} incomes, ${result.migratedRecords.expenses} expenses, ${result.migratedRecords.debts} debts, ${result.migratedRecords.goals} goals`
+          })
         } else {
-          console.error('❌ PostOnboarding: Consolidation had errors:', result.errors)
+          console.error('❌ FIXED: Consolidation failed:', result.errors)
+          toast({
+            title: "Data Migration Issues",
+            description: result.errors.join(', '),
+            variant: "destructive"
+          })
         }
+
+        // Marcar onboarding como completado
+        await updateOnboardingStatus(true)
+        
+        // Dar tiempo para que se vea el mensaje
+        setTimeout(() => {
+          setIsConsolidating(false)
+          navigate('/dashboard', { replace: true })
+        }, 3000)
+
       } catch (error) {
-        console.error('❌ PostOnboarding: Error during consolidation:', error)
+        console.error('❌ FIXED: Error in consolidation process:', error)
         toast({
-          title: "Error en consolidación",
-          description: "Hubo un problema al procesar tus datos. Continuaremos al dashboard.",
+          title: "Error in Setup",
+          description: "There was an issue setting up your dashboard. Redirecting...",
           variant: "destructive"
         })
-      } finally {
-        setIsConsolidating(false)
+        
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true })
+        }, 2000)
       }
     }
 
-    consolidateData()
-  }, [user?.id, toast, hasCompleted])
+    consolidateAndComplete()
+  }, [user?.id, navigate, toast, updateOnboardingStatus])
 
-  const handleConsolidationComplete = async () => {
-    if (!user?.id || hasCompleted) return
-
-    try {
-      console.log('🔄 PostOnboarding: Completing onboarding process for user:', user.id)
-      setHasCompleted(true)
-      
-      // Marcar onboarding como completado usando el hook
-      await updateOnboardingStatus(true)
-      console.log('✅ PostOnboarding: Onboarding marked as completed')
-      
-      // Esperar un momento para que se propague el cambio
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      toast({
-        title: "¡Bienvenido a CrediPal!",
-        description: "Tu plan financiero está listo"
-      })
-      
-      // Forzar navegación al dashboard
-      console.log('🔄 PostOnboarding: Navigating to dashboard')
-      navigate('/dashboard', { replace: true })
-      
-    } catch (error) {
-      console.error('❌ PostOnboarding: Error completing onboarding:', error)
-      toast({
-        title: "Error completando configuración",
-        description: "Continuaremos al dashboard",
-        variant: "destructive"
-      })
-      // Aún así navegar al dashboard
-      navigate('/dashboard', { replace: true })
-    }
-  }
-
-  // Mostrar loader mientras consolida
-  if (isConsolidating || isLoading) {
+  if (isConsolidating) {
     return (
       <ConsolidationLoader 
-        onComplete={handleConsolidationComplete}
-        autoComplete={true}
+        onComplete={() => {}}
+        autoComplete={false}
       />
     )
-  }
-
-  // Si ya no está consolidando y no ha completado, completar ahora
-  if (!hasCompleted) {
-    handleConsolidationComplete()
   }
 
   return null
