@@ -26,8 +26,8 @@ export default function DataAudit() {
   const hasDataDiscrepancy = unifiedData && optimizedData && (
     Math.abs(unifiedData.monthlyIncome - optimizedData.monthlyIncome) > 0.01 ||
     Math.abs(unifiedData.monthlyExpenses - optimizedData.monthlyExpenses) > 0.01 ||
-    unifiedData.activeDebts.length !== optimizedData.activeDebts.length ||
-    unifiedData.activeGoals.length !== optimizedData.activeGoals.length
+    unifiedData.debts.length !== optimizedData.activeDebts.length ||
+    unifiedData.financialGoals.length !== optimizedData.activeGoals.length
   )
 
   return (
@@ -57,11 +57,11 @@ export default function DataAudit() {
                 </div>
                 <div className="flex justify-between">
                   <span>Deudas:</span>
-                  <span className="font-semibold">{unifiedData.activeDebts.length}</span>
+                  <span className="font-semibold">{unifiedData.debts.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Metas:</span>
-                  <span className="font-semibold">{unifiedData.activeGoals.length}</span>
+                  <span className="font-semibold">{unifiedData.financialGoals.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tiene Datos:</span>
@@ -71,7 +71,7 @@ export default function DataAudit() {
                 </div>
                 <div className="flex justify-between">
                   <span>Fuente:</span>
-                  <Badge variant="outline">{unifiedData.dataSource}</Badge>
+                  <Badge variant="outline">Onboarding</Badge>
                 </div>
               </div>
             ) : (

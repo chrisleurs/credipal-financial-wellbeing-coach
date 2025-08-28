@@ -39,7 +39,7 @@ export const FinancialSummary: React.FC = () => {
             {formatCurrency(financialData.monthlyIncome)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Fuente: {financialData.dataSource}
+            Datos consolidados
           </p>
         </CardContent>
       </Card>
@@ -73,7 +73,7 @@ export const FinancialSummary: React.FC = () => {
             {formatCurrency(financialData.currentSavings)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {financialData.activeGoals.length} metas activas
+            {financialData.financialGoals.length} metas activas
           </p>
         </CardContent>
       </Card>

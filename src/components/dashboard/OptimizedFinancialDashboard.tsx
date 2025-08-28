@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react'
 import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
 import { useFinancialPlanManager } from '@/hooks/useFinancialPlanManager'
@@ -109,7 +110,7 @@ export const OptimizedFinancialDashboard = () => {
     )
   }
 
-  if (!financialData.hasFinancialData) {
+  if (!financialData.hasRealData) {
     return <EmptyState />
   }
 
@@ -117,10 +118,10 @@ export const OptimizedFinancialDashboard = () => {
 
   // Convertir datos unificados al formato esperado por ModernFinancialSummary
   const consolidatedData = financialData ? {
-    monthlyIncome: financialData.totalMonthlyIncome,
+    monthlyIncome: financialData.monthlyIncome,
     monthlyExpenses: financialData.monthlyExpenses,
     currentSavings: financialData.currentSavings,
-    savingsCapacity: financialData.monthlySavingsCapacity
+    savingsCapacity: financialData.savingsCapacity
   } : {
     monthlyIncome: 0,
     monthlyExpenses: 0,
@@ -136,7 +137,7 @@ export const OptimizedFinancialDashboard = () => {
     amount: debt.balance,
     monthlyPayment: debt.payment,
     source: 'onboarding' as const,
-    isKueski: false
+    isKueski: debt.creditor.toLowerCase().includes('kueski')
   }))
 
   // Transform goals to expected format
@@ -176,20 +177,20 @@ export const OptimizedFinancialDashboard = () => {
         </section>
 
         {/* 3. Préstamo Kueski */}
-        {financialData.kueskiLoan && (
+        {financialData.kueskiDebt && (
           <section id="kueski-loan">
             <LoanCard loan={{
-              id: financialData.kueskiLoan.id,
+              id: 'kueski-debt-1',
               user_id: financialData.userId,
-              lender: financialData.kueskiLoan.lender,
-              amount: financialData.kueskiLoan.amount,
-              currency: 'MXN',
-              payment_amount: financialData.kueskiLoan.paymentAmount,
+              lender: 'KueskiPay',
+              amount: financialData.kueskiDebt.balance,
+              currency: 'USD',
+              payment_amount: financialData.kueskiDebt.monthlyPayment,
               payment_dates: [1, 15], // Quincenal típico
-              total_payments: financialData.kueskiLoan.totalPayments,
-              remaining_payments: financialData.kueskiLoan.remainingPayments,
-              next_payment_date: financialData.kueskiLoan.nextPaymentDate,
-              status: financialData.kueskiLoan.status,
+              total_payments: financialData.kueskiDebt.remainingPayments,
+              remaining_payments: financialData.kueskiDebt.remainingPayments,
+              next_payment_date: financialData.kueskiDebt.nextPaymentDate,
+              status: 'active',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }} />
