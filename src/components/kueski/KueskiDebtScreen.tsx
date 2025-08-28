@@ -7,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CreditCard, Calendar, DollarSign, ArrowRight, AlertTriangle } from 'lucide-react';
 import { PageTransition } from '@/components/animations/PageTransition';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const KueskiDebtScreen = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const kueskiDebt = {
@@ -34,7 +36,7 @@ export const KueskiDebtScreen = () => {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-ES', {
+    return date.toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -54,10 +56,10 @@ export const KueskiDebtScreen = () => {
                 </div>
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Deuda Detectada
+                {t('kueski_debt_detected')}
               </h1>
               <p className="text-gray-600">
-                Hemos identificado tu préstamo activo con KueskiPay
+                {t('kueski_debt_subtitle')}
               </p>
             </div>
           </div>
@@ -71,7 +73,7 @@ export const KueskiDebtScreen = () => {
             <Alert className="border-orange-200 bg-orange-50">
               <AlertTriangle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-800">
-                Incluiremos esta deuda en tu plan financiero personalizado
+                {t('kueski_debt_alert')}
               </AlertDescription>
             </Alert>
 
@@ -84,11 +86,11 @@ export const KueskiDebtScreen = () => {
                     KueskiPay
                   </CardTitle>
                   <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                    Activa
+                    {t('kueski_active')}
                   </Badge>
                 </div>
                 <CardDescription>
-                  Préstamo personal a corto plazo
+                  {t('kueski_short_term_loan')}
                 </CardDescription>
               </CardHeader>
               
@@ -97,7 +99,7 @@ export const KueskiDebtScreen = () => {
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <DollarSign className="h-5 w-5 text-gray-600" />
-                    <span className="font-medium">Monto Total</span>
+                    <span className="font-medium">{t('total_amount')}</span>
                   </div>
                   <span className="text-lg font-bold text-gray-900">
                     ${kueskiDebt.totalAmount} {kueskiDebt.currency}
@@ -107,18 +109,18 @@ export const KueskiDebtScreen = () => {
                 {/* Payment Details */}
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Pagos restantes</span>
-                    <span className="font-medium">{kueskiDebt.remainingPayments} de {kueskiDebt.installments}</span>
+                    <span className="text-gray-600">{t('remaining_payments')}</span>
+                    <span className="font-medium">{kueskiDebt.remainingPayments} of {kueskiDebt.installments}</span>
                   </div>
                   
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Pago quincenal</span>
+                    <span className="text-gray-600">{t('biweekly_payment')}</span>
                     <span className="font-medium">${kueskiDebt.installmentAmount} {kueskiDebt.currency}</span>
                   </div>
                   
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Frecuencia</span>
-                    <span className="font-medium">Cada {kueskiDebt.paymentFrequency} días</span>
+                    <span className="text-gray-600">{t('frequency')}</span>
+                    <span className="font-medium">{t('every_x_days').replace('{days}', kueskiDebt.paymentFrequency.toString())}</span>
                   </div>
                 </div>
 
@@ -126,7 +128,7 @@ export const KueskiDebtScreen = () => {
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium text-blue-900">Próximo pago</span>
+                    <span className="font-medium text-blue-900">{t('next_payment')}</span>
                   </div>
                   <span className="text-sm font-medium text-blue-800">
                     {formatDate(kueskiDebt.nextPaymentDate)}
@@ -136,8 +138,8 @@ export const KueskiDebtScreen = () => {
                 {/* Progress Bar */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Progreso de pago</span>
-                    <span className="font-medium">0 de {kueskiDebt.installments} completados</span>
+                    <span className="text-gray-600">{t('payment_progress')}</span>
+                    <span className="font-medium">{t('completed_payments').replace('{completed}', '0').replace('{total}', kueskiDebt.installments.toString())}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
@@ -154,11 +156,10 @@ export const KueskiDebtScreen = () => {
               <CardContent className="pt-4">
                 <div className="text-center space-y-2">
                   <h3 className="font-semibold text-blue-900">
-                    ¿Qué sigue?
+                    {t('whats_next')}
                   </h3>
                   <p className="text-sm text-blue-800">
-                    CrediPal creará un plan financiero personalizado que incluye esta deuda, 
-                    ayudándote a pagarla de manera eficiente junto con tus otros gastos.
+                    {t('credipal_plan_description')}
                   </p>
                 </div>
               </CardContent>
@@ -177,18 +178,18 @@ export const KueskiDebtScreen = () => {
               {isProcessing ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Procesando...
+                  {t('processing')}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  Continuar con mi Plan
+                  {t('continue_with_plan')}
                   <ArrowRight className="h-4 w-4" />
                 </div>
               )}
             </Button>
             
             <p className="text-xs text-gray-500 text-center mt-3">
-              Esta información se usará para crear tu plan financiero personalizado
+              {t('plan_info_usage')}
             </p>
           </div>
         </div>

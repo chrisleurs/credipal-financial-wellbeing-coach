@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 interface LanguageContextType {
@@ -141,7 +140,26 @@ const translations = {
     "coach_income_added": "¡Ingreso registrado! 💰 Lo verás en Programados",
     "coach_saving_progress": "Tu ahorro empuja tu meta un +{progress}% 🎯",
     "coach_debt_reduction": "¡Gran pago! Reduces tu deuda total en {reduction}% 💪",
-    "coach_subscription_created": "Suscripción creada. Te avisamos 2 días antes ⏰"
+    "coach_subscription_created": "Suscripción creada. Te avisamos 2 días antes ⏰",
+
+    // Kueski Debt Screen
+    "kueski_debt_detected": "Deuda Detectada",
+    "kueski_debt_subtitle": "Hemos identificado tu préstamo activo con KueskiPay",
+    "kueski_debt_alert": "Incluiremos esta deuda en tu plan financiero personalizado",
+    "kueski_active": "Activa",
+    "kueski_short_term_loan": "Préstamo personal a corto plazo",
+    "total_amount": "Monto Total",
+    "remaining_payments": "Pagos restantes",
+    "biweekly_payment": "Pago quincenal",
+    "frequency": "Frecuencia",
+    "every_x_days": "Cada {days} días",
+    "next_payment": "Próximo pago",
+    "payment_progress": "Progreso de pago",
+    "completed_payments": "{completed} de {total} completados",
+    "whats_next": "¿Qué sigue?",
+    "credipal_plan_description": "CrediPal creará un plan financiero personalizado que incluye esta deuda, ayudándote a pagarla de manera eficiente junto con tus otros gastos.",
+    "continue_with_plan": "Continuar con mi Plan",
+    "plan_info_usage": "Esta información se usará para crear tu plan financiero personalizado"
   },
   en: {
     // Hero
@@ -274,7 +292,26 @@ const translations = {
     "coach_income_added": "Income registered! 💰 You'll see it in Scheduled",
     "coach_saving_progress": "Your saving pushes your goal +{progress}% 🎯",
     "coach_debt_reduction": "Great payment! You reduce your total debt by {reduction}% 💪",
-    "coach_subscription_created": "Subscription created. We'll remind you 2 days before ⏰"
+    "coach_subscription_created": "Subscription created. We'll remind you 2 days before ⏰",
+
+    // Kueski Debt Screen
+    "kueski_debt_detected": "Debt Detected",
+    "kueski_debt_subtitle": "We have identified your active loan with KueskiPay",
+    "kueski_debt_alert": "We will include this debt in your personalized financial plan",
+    "kueski_active": "Active",
+    "kueski_short_term_loan": "Short-term personal loan",
+    "total_amount": "Total Amount",
+    "remaining_payments": "Remaining payments",
+    "biweekly_payment": "Bi-weekly payment",
+    "frequency": "Frequency",
+    "every_x_days": "Every {days} days",
+    "next_payment": "Next payment",
+    "payment_progress": "Payment progress",
+    "completed_payments": "{completed} of {total} completed",
+    "whats_next": "What's next?",
+    "credipal_plan_description": "CrediPal will create a personalized financial plan that includes this debt, helping you pay it off efficiently alongside your other expenses.",
+    "continue_with_plan": "Continue with my Plan",
+    "plan_info_usage": "This information will be used to create your personalized financial plan"
   }
 }
 
