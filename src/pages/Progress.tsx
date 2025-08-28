@@ -6,6 +6,14 @@ import { Progress } from '@/components/ui/progress'
 import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
 import { TrendingUp, Target, Calendar, DollarSign } from 'lucide-react'
 
+// Type definition for goal objects
+interface FinancialGoalObject {
+  id?: string
+  title: string
+  target_amount: number
+  current_amount: number
+}
+
 export default function ProgressPage() {
   const { data: financialData, isLoading } = useUnifiedFinancialData()
 
@@ -141,14 +149,15 @@ export default function ProgressPage() {
                       )
                     }
                     
-                    // Handle case where goals are proper objects
-                    const progress = goal.target_amount ? (goal.current_amount / goal.target_amount) * 100 : 0
+                    // Handle case where goals are proper objects - cast to our interface
+                    const goalObj = goal as FinancialGoalObject
+                    const progress = goalObj.target_amount ? (goalObj.current_amount / goalObj.target_amount) * 100 : 0
                     return (
-                      <div key={goal.id || index} className="space-y-2">
+                      <div key={goalObj.id || index} className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="font-medium">{goal.title}</span>
+                          <span className="font-medium">{goalObj.title}</span>
                           <span className="text-sm text-gray-600">
-                            ${goal.current_amount || 0} / ${goal.target_amount || 0}
+                            ${goalObj.current_amount || 0} / ${goalObj.target_amount || 0}
                           </span>
                         </div>
                         <Progress value={progress} className="w-full" />
