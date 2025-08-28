@@ -1,95 +1,87 @@
 
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useOptimizedFinancialData } from '@/hooks/useOptimizedFinancialData'
-import { useOptimizedOnboardingConsolidation } from '@/hooks/useOptimizedOnboardingConsolidation'
-import { useOnboardingStatus } from '@/hooks/useOnboardingStatus'
-import { PlanGenerationFlow } from '@/components/plan/PlanGenerationFlow'
+import { useAuth } from '@/hooks/useAuth'
+import { useConsolidatedData } from '@/hooks/useConsolidatedData'
+import { ConsolidationLoader } from '@/components/shared/ConsolidationLoader'
+import { SimpleDataService } from '@/services/simpleDataService'
 import { useToast } from '@/hooks/use-toast'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function PostOnboarding() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { data: consolidatedData, isLoading } = useConsolidatedData()
   const { toast } = useToast()
-  const [planGenerated, setPlanGenerated] = useState(false)
-  
-  const { data: financialData, isLoading: isLoadingData } = useOptimizedFinancialData()
-  const { consolidateData, isConsolidating } = useOptimizedOnboardingConsolidation()
-  const { updateOnboardingStatus } = useOnboardingStatus()
+  const [isConsolidating, setIsConsolidating] = useState(true)
 
-  // Consolidar datos al inicio si es necesario
+  // Consolidar datos al montar el componente
   useEffect(() => {
-    const consolidateIfNeeded = async () => {
-      if (!isConsolidating && !planGenerated) {
-        try {
-          await consolidateData(false) // No marcar como completado aún
-        } catch (error) {
-          console.error('Error consolidating data:', error)
+    const consolidateData = async () => {
+      if (!user?.id) return
+
+      try {
+        setIsConsolidating(true)
+        
+        // Dar tiempo para que se vea la animación
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        const result = await SimpleDataService.consolidateUserData(user.id)
+        
+        if (result.success) {
+          console.log('✅ Data consolidated successfully')
+        } else {
+          console.error('❌ Consolidation had errors:', result.errors)
         }
+      } catch (error) {
+        console.error('❌ Error during consolidation:', error)
+        toast({
+          title: "Error en consolidación",
+          description: "Hubo un problema al procesar tus datos. Continuaremos al dashboard.",
+          variant: "destructive"
+        })
+      } finally {
+        setIsConsolidating(false)
       }
     }
 
-    consolidateIfNeeded()
-  }, [consolidateData, isConsolidating, planGenerated])
+    consolidateData()
+  }, [user?.id, toast])
 
-  const handlePlanGenerated = async () => {
+  const handleConsolidationComplete = async () => {
+    if (!user?.id) return
+
     try {
-      setPlanGenerated(true)
+      // Marcar onboarding como completado
+      await SimpleDataService.markOnboardingCompleted(user.id)
       
       toast({
-        title: "¡Plan generado exitosamente!",
-        description: "Redirigiendo a tu dashboard..."
+        title: "¡Bienvenido a CrediPal!",
+        description: "Tu plan financiero está listo"
       })
-      
-      // Marcar onboarding como completado
-      await updateOnboardingStatus(true)
-      
-      // Pequeña pausa para mejor UX
-      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // Navegar al dashboard
       navigate('/dashboard', { replace: true })
       
     } catch (error) {
       console.error('Error completing onboarding:', error)
-      
-      toast({
-        title: "Error al completar configuración",
-        description: "Redirigiendo al dashboard...",
-        variant: "destructive"
-      })
-      
-      // Navegar al dashboard de todas formas
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true })
-      }, 1000)
+      navigate('/dashboard', { replace: true })
     }
   }
 
-  // Loading states
-  if (isLoadingData || isConsolidating) {
+  // Mostrar loader mientras consolida
+  if (isConsolidating || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-100 flex items-center justify-center">
-        <LoadingSpinner 
-          size="lg" 
-          text={isConsolidating ? "Consolidando información..." : "Cargando datos financieros..."} 
-        />
-      </div>
+      <ConsolidationLoader 
+        onComplete={handleConsolidationComplete}
+        autoComplete={true}
+      />
     )
   }
 
-  // Si no hay datos suficientes, redirigir al onboarding
-  if (!financialData?.hasRealData) {
-    React.useEffect(() => {
-      navigate('/onboarding', { replace: true })
-    }, [navigate])
-    
-    return null
-  }
+  // Si ya no está consolidando, ir directo al dashboard
+  React.useEffect(() => {
+    handleConsolidationComplete()
+  }, [])
 
-  return (
-    <PlanGenerationFlow 
-      onPlanGenerated={handlePlanGenerated}
-    />
-  )
+  return null
 }

@@ -1,5 +1,10 @@
 
-import { useOptimizedFinancialData } from './useOptimizedFinancialData'
+/**
+ * Hook simplificado que usa el nuevo useConsolidatedData
+ * Mantiene compatibilidad con código existente
+ */
+
+import { useConsolidatedData } from './useConsolidatedData'
 
 export interface ConsolidatedFinancialData {
   monthlyIncome: number
@@ -22,31 +27,31 @@ export interface ConsolidatedFinancialData {
 }
 
 export const useConsolidatedFinancialData = () => {
-  const { data: optimizedData, isLoading, error } = useOptimizedFinancialData()
+  const { data: consolidatedData, isLoading, error } = useConsolidatedData()
 
-  const consolidatedData: ConsolidatedFinancialData | null = optimizedData ? {
-    monthlyIncome: optimizedData.monthlyIncome,
-    monthlyExpenses: optimizedData.monthlyExpenses,
-    currentSavings: optimizedData.currentSavings,
-    savingsCapacity: optimizedData.savingsCapacity,
-    hasRealData: optimizedData.hasRealData,
-    expenseCategories: optimizedData.expenseCategories,
-    debts: optimizedData.activeDebts.map((debt, index) => ({
+  const data: ConsolidatedFinancialData | null = consolidatedData ? {
+    monthlyIncome: consolidatedData.monthlyIncome,
+    monthlyExpenses: consolidatedData.monthlyExpenses,
+    currentSavings: consolidatedData.currentSavings,
+    savingsCapacity: consolidatedData.savingsCapacity,
+    hasRealData: consolidatedData.hasRealData,
+    expenseCategories: consolidatedData.expenseCategories,
+    debts: consolidatedData.debts.map((debt, index) => ({
       id: `debt-${index}`,
       name: debt.creditor,
       creditor: debt.creditor,
       balance: debt.balance,
       payment: debt.payment,
-      source: 'onboarding' as const
+      source: debt.creditor.toLowerCase().includes('kueski') ? 'kueski' as const : 'onboarding' as const
     })),
-    financialGoals: optimizedData.activeGoals.map(goal => goal.title),
-    totalDebtBalance: optimizedData.totalDebtBalance,
-    totalMonthlyDebtPayments: optimizedData.totalMonthlyDebtPayments
+    financialGoals: consolidatedData.financialGoals,
+    totalDebtBalance: consolidatedData.totalDebtBalance,
+    totalMonthlyDebtPayments: consolidatedData.totalMonthlyDebtPayments
   } : null
 
   return {
-    data: consolidatedData,
-    consolidatedData,
+    data,
+    consolidatedData: data,
     isLoading,
     error
   }
