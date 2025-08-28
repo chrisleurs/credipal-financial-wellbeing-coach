@@ -13,7 +13,7 @@ interface FinancialDashboardProps {
 }
 
 export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ userId }) => {
-  const { data, isLoading, error } = useConsolidatedFinancialData(userId)
+  const { data, isLoading, error } = useConsolidatedFinancialData()
   const navigate = useNavigate()
 
   if (isLoading) {
@@ -39,10 +39,10 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({ userId }
     )
   }
 
-  const totalIncome = data?.incomes?.reduce((sum, income) => sum + income.amount, 0) || 0
-  const totalExpenses = data?.expenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0
-  const totalDebts = data?.debts?.reduce((sum, debt) => sum + debt.current_balance, 0) || 0
-  const totalSavings = data?.goals?.reduce((sum, goal) => sum + goal.current_amount, 0) || 0
+  const totalIncome = data?.monthlyIncome || 0
+  const totalExpenses = data?.monthlyExpenses || 0
+  const totalDebts = data?.totalDebtBalance || 0
+  const totalSavings = data?.currentSavings || 0
 
   return (
     <div className="p-4 space-y-6 max-w-7xl mx-auto">

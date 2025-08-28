@@ -6,9 +6,9 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 
 export default function Dashboard() {
-  const { user, isLoading } = useAuth()
+  const { user, loading } = useAuth()
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />

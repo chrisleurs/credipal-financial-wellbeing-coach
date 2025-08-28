@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -49,7 +48,7 @@ const Index = () => {
               Cerrar Sesión
             </Button>
           </div>
-          <FinancialDashboard />
+          <FinancialDashboard userId={user.id} />
         </>
       );
     }
