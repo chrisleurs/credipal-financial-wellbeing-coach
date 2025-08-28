@@ -32,7 +32,7 @@ export default function ProgressPage() {
   }
 
   const kueskiProgress = financialData?.kueskiDebt ? 
-    ((500 - financialData.kueskiDebt.remainingAmount) / 500) * 100 : 0
+    ((500 - financialData.kueskiDebt.balance) / 500) * 100 : 0
 
   return (
     <AppLayout>
@@ -73,7 +73,7 @@ export default function ProgressPage() {
               <CardContent className="p-4 text-center">
                 <Target className="h-6 w-6 text-purple-600 mx-auto mb-2" />
                 <div className="text-lg font-bold">
-                  {financialData?.financialGoals.length || 0}
+                  {Array.isArray(financialData?.financialGoals) ? financialData.financialGoals.length : 0}
                 </div>
                 <div className="text-xs text-gray-600">Metas Activas</div>
               </CardContent>
@@ -83,7 +83,7 @@ export default function ProgressPage() {
               <CardContent className="p-4 text-center">
                 <Calendar className="h-6 w-6 text-orange-600 mx-auto mb-2" />
                 <div className="text-lg font-bold">
-                  {financialData?.debts.length || 0}
+                  {financialData?.debts?.length || 0}
                 </div>
                 <div className="text-xs text-gray-600">Deudas</div>
               </CardContent>
@@ -104,12 +104,12 @@ export default function ProgressPage() {
                   <div className="flex justify-between text-sm">
                     <span>Pagado</span>
                     <span>
-                      ${500 - financialData.kueskiDebt.remainingAmount} / $500
+                      ${500 - financialData.kueskiDebt.balance} / $500
                     </span>
                   </div>
                   <Progress value={kueskiProgress} className="w-full" />
                   <div className="text-xs text-gray-600">
-                    Pagos restantes: {financialData.kueskiDebt.paymentsRemaining}
+                    Pagos restantes: {financialData.kueskiDebt.remainingPayments}
                   </div>
                 </div>
               </CardContent>
@@ -125,16 +125,30 @@ export default function ProgressPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {financialData?.financialGoals.length ? (
+              {Array.isArray(financialData?.financialGoals) && financialData.financialGoals.length > 0 ? (
                 <div className="space-y-4">
-                  {financialData.financialGoals.map((goal) => {
-                    const progress = (goal.current_amount / goal.target_amount) * 100
+                  {financialData.financialGoals.map((goal, index) => {
+                    // Handle case where goals might be strings instead of objects
+                    if (typeof goal === 'string') {
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="font-medium">{goal}</span>
+                            <span className="text-sm text-gray-600">En progreso</span>
+                          </div>
+                          <Progress value={0} className="w-full" />
+                        </div>
+                      )
+                    }
+                    
+                    // Handle case where goals are proper objects
+                    const progress = goal.target_amount ? (goal.current_amount / goal.target_amount) * 100 : 0
                     return (
-                      <div key={goal.id} className="space-y-2">
+                      <div key={goal.id || index} className="space-y-2">
                         <div className="flex justify-between">
                           <span className="font-medium">{goal.title}</span>
                           <span className="text-sm text-gray-600">
-                            ${goal.current_amount} / ${goal.target_amount}
+                            ${goal.current_amount || 0} / ${goal.target_amount || 0}
                           </span>
                         </div>
                         <Progress value={progress} className="w-full" />
