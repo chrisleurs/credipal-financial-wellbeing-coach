@@ -1,96 +1,82 @@
 
 import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { cn } from '@/lib/utils'
+import { useDashboardNavigation } from '@/hooks/useDashboardNavigation'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import { Menu } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAuth } from '@/hooks/useAuth'
-import { useLogout } from '@/hooks/useLogout'
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { MainNavItem, SidebarNavItem } from "@/types/nav"
-import { NavItem } from "@/components/shared/NavItem"
-import { Home, CreditCard, AlertTriangle, Target, TrendingUp, User, Settings, LogOut } from 'lucide-react'
-import { Link } from 'react-router-dom'
+  Home,
+  DollarSign,
+  CreditCard,
+  Calendar,
+  TrendingUp,
+  FileText,
+  Target,
+  User,
+  MessageCircle
+} from 'lucide-react'
 
-interface AppSidebarProps {
-  items?: MainNavItem[]
-  sidebarItems?: SidebarNavItem[]
-}
-
-const navigationItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Gastos', href: '/expenses', icon: CreditCard },
-  { name: 'Deudas', href: '/debts', icon: AlertTriangle },
-  { name: 'Plan', href: '/plan', icon: Target },
+const navigation = [
+  { name: 'Inicio', href: '/dashboard', icon: Home },
+  { name: 'Mi Plan', href: '/coach', icon: FileText },
   { name: 'Progreso', href: '/progress', icon: TrendingUp },
+  { name: 'Gastos', href: '/expenses', icon: DollarSign },
+  { name: 'Deudas', href: '/debts', icon: CreditCard },
+  { name: 'Calendario', href: '/calendar', icon: Calendar },
   { name: 'Perfil', href: '/profile', icon: User },
 ]
 
-export function AppSidebar({ items, sidebarItems }: AppSidebarProps) {
-  const { user } = useAuth()
-  const { handleLogout } = useLogout()
+export function AppSidebar() {
+  const location = useLocation()
+  const { navigateTo, canNavigate } = useDashboardNavigation()
+
+  const handleNavigation = (href: string) => {
+    if (canNavigate) {
+      navigateTo(href)
+    }
+  }
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Menu className="w-5 h-5 md:hidden" />
-      </SheetTrigger>
-      <SheetContent className="w-full sm:w-64 border-right padding-x">
-        <SheetHeader className="space-y-2.5">
-          <SheetTitle>Menú</SheetTitle>
-          <SheetDescription>
-            Navega a través de tu información financiera.
-          </SheetDescription>
-        </SheetHeader>
-        <ScrollArea className="my-4">
-          <div className="py-4">
-            <div className="px-3 py-2">
-              <Avatar className="w-9 h-9">
-                <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name} />
-                <AvatarFallback>{user?.email?.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="space-y-0.5 font-medium leading-none mt-2">
-                <p className="text-sm font-semibold">{user?.user_metadata?.full_name || user?.email}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+    <div className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
+      <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
+        <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
+          <div className="flex flex-shrink-0 items-center px-4">
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                <MessageCircle className="h-5 w-5 text-white" />
               </div>
-            </div>
-            <ul className="mt-6 space-y-1">
-              {navigationItems.map((item) => (
-                <NavItem
-                  key={item.name}
-                  title={item.name}
-                  href={item.href}
-                  icon={item.icon}
-                />
-              ))}
-            </ul>
-            <div className="flex justify-center mt-4">
-              <Link 
-                to="/profile" 
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Configuración
-              </Link>
-            </div>
-            <div className="flex justify-center mt-2">
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-4 py-2"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Cerrar Sesión
-              </button>
+              <span className="ml-2 text-xl font-bold text-gray-900">CrediPal</span>
             </div>
           </div>
-        </ScrollArea>
-      </SheetContent>
-    </Sheet>
+          <nav className="mt-8 flex-1 space-y-1 px-2">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => handleNavigation(item.href)}
+                  disabled={!canNavigate}
+                  className={cn(
+                    isActive
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                    'group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md transition-colors',
+                    !canNavigate && 'opacity-50 cursor-not-allowed'
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500',
+                      'mr-3 flex-shrink-0 h-5 w-5'
+                    )}
+                    aria-hidden="true"
+                  />
+                  {item.name}
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      </div>
+    </div>
   )
 }
