@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const MAIN_CATEGORIES = [
   'Food',
@@ -29,6 +30,7 @@ export function AddCategoryModal({
   onSubmit, 
   preselectedCategory 
 }: AddCategoryModalProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
     main_category: preselectedCategory || ''
@@ -133,7 +135,7 @@ export function AddCategoryModal({
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting} className="flex-1 bg-gradient-primary">
               {isSubmitting ? 'Creating...' : 'Create Category'}

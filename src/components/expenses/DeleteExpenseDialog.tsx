@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DeleteExpenseDialogProps {
   isOpen: boolean;
@@ -24,23 +25,24 @@ export function DeleteExpenseDialog({
   onConfirm, 
   expenseDescription 
 }: DeleteExpenseDialogProps) {
+  const { t } = useLanguage();
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Eliminar gasto?</AlertDialogTitle>
+          <AlertDialogTitle>{t('delete_expense')}</AlertDialogTitle>
           <AlertDialogDescription>
-            ¿Estás seguro de que quieres eliminar el gasto "{expenseDescription}"? 
-            Esta acción no se puede deshacer.
+            {t('delete_expense_confirm').replace('{description}', expenseDescription)}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm}
             className="bg-destructive hover:bg-destructive/90"
           >
-            Eliminar
+            {t('delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

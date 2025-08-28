@@ -3,6 +3,7 @@ import React from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Wallet, TrendingUp, CreditCard, PiggyBank, Repeat } from 'lucide-react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 export interface ActionSheetOption {
   id: string
@@ -23,11 +24,13 @@ export const ActionSheet: React.FC<ActionSheetProps> = ({
   onClose,
   options
 }) => {
+  const { t } = useLanguage()
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="bottom" className="rounded-t-[20px] border-0">
         <SheetHeader className="pb-4">
-          <SheetTitle className="text-center">¿Qué quieres registrar?</SheetTitle>
+          <SheetTitle className="text-center">{t('what_to_register')}</SheetTitle>
         </SheetHeader>
         
         <div className="space-y-3 pb-6">
@@ -71,36 +74,36 @@ export const createActionSheetOptions = ({
 }): ActionSheetOption[] => [
   {
     id: 'expense',
-    title: 'Registrar Gasto 💸',
-    description: 'Añadir un gasto realizado',
+    title: 'Add Expense 💸',
+    description: 'Record a completed expense',
     icon: <Wallet className="h-5 w-5 text-primary" />,
     onClick: onAddExpense
   },
   {
     id: 'income',
-    title: 'Registrar Ingreso 💵',
-    description: 'Registrar dinero recibido',
+    title: 'Add Income 💵',
+    description: 'Register money received',
     icon: <TrendingUp className="h-5 w-5 text-green-600" />,
     onClick: onAddIncome
   },
   {
     id: 'debt',
-    title: 'Pagar Deuda 💳',
-    description: 'Registrar pago de deuda',
+    title: 'Pay Debt 💳',
+    description: 'Record debt payment',
     icon: <CreditCard className="h-5 w-5 text-blue-600" />,
     onClick: onPayDebt
   },
   {
     id: 'saving',
-    title: 'Registrar Ahorro 🏦',
-    description: 'Mover dinero a ahorros',
+    title: 'Add Saving 🏦',
+    description: 'Move money to savings',
     icon: <PiggyBank className="h-5 w-5 text-purple-600" />,
     onClick: onAddSaving
   },
   {
     id: 'subscription',
-    title: 'Añadir Suscripción 🔁',
-    description: 'Crear pago recurrente',
+    title: 'Add Subscription 🔁',
+    description: 'Create recurring payment',
     icon: <Repeat className="h-5 w-5 text-orange-600" />,
     onClick: onAddSubscription
   }

@@ -108,7 +108,40 @@ const translations = {
     "remaining_payments": "Pagos Restantes",
     "active_loans": "Préstamos Activos",
     "loading_financial_info": "Cargando tu información financiera...",
-    "bienestar_financiero": "Bienestar Financiero"
+    "bienestar_financiero": "Bienestar Financiero",
+
+    // UI Elements
+    "delete": "Eliminar",
+    "cancel": "Cancelar", 
+    "add": "Agregar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "processing": "Procesando...",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información",
+
+    // Expense Management
+    "register_income": "Registrar Ingreso",
+    "register_expense": "Registrar Gasto", 
+    "register_saving": "Registrar Ahorro",
+    "delete_expense": "¿Eliminar gasto?",
+    "delete_expense_confirm": "¿Estás seguro de que quieres eliminar el gasto \"{description}\"? Esta acción no se puede deshacer.",
+    "this_month": "Este mes",
+    "average": "Promedio",
+    "movements": "Movimientos",
+    "what_to_register": "¿Qué quieres registrar?",
+
+    // Coach Messages
+    "coach_expense_saved": "Listo, ¡movimiento guardado! 🚀",
+    "coach_income_added": "¡Ingreso registrado! 💰 Lo verás en Programados",
+    "coach_saving_progress": "Tu ahorro empuja tu meta un +{progress}% 🎯",
+    "coach_debt_reduction": "¡Gran pago! Reduces tu deuda total en {reduction}% 💪",
+    "coach_subscription_created": "Suscripción creada. Te avisamos 2 días antes ⏰"
   },
   en: {
     // Hero
@@ -180,7 +213,7 @@ const translations = {
     "total_monthly_income": "Total monthly income",
     
     // Dashboard
-    "dashboard": "Financial Panel",
+    "dashboard": "Financial Dashboard",
     "financial_management": "Manage your finances intelligently",
     "financial_dashboard": "Financial Dashboard",
     "comprehensive_summary": "Complete overview of your financial situation",
@@ -208,7 +241,40 @@ const translations = {
     "remaining_payments": "Remaining Payments",
     "active_loans": "Active Loans",
     "loading_financial_info": "Loading your financial information...",
-    "bienestar_financiero": "Financial Wellness"
+    "bienestar_financiero": "Financial Wellness",
+
+    // UI Elements
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "add": "Add",
+    "save": "Save", 
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "processing": "Processing...",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information",
+
+    // Expense Management
+    "register_income": "Add Income",
+    "register_expense": "Add Expense",
+    "register_saving": "Add Saving",
+    "delete_expense": "Delete expense?",
+    "delete_expense_confirm": "Are you sure you want to delete the expense \"{description}\"? This action cannot be undone.",
+    "this_month": "This month",
+    "average": "Average",
+    "movements": "Movements",
+    "what_to_register": "What would you like to register?",
+
+    // Coach Messages
+    "coach_expense_saved": "Done, movement saved! 🚀",
+    "coach_income_added": "Income registered! 💰 You'll see it in Scheduled",
+    "coach_saving_progress": "Your saving pushes your goal +{progress}% 🎯",
+    "coach_debt_reduction": "Great payment! You reduce your total debt by {reduction}% 💪",
+    "coach_subscription_created": "Subscription created. We'll remind you 2 days before ⏰"
   }
 }
 
@@ -218,8 +284,10 @@ interface LanguageProviderProps {
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const [language, setLanguage] = useState<'es' | 'en'>(() => {
-    const saved = localStorage.getItem('credipal_language')
-    return (saved as 'es' | 'en') || 'en' // English is default
+    // Force English as default and clear any existing Spanish preference
+    localStorage.removeItem('credipal_language')
+    localStorage.setItem('credipal_language', 'en')
+    return 'en'
   })
 
   useEffect(() => {

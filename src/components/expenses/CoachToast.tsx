@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface CoachToastProps {
   type: 'expense' | 'income' | 'saving' | 'debt' | 'subscription'
@@ -11,35 +12,36 @@ interface CoachToastProps {
 
 export const useCoachToast = () => {
   const { toast } = useToast()
+  const { t } = useLanguage()
 
   const showMotivationalToast = (params: CoachToastProps) => {
     const { type, amount, goalProgress, debtReduction } = params
 
     const messages = {
       expense: [
-        "Listo, ¡movimiento guardado! 🚀",
-        "Perfecto, ya lo registré 📝",
-        "¡Excelente control! Movimiento guardado 💪"
+        "Done, movement saved! 🚀",
+        "Perfect, I've recorded it 📝",
+        "Excellent control! Movement saved 💪"
       ],
       income: [
-        "¡Ingreso registrado! 💰 Lo verás en Programados",
-        "¡Genial! Ingreso añadido a tu plan 🌟",
-        "¡Excelente! Tu capacidad de ahorro mejora 🎉"
+        "Income registered! 💰 You'll see it in Scheduled",
+        "Great! Income added to your plan 🌟",
+        "Excellent! Your saving capacity improves 🎉"
       ],
       saving: [
-        `Tu ahorro empuja tu meta un +${goalProgress?.toFixed(1)}% 🎯`,
-        "¡Gran ahorro! Cada peso cuenta 💪",
-        "¡Vas por buen camino hacia tu meta! 🚀"
+        `Your saving pushes your goal +${goalProgress?.toFixed(1)}% 🎯`,
+        "Great saving! Every dollar counts 💪",
+        "You're on the right track towards your goal! 🚀"
       ],
       debt: [
-        `¡Gran pago! Reduces tu deuda total en ${debtReduction?.toFixed(1)}% 💪`,
-        "¡Excelente pago! Cada abono te acerca a la libertad 🎯",
-        "¡Sigue así! Tu esfuerzo está dando frutos 🌟"
+        `Great payment! You reduce your total debt by ${debtReduction?.toFixed(1)}% 💪`,
+        "Excellent payment! Every payment brings you closer to freedom 🎯",
+        "Keep it up! Your effort is paying off 🌟"
       ],
       subscription: [
-        "Suscripción creada. Te avisamos 2 días antes ⏰",
-        "¡Perfecto! Nunca olvidarás este pago 📅",
-        "Suscripción añadida a tu calendario 🎯"
+        "Subscription created. We'll remind you 2 days before ⏰",
+        "Perfect! You'll never forget this payment 📅",
+        "Subscription added to your calendar 🎯"
       ]
     }
 
