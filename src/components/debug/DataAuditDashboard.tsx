@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useUnifiedFinancialData } from '@/hooks/useUnifiedFinancialData'
@@ -19,7 +18,6 @@ export const DataAuditDashboard = () => {
   const { consolidatedData, isLoading: consolidatedLoading } = useConsolidatedFinancialData()
   const { activePlan, isLoadingPlan } = useFinancialPlanManager()
 
-  // Query directo a las tablas principales
   const { data: rawTablesData } = useQuery({
     queryKey: ['raw-tables-audit', user?.id],
     queryFn: async () => {
@@ -319,12 +317,12 @@ export const DataAuditDashboard = () => {
               <CardContent>
                 {unifiedData ? (
                   <div className="text-sm space-y-1">
-                    <div><strong>Ingresos totales:</strong> ${unifiedData.totalMonthlyIncome}</div>
+                    <div><strong>Ingresos totales:</strong> ${unifiedData.monthlyIncome}</div>
                     <div><strong>Gastos mensuales:</strong> ${unifiedData.monthlyExpenses}</div>
                     <div><strong>Deudas totales:</strong> ${unifiedData.totalDebtBalance}</div>
                     <div><strong>Deudas encontradas:</strong> {unifiedData.debts.length}</div>
                     <div><strong>Metas:</strong> {unifiedData.financialGoals.length}</div>
-                    <div><strong>Tiene datos reales:</strong> {unifiedData.hasFinancialData ? 'Sí' : 'No'}</div>
+                    <div><strong>Tiene datos reales:</strong> {unifiedData.hasRealData ? 'Sí' : 'No'}</div>
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">No hay datos unificados</div>
@@ -458,7 +456,6 @@ export const DataAuditDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {/* Aquí agregaríamos lógica para detectar inconsistencias */}
                 <div className="text-sm text-muted-foreground">
                   Análisis de inconsistencias en desarrollo...
                 </div>
